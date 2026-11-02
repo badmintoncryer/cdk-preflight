@@ -186,6 +186,37 @@ Preflight.apply(app, { checkQuotas: true });
   guarantee. The reverse also happens: EC2 does not always enforce the Elastic IP quota when CloudFormation
   creates several addresses in parallel (measured 2026-10-16: with 4 of 5 in use, two parallel `AWS::EC2::EIP` both
   succeeded), so a template the check stops may occasionally deploy. The check follows the quota, not the race.
+- **CloudFormation's own quota warning is a different check.** Since June 2026, creating a change set (and
+  `cdk validate` with `--online`, below) warns when a stack would exceed a service quota. That warning runs per stack,
+  after the template is uploaded, and never stops the deploy. `checkQuotas` adds up every stack of the app that
+  targets the same account and Region, and fails `cdk synth` before anything is uploaded. Both can be on.
+
+## Across stacks
+
+Two checks read every stack of the app at once, because a single template cannot show the problem. They report
+**warnings** (they have not been reproduced on the bench yet, see [Scope](#scope-and-rule-lifecycle)) and never fail
+synth, in either mode:
+
+| Check | Finds | Deploy error it predicts |
+|---|---|---|
+| `pf-cfn-export-name-conflict` | two stacks that deploy to the same account and Region export the same name (Stages included) | `Export with name X is already exported by stack Y` |
+| `pf-cfn-import-value-missing-export` | `Fn::ImportValue` of a name that starts with the name of a stack of the app (`Producer:...`, CDK's naming) that this stack, in the same account and Region, does not export | `No export named X found` |
+
+Imports of names that do not start with a stack name of the app are left alone, since another app may export them.
+Acknowledge a finding with `cdk-preflight-exports::<rule-id>`, or turn a check off with `exclude`.
+
+## With `cdk validate`
+
+The CDK CLI's experimental `cdk validate` (`cdk --unstable=validate validate`) synthesizes the app and runs its
+validation plugins without deploying, so cdk-preflight runs there exactly as in `cdk synth`: in enforce mode a finding
+fails the command, with `enforce: false` it is a warning (checked with CLI 2.1147.0). `--watch` re-runs it on each
+change. `--online` (the default) also submits the templates to CloudFormation's pre-deployment validation, which
+needs credentials and adds the server-side checks (resource name conflicts, the quota warning above); `--no-online`
+keeps it offline.
+
+```sh
+npx cdk --unstable=validate validate --no-online --watch
+```
 
 ## Bundled rules
 
@@ -339,6 +370,14 @@ To add cdk-preflight to a CDK app:
 4. To fix a finding, prefer correcting the resource. To opt out instead: `exclude: ['<rule-id>']` disables one rule, `enforce: false` switches to warn-only reporting
 
 The machine-readable findings are written to `cdk.out/validation-report.json` when synthesizing with `-c @aws-cdk/core:validationReportJson=true`.
+
+The two sibling tools also run as MCP servers, so an agent can check the same `cdk.out` for what it costs idle and
+what it asks of the CloudFormation execution role:
+
+```sh
+claude mcp add idle-cost -- npx -y cfn-idle-cost mcp       # idle_cost
+claude mcp add exec-policy -- npx -y cfn-exec-policy mcp   # exec_policy_explain / _generate / _diff / _doctor
+```
 
 ### Report missed deploy errors
 

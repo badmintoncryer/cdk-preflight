@@ -12,6 +12,9 @@ Scope: every deploy-time failure, and every post-deploy run that is certain to f
 4. Opt-outs: `exclude: ['<rule-id>']` disables one rule; `enforce: false` reports as warnings only (with construct traces and per-finding acknowledgement). Add `strict: true` to also fail on the engine's own error-class findings (F-/E-prefixed) that CDK otherwise downgrades to warnings.
 5. Opt-in: `checkQuotas: true` also compares what the app creates (VPCs, internet gateways, Elastic IPs per Region, reserved Lambda concurrency) against the target account's Service Quotas and usage. It is the only option that calls AWS at synth time; the app process needs credentials (`AWS_PROFILE`, since the CDK CLI does not pass `--profile` on), and without them the check is skipped with a `pf-quota-check-skipped` warning.
 6. Machine-readable findings: synth with `-c @aws-cdk/core:validationReportJson=true`, then read `cdk.out/validation-report.json`.
+7. Without deploying or a full synth step: `cdk --unstable=validate validate --no-online` runs the same rules (add `--watch` to re-run on change).
+8. Across stacks (warnings, never fail synth): `pf-cfn-export-name-conflict` (two stacks in one account and Region export the same name) and `pf-cfn-import-value-missing-export` (an import named `<app stack>:...` that stack does not export). Acknowledge with `cdk-preflight-exports::<rule-id>`.
+9. Sibling MCP servers for the same cdk.out: `npx -y cfn-idle-cost mcp` (idle cost) and `npx -y cfn-exec-policy mcp` (execution role permissions).
 
 ## Key files
 
