@@ -132,6 +132,9 @@ project.addPackageIgnore('/assets/');
 // us-east-1 実測ルールは meta.yaml の benchRegion に従う。
 project.gitignore.addPatterns('/bench/out/');
 
+// The pull request report Action (action.yml) runs from the repository, not from npm.
+project.npmignore?.exclude('/action/', '/action.yml');
+
 // sweep.sh の残骸回収は AWS 認証が要るので実機では回せない。スタブ版の自己チェックを
 // テストに混ぜ、削除分岐が壊れたら CI で落ちるようにする（実 API は叩かない）。
 project.testTask.exec('bash bench/sweep.test.sh');

@@ -289,6 +289,46 @@ Highlights:
 - **Step Functions**: `Next`/`Default`/`Choices` must reference defined states (a dangling `StartAt` is already caught by the engine's built-in `E3601`)
 - **EC2**: security group TCP/UDP port ranges and `FromPort <= ToPort`
 
+## Pull request report (GitHub Action)
+
+The repository is also a GitHub Action that synthesizes the app on both sides of a pull request and posts **one comment** with:
+
+- the cdk-preflight findings of the pull request (from `cdk.out/validation-report.json`, or the synth log),
+- the idle cost change, from [cfn-idle-cost](https://github.com/badmintoncryer/cfn-idle-cost) (what the stacks cost a month with zero traffic),
+- the CloudFormation execution role permission change, from [cfn-exec-policy](https://github.com/badmintoncryer/cfn-exec-policy).
+
+```yaml
+name: cdk-report
+on: pull_request
+permissions: { contents: read, pull-requests: write }
+jobs:
+  report:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with: { node-version: 22 }
+      - uses: badmintoncryer/cdk-preflight@main
+        with:
+          idle-cost-args: --region us-east-1 --max-increase 50
+          exec-policy-args: --fail-on wildcard,unknown
+```
+
+The base branch is fetched and synthesized in a separate worktree, so neither side needs AWS credentials (unless the app's synth does lookups that are not in `cdk.context.json`). The comment is updated on each push and also written to the job summary. The job fails when the pull request has cdk-preflight errors, does not synthesize, or goes over a budget or `--fail-on` given to the other two tools; the `failed` output says which.
+
+| Input | What it does |
+|---|---|
+| `working-directory` | Directory of the CDK app (where `cdk.json` is). Default `.` |
+| `install` | Install command, run on both sides. Default `npm ci`; empty to skip |
+| `synth` | Synth command, run on both sides. It must write `cdk.out` in the app directory. Default `npx cdk synth -q` |
+| `base-ref` | Branch to compare against. Default: the pull request's base branch |
+| `idle-cost`, `idle-cost-args` | `false` to leave the idle cost out; more `cfn-idle-cost` flags (`--region` is needed for env-agnostic stacks) |
+| `exec-policy`, `exec-policy-args` | `false` to leave the permissions out; more `cfn-exec-policy diff` flags |
+| `comment` | `false` to only write the job summary. Default `true` |
+| `github-token` | Token used to comment. Default `github.token` |
+
+When the base branch does not synthesize, the idle cost is shown for the whole app instead of the change, and the permission change is left out.
+
 ## For AI agents
 
 To add cdk-preflight to a CDK app:
