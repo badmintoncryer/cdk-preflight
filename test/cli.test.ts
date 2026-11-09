@@ -121,3 +121,75 @@ test('a $ in the App line is copied verbatim', () => {
   const out = fs.readFileSync(path.join(dir, 'bin', 'app.ts'), 'utf8');
   expect(out).toContain("const app = new App({ context: { k: 'a$&b$1' } });\nPreflight.apply(app);");
 });
+
+describe('check', () => {
+  const ALB = (timeout: string) => [
+    'Resources:',
+    '  Alb:',
+    '    Type: AWS::ElasticLoadBalancingV2::LoadBalancer',
+    '    Properties:',
+    '      Subnets: [subnet-0123456789abcdef0, subnet-0123456789abcdef1]',
+    '      LoadBalancerAttributes:',
+    '        - Key: idle_timeout.timeout_seconds',
+    `          Value: "${timeout}"`,
+    '',
+  ].join('\n');
+
+  let dir: string;
+  beforeEach(() => {
+    dir = fs.mkdtempSync(path.join(os.tmpdir(), 'cdk-preflight-check-test-'));
+    jest.spyOn(console, 'error').mockImplementation(() => {});
+  });
+  afterEach(() => jest.restoreAllMocks());
+
+  function template(name: string, body: string): string {
+    const f = path.join(dir, name);
+    fs.mkdirSync(path.dirname(f), { recursive: true });
+    fs.writeFileSync(f, body);
+    return f;
+  }
+  const out = () => ['--output', path.join(dir, 'out')];
+  const report = () => fs.readFileSync(path.join(dir, 'out', 'validation-report.json'), 'utf8');
+
+  test('exits 1 on a finding and prints it', () => {
+    expect(runCli(['check', ...out(), template('app.yaml', ALB('5000'))])).toBe(1);
+    expect(report()).toContain('pf-elbv2-lb-idle-timeout-range');
+  });
+
+  test('exits 0 on a clean template', () => {
+    expect(runCli(['check', ...out(), template('app.yaml', ALB('60'))])).toBe(0);
+  });
+
+  test('reads JSON templates', () => {
+    const json = JSON.stringify({
+      Resources: {
+        Alb: {
+          Type: 'AWS::ElasticLoadBalancingV2::LoadBalancer',
+          Properties: { LoadBalancerAttributes: [{ Key: 'idle_timeout.timeout_seconds', Value: '5000' }] },
+        },
+      },
+    });
+    expect(runCli(['check', ...out(), template('app.json', json)])).toBe(1);
+  });
+
+  test('--exclude skips a rule and --warn does not fail', () => {
+    const f = template('app.yaml', ALB('5000'));
+    expect(runCli(['check', ...out(), '--exclude', 'pf-elbv2-lb-idle-timeout-range', f])).toBe(0);
+    expect(runCli(['check', '--output', path.join(dir, 'out2'), '--warn', f])).toBe(0);
+  });
+
+  test('checks several templates, even with the same file name', () => {
+    const a = template('a/app.yaml', ALB('60'));
+    const b = template('b/app.yaml', ALB('5000'));
+    expect(runCli(['check', ...out(), a, b])).toBe(1);
+    expect(report()).toContain('app-2/Template/Alb');
+  });
+
+  test('exits 2 on usage errors and unreadable templates', () => {
+    expect(runCli(['check'])).toBe(2);
+    expect(runCli(['check', '--bogus', 'x.yaml'])).toBe(2);
+    expect(runCli(['check', '--exclude'])).toBe(2);
+    expect(runCli(['check', path.join(dir, 'missing.yaml')])).toBe(2);
+    expect(runCli(['check', ...out(), template('bad.yaml', 'Resources:\n  X: [unclosed\n')])).toBe(2);
+  });
+});

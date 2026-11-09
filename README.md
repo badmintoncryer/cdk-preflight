@@ -220,32 +220,12 @@ npx cdk --unstable=validate validate --no-online --watch
 
 ## With a CloudFormation template
 
-cdk-preflight runs inside `cdk synth`, so a template written without CDK goes through a small CDK app that loads it
-with [`cloudformation-include`](https://docs.aws.amazon.com/cdk/api/v2/docs/aws-cdk-lib.cloudformation_include-readme.html).
-The template is not changed, nothing is deployed, and no AWS credentials are needed. In an empty directory:
+Templates written without CDK (JSON or YAML) are checked with `check`. It needs no CDK app and no AWS credentials;
+`aws-cdk-lib` only has to be installed next to cdk-preflight:
 
 ```sh
-npm i -D aws-cdk-lib constructs cdk-preflight aws-cdk
-```
-
-```js
-// preflight.js
-const path = require('path');
-const { App, Stack } = require('aws-cdk-lib');
-const { CfnInclude } = require('aws-cdk-lib/cloudformation-include');
-const { Preflight } = require('cdk-preflight');
-
-const app = new App();
-for (const file of app.node.getContext('templates').split(',')) {
-  const stack = new Stack(app, path.basename(file, path.extname(file)));
-  new CfnInclude(stack, 'Template', { templateFile: file });
-}
-Preflight.apply(app);
-```
-
-```sh
-npx cdk synth -q --app "node preflight.js" -c templates=template.yaml
-# several templates: -c templates=network.yaml,app.yaml
+npm i -D cdk-preflight aws-cdk-lib constructs
+npx cdkpf check template.yaml
 ```
 
 ```text
@@ -254,9 +234,21 @@ ERROR idle_timeout.timeout_seconds is 5000 but must be between 1 and 4000 second
    Acknowledge with 'cdk-preflight::pf-elbv2-lb-idle-timeout-range'
 ```
 
-A finding fails the command (exit code 1), so the same line works in CI. Findings point at the template's logical ID
-(`Alb` above). To skip a rule, pass `Preflight.apply(app, { exclude: ['<rule-id>'] })`; `enforce: false` reports
-without failing. `cfn-idle-cost` and `cfn-exec-policy` read template files directly, without this app.
+Each template is loaded into its own stack with
+[`cloudformation-include`](https://docs.aws.amazon.com/cdk/api/v2/docs/aws-cdk-lib.cloudformation_include-readme.html)
+and synthesized with `Preflight.apply`, so the rules and the output are the same as in `cdk synth`. Findings name the
+template's file (`template`) and logical ID (`Alb`). The exit code is `0` when nothing fails, `1` on findings, and `2`
+when a template cannot be read, so the command works as a CI step as it is.
+
+| Flag | What it does |
+|---|---|
+| `--exclude <id,...>` | Rule ids to skip, as `exclude` |
+| `--warn` | Report findings as warnings and exit `0`, as `enforce: false` |
+| `--region <r>`, `--account <id>` | The environment the template deploys to. Rules that depend on the Region or account only run when it is given |
+| `--output <dir>` | Where to write the synthesized assembly and `validation-report.json`. Default: a temporary directory |
+
+Several templates can be checked at once: `npx cdkpf check network.yaml app.yaml`.
+`cfn-idle-cost` and `cfn-exec-policy` read template files directly as well.
 
 ## Bundled rules
 
@@ -410,6 +402,8 @@ To add cdk-preflight to a CDK app:
 4. To fix a finding, prefer correcting the resource. To opt out instead: `exclude: ['<rule-id>']` disables one rule, `enforce: false` switches to warn-only reporting
 
 The machine-readable findings are written to `cdk.out/validation-report.json` when synthesizing with `-c @aws-cdk/core:validationReportJson=true`.
+
+For a CloudFormation template written without CDK, run `npx cdkpf check <template...>` instead (exit `1` on findings; `--output <dir>` keeps `validation-report.json`).
 
 The two sibling tools also run as MCP servers, so an agent can check the same `cdk.out` for what it costs idle and
 what it asks of the CloudFormation execution role:
