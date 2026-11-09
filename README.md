@@ -218,6 +218,46 @@ keeps it offline.
 npx cdk --unstable=validate validate --no-online --watch
 ```
 
+## With a CloudFormation template
+
+cdk-preflight runs inside `cdk synth`, so a template written without CDK goes through a small CDK app that loads it
+with [`cloudformation-include`](https://docs.aws.amazon.com/cdk/api/v2/docs/aws-cdk-lib.cloudformation_include-readme.html).
+The template is not changed, nothing is deployed, and no AWS credentials are needed. In an empty directory:
+
+```sh
+npm i -D aws-cdk-lib constructs cdk-preflight aws-cdk
+```
+
+```js
+// preflight.js
+const path = require('path');
+const { App, Stack } = require('aws-cdk-lib');
+const { CfnInclude } = require('aws-cdk-lib/cloudformation-include');
+const { Preflight } = require('cdk-preflight');
+
+const app = new App();
+for (const file of app.node.getContext('templates').split(',')) {
+  const stack = new Stack(app, path.basename(file, path.extname(file)));
+  new CfnInclude(stack, 'Template', { templateFile: file });
+}
+Preflight.apply(app);
+```
+
+```sh
+npx cdk synth -q --app "node preflight.js" -c templates=template.yaml
+# several templates: -c templates=network.yaml,app.yaml
+```
+
+```text
+ERROR idle_timeout.timeout_seconds is 5000 but must be between 1 and 4000 seconds (cdk-preflight)
+   template/Template/Alb (Alb) aws-cdk-lib.aws_elasticloadbalancingv2.CfnLoadBalancer
+   Acknowledge with 'cdk-preflight::pf-elbv2-lb-idle-timeout-range'
+```
+
+A finding fails the command (exit code 1), so the same line works in CI. Findings point at the template's logical ID
+(`Alb` above). To skip a rule, pass `Preflight.apply(app, { exclude: ['<rule-id>'] })`; `enforce: false` reports
+without failing. `cfn-idle-cost` and `cfn-exec-policy` read template files directly, without this app.
+
 ## Bundled rules
 
 See [docs/rules.md](docs/rules.md) for the generated rule table.
