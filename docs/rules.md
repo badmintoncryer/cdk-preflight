@@ -762,8 +762,6 @@
 | `pf-agentcore-config-bundle-components-empty` | AWS::BedrockAgentCore::ConfigurationBundle | A configuration bundle needs at least one component | ERROR | none |
 | `pf-agentcore-config-bundle-name-unique` | AWS::BedrockAgentCore::ConfigurationBundle | BundleName must be unique within the account | ERROR | none |
 | `pf-agentcore-dataset-name-unique` | AWS::BedrockAgentCore::Dataset | DatasetName must be unique within the account, compared case-insensitively | ERROR | none |
-| `pf-agentcore-dataset-source-exactly-one` | AWS::BedrockAgentCore::Dataset | Dataset Source must hold exactly one of InlineExamples or S3Source | ERROR | none |
-| `pf-agentcore-evaluator-name-unique` | AWS::BedrockAgentCore::Evaluator | EvaluatorName must be unique within the account | ERROR | none |
 | `pf-agentcore-evaluator-rating-scale-empty` | AWS::BedrockAgentCore::Evaluator | An LLM-as-a-judge evaluator RatingScale must list at least one scale entry | ERROR | none |
 | `pf-agentcore-execution-role-account` | AWS::BedrockAgentCore::OnlineEvaluationConfig<br>AWS::BedrockAgentCore::Memory | An AgentCore execution role must live in the deploy account | ERROR | none |
 | `pf-agentcore-gateway-authorizer-config-unexpected` | AWS::BedrockAgentCore::Gateway | Gateways with AuthorizerType AWS_IAM or NONE must not set AuthorizerConfiguration | ERROR | none |
@@ -859,7 +857,6 @@
 | `pf-cassandra-keyspace-regionlist-includes-current` | AWS::Cassandra::Keyspace | A MULTI_REGION keyspace has a RegionList that includes the deployment Region | ERROR | none |
 | `pf-cassandra-multiregion-table-cmk` | AWS::Cassandra::Table | A table in a multi-Region keyspace does not use CUSTOMER_MANAGED_KMS_KEY | ERROR | none |
 | `pf-cassandra-replica-read-capacity-requires-provisioned` | AWS::Cassandra::Table | ReplicaSpecifications read capacity settings are only used on a PROVISIONED table | ERROR | none |
-| `pf-cassandra-table-udt-dependency` | AWS::Cassandra::Table<br>AWS::Cassandra::Type | A table or type that uses an in-template UDT depends on its AWS::Cassandra::Type | ERROR | none |
 | `pf-cassandra-type-field-name-length` | AWS::Cassandra::Type | A UDT FieldName is at most 128 characters | ERROR | none |
 | `pf-cassandra-type-fields-empty` | AWS::Cassandra::Type | An AWS::Cassandra::Type has at least one field | ERROR | none |
 | `pf-cassandra-type-name-format` | AWS::Cassandra::Type | An unquoted TypeName starts with a letter and uses only letters, digits and _ | ERROR | none |
@@ -1099,8 +1096,8 @@
 | `pf-codebuild-sourcecredential-codeconnections-arn` | AWS::CodeBuild::SourceCredential | A CODECONNECTIONS credential carries a connection ARN as its Token | ERROR | none |
 | `pf-codebuild-sourcecredential-oauth-not-supported` | AWS::CodeBuild::SourceCredential | OAUTH source credentials are not imported through CloudFormation | ERROR | none |
 | `pf-codebuild-sourcecredential-one-per-server-type` | AWS::CodeBuild::SourceCredential | One source credential per server type per Region | ERROR | none |
-| `pf-codebuild-vpc-security-groups-max-5` | AWS::CodeBuild::Project | VpcConfig names at most 5 security groups | ERROR | none |
-| `pf-codebuild-vpc-subnets-max-16` | AWS::CodeBuild::Project | VpcConfig names at most 16 subnets | ERROR | none |
+| `pf-codebuild-vpc-security-groups-max-5` | AWS::CodeBuild::Project | VpcConfig names at most 5 security groups | ERROR | cfn-schema |
+| `pf-codebuild-vpc-subnets-max-16` | AWS::CodeBuild::Project | VpcConfig names at most 16 subnets | ERROR | cfn-schema |
 | `pf-codecommit-code-branch-name-valid` | AWS::CodeCommit::Repository | Code.BranchName must be a valid Git branch name | ERROR | none |
 | `pf-codecommit-kms-key-region` | AWS::CodeCommit::Repository | KmsKeyId must name a KMS key in the repository's Region | ERROR | none |
 | `pf-codecommit-trigger-branch-name-valid` | AWS::CodeCommit::Repository | Trigger branch names must be valid Git branch names | ERROR | none |
@@ -2170,7 +2167,7 @@
 | `pf-kinesisanalytics-runtime-deprecated` | AWS::KinesisAnalyticsV2::Application | Deprecated runtime environments can no longer be created | ERROR | none |
 | `pf-kinesisanalytics-service-role-account` | AWS::KinesisAnalyticsV2::Application | ServiceExecutionRole must belong to the deploying account | ERROR | none |
 | `pf-kinesisanalytics-snapshot-runtime` | AWS::KinesisAnalyticsV2::Application | ApplicationSnapshotConfiguration is not applicable to Studio runtimes | ERROR | none |
-| `pf-kinesisanalytics-sql-configuration-runtime` | AWS::KinesisAnalyticsV2::Application | SqlApplicationConfiguration belongs to the SQL runtime only | ERROR | none |
+| `pf-kinesisanalytics-sql-configuration-runtime` | AWS::KinesisAnalyticsV2::Application | SqlApplicationConfiguration belongs to the SQL runtime only | ERROR | cfn-schema |
 | `pf-kinesisanalytics-sql-only-resource` | AWS::KinesisAnalyticsV2::ApplicationOutput<br>AWS::KinesisAnalyticsV2::ApplicationReferenceDataSource | Outputs and reference data sources need a SQL application | ERROR | none |
 | `pf-kinesisanalytics-sql-runtime-unsupported` | AWS::KinesisAnalyticsV2::Application | SQL applications can no longer be created | ERROR | none |
 | `pf-kinesisanalytics-system-rollback-runtime` | AWS::KinesisAnalyticsV2::Application | ApplicationSystemRollbackConfiguration is not applicable to Studio runtimes | ERROR | none |
