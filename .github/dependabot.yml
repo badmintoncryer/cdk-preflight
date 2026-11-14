@@ -15,13 +15,3 @@ updates:
       all:
         patterns:
           - "*"
-  - package-ecosystem: github-actions
-    directory: /
-    schedule:
-      interval: weekly
-    labels:
-      - dependencies
-    groups:
-      all:
-        patterns:
-          - "*"
