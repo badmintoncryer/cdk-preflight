@@ -7,7 +7,7 @@ cd "$(dirname "$0")/.."
 RULE=pf-t-plain # resourceTypes: [AWS::Batch::ComputeEnvironment]、repro.expect なし
 tmp=$(mktemp -d)
 trap 'rm -rf "$tmp"' EXIT
-mkdir -p "$tmp/rules/t/pf-t-plain" "$tmp/rules/t/pf-t-expect" "$tmp/rules/t/pf-t-vpc/templates" "$tmp/rules/t/pf-t-client"
+mkdir -p "$tmp/rules/t/pf-t-plain" "$tmp/rules/t/pf-t-expect" "$tmp/rules/t/pf-t-vpc/templates" "$tmp/rules/t/pf-t-client" "$tmp/rules/t/pf-t-eb/templates"
 cat > "$tmp/rules/t/pf-t-plain/meta.yaml" <<'YAML'
 id: pf-t-plain
 resourceTypes: ["AWS::Batch::ComputeEnvironment"]
@@ -27,6 +27,15 @@ cat > "$tmp/rules/t/pf-t-vpc/templates/fail.template.json" <<'JSON'
   "Subnets": ["subnet-2e0a500f", "subnet-ab11fde7", "subnet-7f91c820", "subnet-11111111"],
   "SecurityGroups": ["sg-7d699f61"]}},
  "T": {"Type": "AWS::ElasticLoadBalancingV2::TargetGroup", "Properties": {"VpcId": "vpc-4331593e"}}}}
+JSON
+sed 's/pf-t-plain/pf-t-eb/' "$tmp/rules/t/pf-t-plain/meta.yaml" > "$tmp/rules/t/pf-t-eb/meta.yaml"
+# 引退した版を書いた Elastic Beanstalk のフィクスチャ（PlatformArn と SolutionStackName の両方）
+cat > "$tmp/rules/t/pf-t-eb/templates/fail.template.json" <<'JSON'
+{"Resources": {"E": {"Type": "AWS::ElasticBeanstalk::Environment", "Properties": {
+  "PlatformArn": "arn:aws:elasticbeanstalk:ap-northeast-1::platform/Node.js 22 running on 64bit Amazon Linux 2023/6.11.9",
+  "SolutionStackName": "64bit Amazon Linux 2023 v6.11.9 running Node.js 22"}},
+ "W": {"Type": "AWS::ElasticBeanstalk::Environment", "Properties": {
+  "PlatformArn": "arn:aws:elasticbeanstalk:ap-northeast-1::platform/IIS 10.0 running on 64bit Windows Server Core 2025/2.23.6"}}}}
 JSON
 cat > "$tmp/aws" <<'STUB'
 #!/bin/bash
@@ -86,6 +95,13 @@ case "$args" in
   *"describe-subnets"*use1-az2*) echo subnet-0a2 ;;
   *"describe-subnets"*use1-az4*) echo subnet-0a4 ;;
   *"describe-subnets"*use1-az6*) echo subnet-0a6 ;;
+  # 版は文字列ではなく数として比べる（6.10.0 > 6.9.12）。名前ごと引退していれば空
+  *"list-platform-versions"*"Node.js 22"*)
+    p='arn:aws:elasticbeanstalk:us-east-1::platform/Node.js 22 running on 64bit Amazon Linux 2023'
+    echo "{\"PlatformSummaryList\": [{\"PlatformArn\": \"$p/6.9.12\", \"PlatformVersion\": \"6.9.12\"}, {\"PlatformArn\": \"$p/6.10.0\", \"PlatformVersion\": \"6.10.0\"}]}" ;;
+  *"list-platform-versions"*"IIS 10.0"*)
+    [ -n "${CDKPF_STUB_EB_RETIRED:-}" ] && { echo '{"PlatformSummaryList": []}'; exit 0; }
+    echo '{"PlatformSummaryList": [{"PlatformArn": "arn:aws:elasticbeanstalk:us-east-1::platform/IIS 10.0 running on 64bit Windows Server Core 2025/2.30.1", "PlatformVersion": "2.30.1"}]}' ;;
   *) exit 0 ;;
 esac
 STUB
@@ -369,8 +385,21 @@ VOTHER='{"OperationEvents": [{"EventType": "VALIDATION_ERROR", "LogicalResourceI
 got=$(RULE=pf-t-expect CDKPF_STUB_FVALIDATION="$VOTHER" run "None" "$VSUM")
 expect 4 "$got" "an early-validation failure on another property must not verify"
 
+# 引退した Elastic Beanstalk の版は、同じ名前の最新版（とそのリージョン）に読み替えて作る
+got=$(RULE=pf-t-eb run "AWS::Batch::ComputeEnvironment" "Compute Environment must be created in ENABLED state.")
+expect 0 "$got" "a fixture on a retired Elastic Beanstalk platform version still runs"
+for want in 'us-east-1::platform/Node.js 22 running on 64bit Amazon Linux 2023/6.10.0"' \
+  '"64bit Amazon Linux 2023 v6.10.0 running Node.js 22"' 'us-east-1::platform/IIS 10.0 running on 64bit Windows Server Core 2025/2.30.1"'; do
+  grep -qF -- "$want" "$tmp/calls.tpl" || { echo "FAIL: the created template lacks $want"; cat "$tmp/calls.tpl"; exit 1; }
+done
+grep -qE '6\.11\.9|2\.23\.6|ap-northeast-1' "$tmp/calls.tpl" && { echo "FAIL: a retired version survived"; cat "$tmp/calls.tpl"; exit 1; }
+# 名前ごと引退していたら、制約より先に倒れる前に判定を降りる
+got=$(RULE=pf-t-eb CDKPF_STUB_EB_RETIRED=1 run "AWS::Batch::ComputeEnvironment" "Compute Environment must be created in ENABLED state.")
+expect 4 "$got" "a platform with no Ready version must not reach create-stack"
+grep -q "create-stack" "$tmp/calls" && { echo "FAIL: created a stack on a retired platform"; exit 1; }
+
 # 直書きの無いテンプレートには EC2 を引きに行かない
 got=$(run "AWS::Batch::ComputeEnvironment" "Compute Environment must be created in ENABLED state.")
 grep -q "describe-vpcs" "$tmp/calls" && { echo "FAIL: looked up a default VPC for a template that names none"; exit 1; }
 
-echo "ok: verify-rule.sh default-VPC localization + scaffolding guard + create-stack rejection + unreadable status/events + leftover noise + reason must name the constraint + early-validation detail"
+echo "ok: verify-rule.sh default-VPC localization + scaffolding guard + create-stack rejection + unreadable status/events + leftover noise + reason must name the constraint + early-validation detail + Elastic Beanstalk platform version"
