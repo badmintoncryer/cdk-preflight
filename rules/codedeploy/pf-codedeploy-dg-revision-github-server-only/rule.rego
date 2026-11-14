@@ -16,7 +16,7 @@ _pf_cdrgh_github(name) if {
 
 violation contains make_diag_full("pf-codedeploy-dg-revision-github-server-only", "ERROR", name,
 	"Properties.Deployment.Revision",
-	sprintf("the deployment group is on the %s compute platform but its Deployment names a GitHub revision; the deployment fails with \"Revision type: GitHub is not supported under compute platform: %s\"", [p, upper(p)]),
+	sprintf("the deployment group is on the %s compute platform but its Deployment names a GitHub revision; CloudFormation refuses it with \"Property Deployment cannot be specified.\" (CreateDeployment itself answers \"Revision type: GitHub is not supported under compute platform: %s\")", [p, upper(p)]),
 	"Deploy the revision from Amazon S3, or move the deployment group to the EC2/On-Premises platform",
 	"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-codedeploy-deploymentgroup-githublocation.html") if {
 	some name in resources_of_type("AWS::CodeDeploy::DeploymentGroup")

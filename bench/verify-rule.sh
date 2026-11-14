@@ -26,7 +26,7 @@ LOG="bench/logs/$RULE.log"
 : > "$LOG"
 ERRF=$(mktemp)
 LOCAL_TPL=$(mktemp)
-trap 'rm -f "$ERRF" "$LOCAL_TPL"' EXIT
+trap 'rm -f "$ERRF" "$LOCAL_TPL" "$LOCAL_TPL.eb"' EXIT
 
 POLL_BUDGET_SECONDS=${CDKPF_POLL_BUDGET:-3600}
 
@@ -115,6 +115,33 @@ reason_of() {
 
 failed_type() { events_query "$1" "StackEvents[?$(root_failure "$1")]|[-1].ResourceType"; }
 
+# CloudFormation のプロパティ検証（作成前の早期検証）は 2026-10 から、スタックイベントには
+# "Validation failed with N error(s). Call DescribeEvents to retrieve the full list of issues ..." としか
+# 書かなくなった。以前は同じ行が "Properties validation failed for resource X with message: #/..." で
+# 中身まで名指ししていたので、repro.expect はその中身を引いている（2026-11 の月次で aps / codebuild /
+# kinesisanalytics / route53 の 6 本がこれで INCONCLUSIVE）。中身は DescribeEvents の VALIDATION_ERROR に
+# しか無いので、まとめ文のときだけ引いて理由の後ろにつなぐ。読めなければまとめ文のまま返す
+# （expect と照合できず INCONCLUSIVE に倒れるので、嘘の verified にはならない）。
+# 2 行目に、最初に名指しされたリソースの型を返す（足場ガード用。無ければ None）。
+validation_details() { # <stack> -> "<詳細>\n<型>" を stdout。読めなければ rc 1
+  local v
+  v=$(aws cloudformation describe-events --stack-name "$1" --region "$REGION" \
+    --filters FailedEvents=true --output json 2>"$ERRF") || { cat "$ERRF" >> "$LOG"; return 1; }
+  python3 -c '
+import json, sys
+evs = [e for e in json.load(sys.stdin).get("OperationEvents") or [] if e.get("EventType") == "VALIDATION_ERROR"]
+if not evs:
+    sys.exit(1)
+parts = []
+for e in evs:
+    where = " ".join(x for x in (e.get("LogicalResourceId"), e.get("ValidationPath")) if x)
+    name = e.get("ValidationName") or "validation"
+    parts.append((name + " " + where + ": " + (e.get("ValidationStatusReason") or "")).strip())
+print(" / ".join(parts))
+print(evs[0].get("ResourceType") or "None")
+' <<<"$v"
+}
+
 # フィクスチャは検査対象の周りに足場（VPC、ロール、バケット）を建てる。足場のほうが
 # 倒れた場合 — アカウントのクォータ、前回の消し残り、スロットリング — でもスタックは
 # ROLLBACK_COMPLETE で終わるので、そのままだと「制約を再現した」と読めてしまい、
@@ -172,7 +199,13 @@ cleanup() { # 無人運用前提: DELETE_FAILED で固着したら retain 削除
 # elbv2 / msk / servicediscovery / opensearch のフィクスチャがこれを直書きしている。他のアカウント（月次）には
 # その ID が無く、制約より先に NotFound で倒れるので、作る直前に自分の既定 VPC の ID へ読み替える。
 # サブネットは AZ 名ではなく AZ ID で選ぶ（AZ 名と物理 AZ の対応はアカウントごとに違う）。bench では同じ ID に戻る。
-localize() { # <template> -> 作るテンプレートのパス。直書きがあるのに既定 VPC を引けなければ rc 1
+localize() { # <template> -> 作るテンプレートのパス。読み替えに要る値を引けなければ rc 1
+  local tpl
+  tpl=$(localize_vpc "$1") || return 1
+  localize_eb_platform "$tpl"
+}
+
+localize_vpc() { # <template> -> パス。直書きがあるのに既定 VPC を引けなければ rc 1
   local vpc val pair args
   grep -qsE 'vpc-4331593e|sg-7d699f61|subnet-(2e0a500f|ab11fde7|7f91c820)' "$1" || { echo "$1"; return 0; }
   vpc=$(aws ec2 describe-vpcs --region "$REGION" --filters Name=is-default,Values=true \
@@ -192,10 +225,54 @@ localize() { # <template> -> 作るテンプレートのパス。直書きがあ
   sed "${args[@]}" "$1" > "$LOCAL_TPL" && echo "$LOCAL_TPL"
 }
 
+# Elastic Beanstalk のプラットフォームは版ごとに引退する。フィクスチャに書いた版（PlatformArn の末尾、
+# SolutionStackName の vX.Y.Z）が消えると、制約より先に "No Platform named ... found" で倒れる
+# （2026-11 の月次で elasticbeanstalk の 34 本がこれで INCONCLUSIVE。2026-09 に書いた 6.11.9 と 2.23.6 が引退していた）。
+# 作る直前に、同じプラットフォーム名の Ready な最新版へ読み替える。名前ごと引退していたら引けずに rc 1。
+EB_PLATFORM_PY='
+import json, re, sys
+ARN = re.compile(r"arn:aws:elasticbeanstalk:[a-z0-9-]*::platform/([^/\"]+)/[0-9.]+")
+STACK = re.compile(r"64bit (.+?) v[0-9.]+ running ([^\"]+)")
+try:
+    src = open(sys.argv[2]).read()
+except OSError:
+    src = ""  # 作れないテンプレートは create-stack 側が名指しする
+if sys.argv[1] == "names":
+    names = {m.group(1) for m in ARN.finditer(src)}
+    names |= {f"{m.group(2)} running on 64bit {m.group(1)}" for m in STACK.finditer(src)}
+    print("\n".join(sorted(names)))
+else:
+    latest = json.loads(sys.argv[3])
+    src = ARN.sub(lambda m: latest[m.group(1)], src)
+    def stack(m):
+        ver = latest[f"{m.group(2)} running on 64bit {m.group(1)}"].rsplit("/", 1)[1]
+        return f"64bit {m.group(1)} v{ver} running {m.group(2)}"
+    sys.stdout.write(STACK.sub(stack, src))
+'
+localize_eb_platform() { # <template> -> パス。版を引けなければ rc 1
+  local names name arn latest="{}"
+  names=$(python3 -c "$EB_PLATFORM_PY" names "$1") || return 1
+  [ -z "$names" ] && { echo "$1"; return 0; }
+  while IFS= read -r name; do
+    arn=$(aws elasticbeanstalk list-platform-versions --region "$REGION" --output json \
+      --filters "Type=PlatformName,Operator==,Values=$name" "Type=PlatformStatus,Operator==,Values=Ready" 2>>"$LOG" |
+      python3 -c '
+import json, sys
+ps = [p for p in json.load(sys.stdin).get("PlatformSummaryList") or [] if p.get("PlatformVersion")]
+if ps:
+    print(max(ps, key=lambda p: [int(x) for x in p["PlatformVersion"].split(".")])["PlatformArn"])
+') || return 1
+    [ -n "$arn" ] || { echo "no Ready Elastic Beanstalk platform named \"$name\" in $REGION" >> "$LOG"; return 1; }
+    echo "localize: Elastic Beanstalk platform \"$name\" -> $arn" >> "$LOG"
+    latest=$(python3 -c 'import json, sys; d = json.loads(sys.argv[1]); d[sys.argv[2]] = sys.argv[3]; print(json.dumps(d))' "$latest" "$name" "$arn")
+  done <<<"$names"
+  python3 -c "$EB_PLATFORM_PY" apply "$1" "$latest" > "$LOCAL_TPL.eb" && echo "$LOCAL_TPL.eb"
+}
+
 create_stack() { # <stack> <template> <fail|pass> — API レベルで弾かれたら理由を出して INCONCLUSIVE で抜ける
   local out rc msg tpl
   tpl=$(localize "$2") || {
-    echo "!! INCONCLUSIVE: the $3 template names bench's default VPC, and $REGION here has no default VPC (or subnet) to stand in for it, or the lookup failed (see the aws error above in $LOG)" | tee -a "$LOG"
+    echo "!! INCONCLUSIVE: the $3 template names bench's default VPC or an Elastic Beanstalk platform, and $REGION here has no default VPC (or subnet) or no Ready version of that platform to stand in for it, or the lookup failed (see $LOG)" | tee -a "$LOG"
     exit 4
   }
   out=$(aws cloudformation create-stack --stack-name "$1" --region "$REGION" \
@@ -232,6 +309,10 @@ else
   FSTATUS=$(poll_terminal "$FSTACK")
   REASON=$(reason_of "$FSTACK") || READ_FAILED=1
   FTYPE=$(failed_type "$FSTACK") || READ_FAILED=1
+  if [ "$READ_FAILED" = 0 ] && [[ "$REASON" == "Validation failed with "* ]] && D=$(validation_details "$FSTACK"); then
+    REASON="$REASON [DescribeEvents: ${D%$'\n'*}]"
+    [ "$FTYPE" = None ] && FTYPE=${D##*$'\n'}
+  fi
   # 違反するリソースが 2 つある fail テンプレートは、CFN が並行に作るのでどちらが先に倒れるかが実行ごとに
   # 変わる（2026-09-28、nfw tls-scopes と glue worker-type が exit 4。期待の文面はどちらも、後から倒れた
   # もう一方のリソースの本物の失敗に出ていた）。先頭でなくても制約の文面で倒れたリソースがあれば、それを理由にする。
