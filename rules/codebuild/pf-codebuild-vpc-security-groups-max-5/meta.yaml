@@ -5,9 +5,9 @@ benchRegion: us-east-1
 severity: ERROR
 title: VpcConfig names at most 5 security groups
 constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-codebuild-project-vpcconfig.html
-upstream: none
+upstream: cfn-schema
 repro:
   method: real-deploy
-  evidence: "bench 2026-09-14 us-east-1: fail template (VpcConfig naming 6 security groups) -> \"Invalid vpc config: the maximum number of security groups is 5\" (ROLLBACK_COMPLETE); pass template (a VPC, 16 subnets, 5 security groups and a service role built in the same stack, all named by VpcConfig) -> CREATE_COMPLETE. The count is checked before the ids are resolved, so the fail template gets away with made-up ids."
-  expect: "Invalid vpc config: the maximum number of security groups is 5"
+  evidence: "bench 2026-09-14 us-east-1: fail template (VpcConfig naming 6 security groups) -> \"Invalid vpc config: the maximum number of security groups is 5\" (ROLLBACK_COMPLETE); pass template (a VPC, 16 subnets, 5 security groups and a service role built in the same stack, all named by VpcConfig) -> CREATE_COMPLETE. The count is checked before the ids are resolved, so the fail template gets away with made-up ids.. monthly-verify 2026-11 us-east-1: fail -> \"Validation failed with 1 error(s). Call DescribeEvents to retrieve the full list of issues with resource and property details, resolve each error, then retry the operation. [DescribeEvents: PROPERTY_VALIDATION Main /Resources/Main/Properties/VpcConfig/SecurityGroupIds: #/VpcConfig/SecurityGroupIds: expected maximum item count: 5, found: 6]\"; CloudFormation's server-side validation now stops the count before the handler runs, so upstream: cfn-schema (the stack event names no property; the detail is only in DescribeEvents)"
+  expect: "#/VpcConfig/SecurityGroupIds: expected maximum item count: 5"
 addedOn: 2026-09-14

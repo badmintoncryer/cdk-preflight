@@ -95,6 +95,8 @@ case "$args" in
   *"describe-subnets"*use1-az2*) echo subnet-0a2 ;;
   *"describe-subnets"*use1-az4*) echo subnet-0a4 ;;
   *"describe-subnets"*use1-az6*) echo subnet-0a6 ;;
+  # 本物の CLI は shorthand の Operator== を ParamValidation で弾く（2026-11-14 の再実行で全滅した）
+  *"list-platform-versions"*"Operator=="*) echo "Error parsing parameter '--filters': Expected: ',', received: '='" >&2; exit 252 ;;
   # 版は文字列ではなく数として比べる（6.10.0 > 6.9.12）。名前ごと引退していれば空
   *"list-platform-versions"*"Node.js 22"*)
     p='arn:aws:elasticbeanstalk:us-east-1::platform/Node.js 22 running on 64bit Amazon Linux 2023'
