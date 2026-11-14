@@ -4,7 +4,7 @@ import rego.v1
 
 violation contains make_diag_full("pf-codebuild-vpc-subnets-max-16", "ERROR", name,
 	"Properties.VpcConfig.Subnets",
-	sprintf("%d subnets are named; CreateProject fails with \"Invalid vpc config: the maximum number of subnets is 16\"", [n]),
+	sprintf("%d subnets are named; CloudFormation refuses the deploy before CodeBuild sees it (\"#/VpcConfig/Subnets: expected maximum item count: 16\", and CreateProject itself says \"Invalid vpc config: the maximum number of subnets is 16\")", [n]),
 	"Keep VpcConfig.Subnets to 16 entries or fewer",
 	"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-codebuild-project-vpcconfig.html") if {
 	some name in resources_of_type("AWS::CodeBuild::Project")

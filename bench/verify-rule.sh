@@ -250,12 +250,14 @@ else:
     sys.stdout.write(STACK.sub(stack, src))
 '
 localize_eb_platform() { # <template> -> パス。版を引けなければ rc 1
-  local names name arn latest="{}"
+  local names name arn filters latest="{}"
   names=$(python3 -c "$EB_PLATFORM_PY" names "$1") || return 1
   [ -z "$names" ] && { echo "$1"; return 0; }
   while IFS= read -r name; do
-    arn=$(aws elasticbeanstalk list-platform-versions --region "$REGION" --output json \
-      --filters "Type=PlatformName,Operator==,Values=$name" "Type=PlatformStatus,Operator==,Values=Ready" 2>>"$LOG" |
+    # shorthand は Operator== を読めない（"Expected: ',', received: '='"、2026-11-14 の再実行で全滅）ので JSON で渡す
+    filters=$(python3 -c 'import json, sys; print(json.dumps([{"Type": "PlatformName", "Operator": "=", "Values": [sys.argv[1]]},
+      {"Type": "PlatformStatus", "Operator": "=", "Values": ["Ready"]}]))' "$name")
+    arn=$(aws elasticbeanstalk list-platform-versions --region "$REGION" --output json --filters "$filters" 2>>"$LOG" |
       python3 -c '
 import json, sys
 ps = [p for p in json.load(sys.stdin).get("PlatformSummaryList") or [] if p.get("PlatformVersion")]
