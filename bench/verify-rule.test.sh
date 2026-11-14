@@ -70,6 +70,12 @@ case "$args" in
       *) echo "$ans"; i=1; while [ "$i" -lt "$pages" ]; do echo None; i=$((i + 1)); done ;;
     esac ;;
   *"describe-stack-resources"*) echo "" ;;
+  # 早期検証の中身（DescribeEvents）。未設定なら検証エラーの無い操作として答える
+  *"describe-events"*)
+    eval "verr=\${CDKPF_STUB_${w}VALIDATION_ERR:-}"
+    [ -z "$verr" ] || { echo "$verr" >&2; exit 255; }
+    eval "vjson=\${CDKPF_STUB_${w}VALIDATION:-}"
+    echo "${vjson:-{\"OperationEvents\": []\}}" ;;
   *"wait"*"stack-delete-complete"*) [ -z "$wfail" ] || exit 255 ;;
   *"create-stack"*)
     tb=${args#*file://}; cp "${tb%% *}" "$CDKPF_STUB_CALLS.tpl" 2>/dev/null # 実際に作ろうとしたテンプレート
@@ -345,8 +351,26 @@ expect 4 "$got" "no default VPC to stand in for bench's is INCONCLUSIVE"
 grep -q "has no default VPC" "$tmp/out" || { echo "FAIL: the missing default VPC was not named"; cat "$tmp/out"; exit 1; }
 grep -q "create-stack" "$tmp/calls" && { echo "FAIL: created a stack without a default VPC to point at"; exit 1; }
 
+# 早期検証で倒れたスタックはイベントにまとめ文しか残さない。中身は DescribeEvents から引いて照合する
+# （2026-11 の月次で aps / codebuild / kinesisanalytics / route53 の 6 本がまとめ文のまま INCONCLUSIVE）
+VSUM='Validation failed with 1 error(s). Call DescribeEvents to retrieve the full list of issues with resource and property details, resolve each error, then retry the operation.'
+VEV='{"OperationEvents": [{"EventType": "STACK_EVENT", "LogicalResourceId": "cdkpf-pf-t-expect-fail"}, {"EventType": "VALIDATION_ERROR", "LogicalResourceId": "Ce", "ResourceType": "AWS::Batch::ComputeEnvironment", "ValidationName": "PROPERTY_VALIDATION", "ValidationPath": "/Resources/Ce/Properties/State", "ValidationStatusReason": "Compute Environment must be created in ENABLED state."}]}'
+got=$(RULE=pf-t-expect CDKPF_STUB_FVALIDATION="$VEV" run "None" "$VSUM")
+expect 0 "$got" "an early-validation failure verifies on the detail DescribeEvents returns"
+grep -q 'DescribeEvents: PROPERTY_VALIDATION Ce /Resources/Ce/Properties/State: Compute Environment' "$tmp/out" \
+  || { echo "FAIL: the reason did not carry the DescribeEvents detail"; cat "$tmp/out"; exit 1; }
+# 中身が読めなければまとめ文のまま。expect を名指ししていないので判定を降りる
+got=$(RULE=pf-t-expect CDKPF_STUB_FVALIDATION_ERR="An error occurred (Throttling)" run "None" "$VSUM")
+expect 4 "$got" "an unreadable DescribeEvents must not verify"
+got=$(RULE=pf-t-expect run "None" "$VSUM")
+expect 4 "$got" "a summary with no VALIDATION_ERROR behind it must not verify"
+# 中身が別の検証なら、足場の型が名指しされても対象型でなければ足場ガードに掛かりうる。少なくとも verified にはしない
+VOTHER='{"OperationEvents": [{"EventType": "VALIDATION_ERROR", "LogicalResourceId": "Vpc", "ResourceType": "AWS::EC2::VPC", "ValidationName": "PROPERTY_VALIDATION", "ValidationPath": "/Resources/Vpc/Properties/CidrBlock", "ValidationStatusReason": "bad cidr"}]}'
+got=$(RULE=pf-t-expect CDKPF_STUB_FVALIDATION="$VOTHER" run "None" "$VSUM")
+expect 4 "$got" "an early-validation failure on another property must not verify"
+
 # 直書きの無いテンプレートには EC2 を引きに行かない
 got=$(run "AWS::Batch::ComputeEnvironment" "Compute Environment must be created in ENABLED state.")
 grep -q "describe-vpcs" "$tmp/calls" && { echo "FAIL: looked up a default VPC for a template that names none"; exit 1; }
 
-echo "ok: verify-rule.sh default-VPC localization + scaffolding guard + create-stack rejection + unreadable status/events + leftover noise + reason must name the constraint"
+echo "ok: verify-rule.sh default-VPC localization + scaffolding guard + create-stack rejection + unreadable status/events + leftover noise + reason must name the constraint + early-validation detail"

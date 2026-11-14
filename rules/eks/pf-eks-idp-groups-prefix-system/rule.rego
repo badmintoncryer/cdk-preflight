@@ -6,7 +6,7 @@ import rego.v1
 # rejecting, and whether it also refuses "system:foo" is unproven.
 violation contains make_diag_full("pf-eks-idp-groups-prefix-system", "ERROR", name,
 	"Properties.Oidc.GroupsPrefix",
-	"GroupsPrefix is \"system:\", which Kubernetes reserves (\"The prefix system: is reserved for Kubernetes system use\")",
+	"GroupsPrefix is \"system:\", which Kubernetes reserves (\"The parameter groupsPrefix should not start with 'system:'\")",
 	"Use a prefix of your own, e.g. okta:",
 	"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-eks-identityproviderconfig-oidcidentityproviderconfig.html") if {
 	some name in resources_of_type("AWS::EKS::IdentityProviderConfig")

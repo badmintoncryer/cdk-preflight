@@ -4,6 +4,7 @@
 リポジトリのルートで実行する:
 
     python3 scripts/plan-services.py "<service or empty>"   # -> services=[...]
+    python3 scripts/plan-services.py "" "<rule ids>"        # -> そのルールを持つサービスだけ（割らない）
     python3 scripts/plan-services.py --self-test
 
 一覧は **ワークフローの実行時に** `rules/` を読んで組む。以前は projen が
@@ -60,6 +61,21 @@ def matrix(selection: str, root: str = "rules") -> list:
     return out
 
 
+def rule_services(rules: str, root: str = "rules") -> list:
+    """ルール id（空白かカンマ区切り）を持つサービスの一覧。ルールを絞った dispatch 用。
+
+    数本だけ流すのでシャードには割らない（verify-all.sh は CDKPF_RULES に無いルールを飛ばす）。
+    知らない id は黙って落とすと「全部 OK」に見えるので、ここで止める。
+    """
+    out = set()
+    for rule in rules.replace(",", " ").split():
+        hits = [s for s in os.listdir(root) if os.path.isdir(os.path.join(root, s, rule))]
+        if len(hits) != 1:
+            raise SystemExit(f"rule not found: {rule}")
+        out.add(hits[0])
+    return sorted(out)
+
+
 def self_test() -> None:
     every = matrix("")
     # 並びはサービス名の順。文字列としては整列しない（"bedrock.1of3" は "bedrock-agentcore" の後ろに来る）
@@ -80,6 +96,13 @@ def self_test() -> None:
     one = next(s for s in every if "." not in s)
     assert matrix(one) == [one], f"{one} は自分だけを選ぶべき"
     assert matrix("nosuchservice") == ["nosuchservice"], "知らない名前はそのまま通すべき"
+    eks_rule = sorted(d for d in os.listdir(os.path.join("rules", "eks")))[0]
+    assert rule_services(f"{eks_rule}, {eks_rule}") == ["eks"], "ルールで絞ったらシャードに割らず 1 本にするべき"
+    try:
+        rule_services("pf-no-such-rule")
+        raise AssertionError("知らないルール id は止めるべき")
+    except SystemExit:
+        pass
     print(f"ok: {len(every)} matrix entries from rules/")
 
 
@@ -88,4 +111,5 @@ if __name__ == "__main__":
     if arg == "--self-test":
         self_test()
     else:
-        print("services=" + json.dumps(matrix(arg)))
+        rules = sys.argv[2] if len(sys.argv) > 2 else ""
+        print("services=" + json.dumps(rule_services(rules) if rules.strip() else matrix(arg)))

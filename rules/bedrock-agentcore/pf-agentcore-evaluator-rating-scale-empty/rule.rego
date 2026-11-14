@@ -8,7 +8,7 @@ import rego.v1
 # with "RatingScale must contain at least one non-empty scale definition".
 violation contains make_diag_full("pf-agentcore-evaluator-rating-scale-empty", "ERROR", name,
 	sprintf("Properties.EvaluatorConfig.LlmAsAJudge.RatingScale.%s", [key]),
-	sprintf("RatingScale.%s is empty; CreateEvaluator fails with \"RatingScale must contain at least one non-empty scale definition (numerical or categorical)\"", [key]),
+	sprintf("RatingScale.%s is empty; CreateEvaluator fails with \"RatingScale must contain at least one non-empty scale definition (numerical, categorical or multiDimensional)\"", [key]),
 	"List at least one scale entry (Label, Definition, and Value for Numerical)",
 	"https://docs.aws.amazon.com/bedrock-agentcore-control/latest/APIReference/API_RatingScale.html") if {
 	some name in resources_of_type("AWS::BedrockAgentCore::Evaluator")

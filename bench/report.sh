@@ -29,10 +29,12 @@ if not rows:
 plan = os.environ.get('CDKPF_PLAN', '').strip()
 if plan:
     seen = {r['rule'] for r in rows}
+    # ルールで絞った dispatch では、絞ったルールだけが「行が無ければおかしい」対象
+    only = set(os.environ.get('CDKPF_RULES', '').replace(',', ' ').split())
     for svc in sorted({spec.split('.')[0] for spec in json.loads(plan)}):
         for d in sorted(glob.glob(f'rules/{svc}/*/')):
             rule = os.path.basename(d.rstrip('/'))
-            if rule not in seen:
+            if rule not in seen and (not only or rule in only):
                 rows.append({'rule': rule, 'service': svc, 'status': 'INCONCLUSIVE', 'region': '-',
                              'detail': 'no result: the verify job for this rule did not finish or did not upload'})
 

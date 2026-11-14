@@ -8,6 +8,6 @@ constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateR
 upstream: none
 repro:
   method: real-deploy
-  evidence: "bench 2026-09-14 us-east-1: fail template (ReportGroup ExportConfig NO_EXPORT carrying an S3Destination) -> \"Failed to call CreateReportGroup, reason: S3 export config should not be specified when export config type is NO_EXPORT\" (ROLLBACK_COMPLETE); pass template (NO_EXPORT with no S3Destination) -> CREATE_COMPLETE."
-  expect: "Failed to call CreateReportGroup, reason: S3 export config should not be specified when export config type is NO_EXPORT"
+  evidence: "bench 2026-09-14 us-east-1: fail template (ReportGroup ExportConfig NO_EXPORT carrying an S3Destination) -> \"Failed to call CreateReportGroup, reason: S3 export config should not be specified when export config type is NO_EXPORT\" (ROLLBACK_COMPLETE); pass template (NO_EXPORT with no S3Destination) -> CREATE_COMPLETE.. monthly-verify 2026-11 us-east-1: fail -> \"Resource handler returned message: \"S3 export config should not be specified when export config type is NO_EXPORT (Service: CodeBuild, Status Code: 400) (SDK Attempt Count: 1)\"\"; the handler dropped the Failed to call CreateReportGroup prefix, so expect keeps the service sentence only"
+  expect: "S3 export config should not be specified when export config type is NO_EXPORT"
 addedOn: 2026-09-14

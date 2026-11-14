@@ -11,6 +11,11 @@ on:
         required: false
         type: string
         default: ""
+      rules:
+        description: verify only these rule ids, space or comma separated (empty = every rule of the selected services)
+        required: false
+        type: string
+        default: ""
 concurrency:
   group: monthly-verify
   cancel-in-progress: false
@@ -28,7 +33,8 @@ jobs:
         id: plan
         env:
           SERVICE: ${{ inputs.service }}
-        run: python3 scripts/plan-services.py "$SERVICE" >> "$GITHUB_OUTPUT"
+          RULES: ${{ inputs.rules }}
+        run: python3 scripts/plan-services.py "$SERVICE" "$RULES" >> "$GITHUB_OUTPUT"
   fixtures:
     runs-on: ubuntu-latest
     permissions:
@@ -70,6 +76,7 @@ jobs:
         id: verify_rules
         env:
           SERVICE: ${{ matrix.service }}
+          CDKPF_RULES: ${{ inputs.rules }}
         run: bash bench/verify-all.sh "$SERVICE"
       - name: Upload results
         id: upload_results
@@ -137,4 +144,5 @@ jobs:
         if: "!cancelled()"
         env:
           CDKPF_PLAN: ${{ needs.plan.outputs.services }}
+          CDKPF_RULES: ${{ inputs.rules }}
         run: bash bench/report.sh

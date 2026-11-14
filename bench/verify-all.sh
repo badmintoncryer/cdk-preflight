@@ -25,10 +25,16 @@ emit() { # rule status region detail
     "$1" "$SVC" "$2" "$3" "$4" >> "$OUT"
 }
 
+# CDKPF_RULES（空白かカンマ区切りのルール id）があれば、そのルールだけを回す（直したルールの再検証用）。
+# 外したルールは行を出さない。report.sh も同じ変数で「結果の無いルール」の数え方を絞る
+RULES=" ${CDKPF_RULES//,/ } "
 overall=0
 i=0
 for d in rules/"$SVC"/*/; do
   rule=$(basename "$d")
+  if [ -n "${CDKPF_RULES:-}" ]; then
+    case "$RULES" in *" $rule "*) ;; *) continue ;; esac
+  fi
   # シャードは名前順のラウンドロビンで割る。連番ブロックで割ると、名前が近い
   # （= だいたい重さも近い）ルールが同じシャードに固まって偏る
   i=$((i + 1))

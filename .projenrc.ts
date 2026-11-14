@@ -200,6 +200,12 @@ monthlyVerify.on({
         type: 'string',
         default: '',
       },
+      rules: {
+        description: 'verify only these rule ids, space or comma separated (empty = every rule of the selected services)',
+        required: false,
+        type: 'string',
+        default: '',
+      },
     },
   },
 });
@@ -230,8 +236,8 @@ monthlyVerify.addJob('plan', {
       id: 'plan',
       name: 'Compute service matrix',
       // 入力は env 経由で渡す。run の中に ${{ }} で展開すると、値がそのままシェルのコードになる
-      env: { SERVICE: '${{ inputs.service }}' },
-      run: 'python3 scripts/plan-services.py "$SERVICE" >> "$GITHUB_OUTPUT"',
+      env: { SERVICE: '${{ inputs.service }}', RULES: '${{ inputs.rules }}' },
+      run: 'python3 scripts/plan-services.py "$SERVICE" "$RULES" >> "$GITHUB_OUTPUT"',
     },
   ],
 });
@@ -267,7 +273,11 @@ monthlyVerify.addJob('verify', {
   steps: [
     checkoutStep,
     awsCredsStep,
-    { name: 'Verify rules', env: { SERVICE: '${{ matrix.service }}' }, run: 'bash bench/verify-all.sh "$SERVICE"' },
+    {
+      name: 'Verify rules',
+      env: { SERVICE: '${{ matrix.service }}', CDKPF_RULES: '${{ inputs.rules }}' },
+      run: 'bash bench/verify-all.sh "$SERVICE"',
+    },
     {
       name: 'Upload results',
       if: 'always()',
@@ -315,7 +325,7 @@ monthlyVerify.addJob('report', {
     {
       name: 'Report',
       if: '!cancelled()',
-      env: { CDKPF_PLAN: '${{ needs.plan.outputs.services }}' },
+      env: { CDKPF_PLAN: '${{ needs.plan.outputs.services }}', CDKPF_RULES: '${{ inputs.rules }}' },
       run: 'bash bench/report.sh',
     },
   ],

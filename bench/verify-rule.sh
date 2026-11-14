@@ -115,6 +115,33 @@ reason_of() {
 
 failed_type() { events_query "$1" "StackEvents[?$(root_failure "$1")]|[-1].ResourceType"; }
 
+# CloudFormation のプロパティ検証（作成前の早期検証）は 2026-10 から、スタックイベントには
+# "Validation failed with N error(s). Call DescribeEvents to retrieve the full list of issues ..." としか
+# 書かなくなった。以前は同じ行が "Properties validation failed for resource X with message: #/..." で
+# 中身まで名指ししていたので、repro.expect はその中身を引いている（2026-11 の月次で aps / codebuild /
+# kinesisanalytics / route53 の 6 本がこれで INCONCLUSIVE）。中身は DescribeEvents の VALIDATION_ERROR に
+# しか無いので、まとめ文のときだけ引いて理由の後ろにつなぐ。読めなければまとめ文のまま返す
+# （expect と照合できず INCONCLUSIVE に倒れるので、嘘の verified にはならない）。
+# 2 行目に、最初に名指しされたリソースの型を返す（足場ガード用。無ければ None）。
+validation_details() { # <stack> -> "<詳細>\n<型>" を stdout。読めなければ rc 1
+  local v
+  v=$(aws cloudformation describe-events --stack-name "$1" --region "$REGION" \
+    --filters FailedEvents=true --output json 2>"$ERRF") || { cat "$ERRF" >> "$LOG"; return 1; }
+  python3 -c '
+import json, sys
+evs = [e for e in json.load(sys.stdin).get("OperationEvents") or [] if e.get("EventType") == "VALIDATION_ERROR"]
+if not evs:
+    sys.exit(1)
+parts = []
+for e in evs:
+    where = " ".join(x for x in (e.get("LogicalResourceId"), e.get("ValidationPath")) if x)
+    name = e.get("ValidationName") or "validation"
+    parts.append((name + " " + where + ": " + (e.get("ValidationStatusReason") or "")).strip())
+print(" / ".join(parts))
+print(evs[0].get("ResourceType") or "None")
+' <<<"$v"
+}
+
 # フィクスチャは検査対象の周りに足場（VPC、ロール、バケット）を建てる。足場のほうが
 # 倒れた場合 — アカウントのクォータ、前回の消し残り、スロットリング — でもスタックは
 # ROLLBACK_COMPLETE で終わるので、そのままだと「制約を再現した」と読めてしまい、
@@ -232,6 +259,10 @@ else
   FSTATUS=$(poll_terminal "$FSTACK")
   REASON=$(reason_of "$FSTACK") || READ_FAILED=1
   FTYPE=$(failed_type "$FSTACK") || READ_FAILED=1
+  if [ "$READ_FAILED" = 0 ] && [[ "$REASON" == "Validation failed with "* ]] && D=$(validation_details "$FSTACK"); then
+    REASON="$REASON [DescribeEvents: ${D%$'\n'*}]"
+    [ "$FTYPE" = None ] && FTYPE=${D##*$'\n'}
+  fi
   # 違反するリソースが 2 つある fail テンプレートは、CFN が並行に作るのでどちらが先に倒れるかが実行ごとに
   # 変わる（2026-09-28、nfw tls-scopes と glue worker-type が exit 4。期待の文面はどちらも、後から倒れた
   # もう一方のリソースの本物の失敗に出ていた）。先頭でなくても制約の文面で倒れたリソースがあれば、それを理由にする。
