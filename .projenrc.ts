@@ -77,14 +77,10 @@ const project = new awscdk.AwsCdkConstructLibrary({
   },
 });
 
-// projen の Dependabot コンポーネントは npm しか出さないので、Actions も見てもらう。
-project.tryFindObjectFile('.github/dependabot.yml')!.addOverride('updates.1', {
-  'package-ecosystem': 'github-actions',
-  'directory': '/',
-  'schedule': { interval: 'weekly' },
-  'labels': ['dependencies'],
-  'groups': { all: { patterns: ['*'] } },
-});
+// Dependabot の github-actions は入れない。.github/workflows/*.yml は projen の生成物なので、
+// Dependabot が uses: を書き換えても build の `npx projen` で元に戻り、self-mutation 検知で落ちる。
+// さらに Dependabot 起動の run には PROJEN_GITHUB_TOKEN が渡らず、self-mutation の push もできない。
+// Action の版は projen 本体の更新（npm 側では ignore しているので手で上げる）に任せる。
 
 // cdkVersion は peerDependency の下限と開発用の版を同時に決めるが、この 2 つは切り離す。
 // 下限は据え置いて古いエンジンの利用者にもルールを届けつつ、開発と CI は最新のエンジンで回して
