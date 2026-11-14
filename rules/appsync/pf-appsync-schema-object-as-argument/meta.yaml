@@ -8,6 +8,6 @@ constraintSource: https://docs.aws.amazon.com/appsync/latest/devguide/designing-
 upstream: none
 repro:
   method: real-deploy
-  evidence: "real-deploy 2026-09-12 us-east-1: Schema Creation Status is FAILED with details: Found 1 problem(s) with the schema:"
-  expect: "Schema Creation Status is FAILED with details: Found 1 problem(s) with the schema"
+  evidence: "real-deploy 2026-09-12 us-east-1: Schema Creation Status is FAILED with details: Found 1 problem(s) with the schema:. monthly-verify 2026-11 us-east-1: fail -> \"Resource handler returned message: \"Resource of type 'AWS::AppSync::GraphQLSchema' with identifier 'e3hp2ojptzc6hapao4gad64g7i' did not stabilize.\" (HandlerErrorCode: NotStabilized)\"; the GraphQLSchema handler no longer passes the schema status details on and only reports that the schema never reached SUCCESS, so expect quotes that"
+  expect: "did not stabilize."
 addedOn: 2026-09-12
