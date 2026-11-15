@@ -34,7 +34,8 @@
             "Value": "16385"
           }
         ]
-      }
+      },
+      "DependsOn": "T1"
     },
     "T3": {
       "Type": "AWS::ElasticBeanstalk::ConfigurationTemplate",
@@ -55,7 +56,8 @@
             "Value": "1025"
           }
         ]
-      }
+      },
+      "DependsOn": "T1"
     }
   }
 }
