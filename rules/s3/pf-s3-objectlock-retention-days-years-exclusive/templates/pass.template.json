@@ -18,6 +18,26 @@
           }
         }
       }
+    },
+    "EventHold": {
+      "Type": "AWS::S3::Bucket",
+      "Properties": {
+        "ObjectLockEnabled": true,
+        "VersioningConfiguration": {
+          "Status": "Enabled"
+        },
+        "ObjectLockConfiguration": {
+          "ObjectLockEnabled": "Enabled",
+          "Rule": {
+            "DefaultRetention": {
+              "Mode": "GOVERNANCE",
+              "DefaultEventHold": {
+                "Days": 1
+              }
+            }
+          }
+        }
+      }
     }
   }
 }

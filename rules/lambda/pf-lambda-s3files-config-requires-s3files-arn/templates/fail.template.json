@@ -1,0 +1,181 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Resources": {
+    "Vpc": {
+      "Type": "AWS::EC2::VPC",
+      "Properties": {
+        "CidrBlock": "10.83.0.0/16",
+        "EnableDnsSupport": true,
+        "EnableDnsHostnames": true
+      }
+    },
+    "SubA": {
+      "Type": "AWS::EC2::Subnet",
+      "Properties": {
+        "VpcId": {
+          "Ref": "Vpc"
+        },
+        "CidrBlock": "10.83.1.0/24",
+        "AvailabilityZone": {
+          "Fn::Select": [
+            0,
+            {
+              "Fn::GetAZs": ""
+            }
+          ]
+        }
+      }
+    },
+    "SubB": {
+      "Type": "AWS::EC2::Subnet",
+      "Properties": {
+        "VpcId": {
+          "Ref": "Vpc"
+        },
+        "CidrBlock": "10.83.2.0/24",
+        "AvailabilityZone": {
+          "Fn::Select": [
+            1,
+            {
+              "Fn::GetAZs": ""
+            }
+          ]
+        }
+      }
+    },
+    "Sg": {
+      "Type": "AWS::EC2::SecurityGroup",
+      "Properties": {
+        "GroupDescription": "cdkpf fixture",
+        "VpcId": {
+          "Ref": "Vpc"
+        }
+      }
+    },
+    "Fs": {
+      "Type": "AWS::EFS::FileSystem"
+    },
+    "MtA": {
+      "Type": "AWS::EFS::MountTarget",
+      "Properties": {
+        "FileSystemId": {
+          "Ref": "Fs"
+        },
+        "SubnetId": {
+          "Ref": "SubA"
+        },
+        "SecurityGroups": [
+          {
+            "Ref": "Sg"
+          }
+        ]
+      }
+    },
+    "MtB": {
+      "Type": "AWS::EFS::MountTarget",
+      "Properties": {
+        "FileSystemId": {
+          "Ref": "Fs"
+        },
+        "SubnetId": {
+          "Ref": "SubB"
+        },
+        "SecurityGroups": [
+          {
+            "Ref": "Sg"
+          }
+        ]
+      }
+    },
+    "Ap": {
+      "Type": "AWS::EFS::AccessPoint",
+      "Properties": {
+        "FileSystemId": {
+          "Ref": "Fs"
+        },
+        "PosixUser": {
+          "Uid": "1000",
+          "Gid": "1000"
+        },
+        "RootDirectory": {
+          "Path": "/l",
+          "CreationInfo": {
+            "OwnerUid": "1000",
+            "OwnerGid": "1000",
+            "Permissions": "755"
+          }
+        }
+      }
+    },
+    "FnRole": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "lambda.amazonaws.com"
+              },
+              "Action": "sts:AssumeRole"
+            }
+          ]
+        },
+        "ManagedPolicyArns": [
+          "arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole",
+          "arn:aws:iam::aws:policy/AmazonElasticFileSystemClientFullAccess"
+        ]
+      }
+    },
+    "Fn": {
+      "Type": "AWS::Lambda::Function",
+      "DependsOn": [
+        "MtA",
+        "MtB"
+      ],
+      "Properties": {
+        "Role": {
+          "Fn::GetAtt": [
+            "FnRole",
+            "Arn"
+          ]
+        },
+        "Runtime": "python3.13",
+        "Handler": "index.handler",
+        "Code": {
+          "ZipFile": "def handler(e, c):\n    return 1\n"
+        },
+        "VpcConfig": {
+          "SubnetIds": [
+            {
+              "Ref": "SubA"
+            },
+            {
+              "Ref": "SubB"
+            }
+          ],
+          "SecurityGroupIds": [
+            {
+              "Ref": "Sg"
+            }
+          ]
+        },
+        "FileSystemConfigs": [
+          {
+            "Arn": {
+              "Fn::GetAtt": [
+                "Ap",
+                "Arn"
+              ]
+            },
+            "LocalMountPath": "/mnt/a",
+            "S3FilesConfig": {
+              "DirectS3Read": "ENABLED"
+            }
+          }
+        ]
+      }
+    }
+  }
+}

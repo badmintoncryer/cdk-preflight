@@ -1,0 +1,13 @@
+id: pf-eks-cluster-controller-config-requires-provisioned
+service: eks
+benchRegion: us-east-1
+resourceTypes: [AWS::EKS::Cluster]
+severity: ERROR
+title: "HPA sync period and pod GC threshold need a Provisioned Control Plane tier"
+constraintSource: https://docs.aws.amazon.com/eks/latest/userguide/control-plane-parameters.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-11-16 us-east-1: HorizontalPodAutoscalerSyncPeriod 10s with no ControlPlaneScalingConfig -> \"Kubernetes Control Plane configuration 'kubeControllerManagerConfig.horizontalPodAutoscalerSyncPeriod' is not supported for this Provisioned Control Plane scaling tier.\" (ROLLBACK_COMPLETE); the same day TerminatedPodGcThreshold 10000 on a standard cluster was rejected with the same sentence for 'kubeControllerManagerConfig.terminatedPodGcThreshold'. Verified fail-only: the pass template needs a paid Provisioned Control Plane tier (tier-xl), so it is not deployed."
+  expect: "is not supported for this Provisioned Control Plane scaling tier"
+addedOn: 2026-11-16

@@ -1,0 +1,33 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Resources": {
+    "Topic": {
+      "Type": "AWS::SNS::Topic",
+      "Properties": {
+        "MaximumMessageSize": 262145,
+        "Subscription": [
+          {
+            "Protocol": "https",
+            "Endpoint": "https://example.com/"
+          }
+        ]
+      }
+    },
+    "Topic2": {
+      "Type": "AWS::SNS::Topic",
+      "Properties": {
+        "MaximumMessageSize": 262145
+      }
+    },
+    "Sub": {
+      "Type": "AWS::SNS::Subscription",
+      "Properties": {
+        "TopicArn": {
+          "Ref": "Topic2"
+        },
+        "Protocol": "https",
+        "Endpoint": "https://example.com/"
+      }
+    }
+  }
+}

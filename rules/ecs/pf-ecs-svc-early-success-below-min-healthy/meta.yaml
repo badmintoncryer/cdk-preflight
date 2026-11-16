@@ -1,0 +1,13 @@
+id: pf-ecs-svc-early-success-below-min-healthy
+service: ecs
+benchRegion: us-east-1
+resourceTypes: [AWS::ECS::Service]
+severity: ERROR
+title: "EarlySuccessCriteria.HealthyPercent must not be below MinimumHealthyPercent"
+constraintSource: https://docs.aws.amazon.com/AmazonECS/latest/developerguide/deployment-early-success.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-11-16 us-east-1: MinimumHealthyPercent 50 with EarlySuccessCriteria.HealthyPercent 49 -> \"Invalid request provided: Invalid early success criteria, healthy percent must be between minimum healthy percent and 100.\" (ROLLBACK_COMPLETE); pass 50 / 50 -> CREATE_COMPLETE."
+  expect: "Invalid early success criteria, healthy percent must be between minimum healthy percent and 100"
+addedOn: 2026-11-16
