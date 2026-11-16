@@ -8,6 +8,6 @@ constraintSource: https://docs.aws.amazon.com/AmazonECS/latest/developerguide/de
 upstream: none
 repro:
   method: real-deploy
-  evidence: "bench 2026-11-16 us-east-1: PENDING -> Invalid early success criteria, healthy percent must be between minimum healthy percent and 100 (ROLLBACK_COMPLETE)"
+  evidence: "bench 2026-11-16 us-east-1: MinimumHealthyPercent 50 with EarlySuccessCriteria.HealthyPercent 49 -> \"Invalid request provided: Invalid early success criteria, healthy percent must be between minimum healthy percent and 100.\" (ROLLBACK_COMPLETE); pass 50 / 50 -> CREATE_COMPLETE."
   expect: "Invalid early success criteria, healthy percent must be between minimum healthy percent and 100"
 addedOn: 2026-11-16

@@ -8,6 +8,6 @@ constraintSource: https://docs.aws.amazon.com/eks/latest/userguide/control-plane
 upstream: none
 repro:
   method: real-deploy
-  evidence: "bench 2026-11-16 us-east-1: PENDING -> Allowed values: [LeastAllocated, MostAllocated] (ROLLBACK_COMPLETE)"
+  evidence: "bench 2026-11-16 us-east-1: ScoringStrategy.Type Balanced -> \"kubeSchedulerConfig.nodeResourcesFit.scoringStrategy.type 'Balanced' is not supported. Allowed values: [LeastAllocated, MostAllocated].\" (ROLLBACK_COMPLETE); pass MostAllocated -> CREATE_COMPLETE."
   expect: "Allowed values: [LeastAllocated, MostAllocated]"
 addedOn: 2026-11-16

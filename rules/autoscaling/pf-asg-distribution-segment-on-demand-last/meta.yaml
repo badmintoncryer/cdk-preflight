@@ -8,6 +8,6 @@ constraintSource: https://docs.aws.amazon.com/autoscaling/ec2/userguide/distribu
 upstream: none
 repro:
   method: real-deploy
-  evidence: "bench 2026-11-16 us-east-1: PENDING -> If 'on-demand' is specified in TargetCapacityTypes, it must be the last element (ROLLBACK_COMPLETE)"
+  evidence: "bench 2026-11-16 us-east-1: TargetCapacityTypes [on-demand, capacity-block] -> \"If 'on-demand' is specified in TargetCapacityTypes, it must be the last element.\" (ROLLBACK_COMPLETE); pass [capacity-block, on-demand] with DesiredCapacity 0 -> CREATE_COMPLETE."
   expect: "If 'on-demand' is specified in TargetCapacityTypes, it must be the last element"
 addedOn: 2026-11-16

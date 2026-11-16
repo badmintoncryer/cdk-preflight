@@ -8,6 +8,6 @@ constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateR
 upstream: none
 repro:
   method: real-deploy
-  evidence: "bench 2026-09-06 us-east-1: fail template -> ROLLBACK_COMPLETE \"The XML you provided was not well-formed or did not validate against our published schema\"; pass template -> CREATE_COMPLETE"
+  evidence: "bench 2026-09-06 us-east-1: fail template -> ROLLBACK_COMPLETE \"The XML you provided was not well-formed or did not validate against our published schema\"; pass template -> CREATE_COMPLETE; bench 2026-11-16 us-east-1: pass template with a second bucket carrying Mode GOVERNANCE and DefaultEventHold {Days: 1} but neither Days nor Years (variable retention) -> CREATE_COMPLETE, fail still -> ROLLBACK_COMPLETE with the same message"
   expect: "The XML you provided was not well-formed or did not validate against our published schema"
 addedOn: 2026-09-06

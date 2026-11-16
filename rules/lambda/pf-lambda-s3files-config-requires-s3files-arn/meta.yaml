@@ -8,6 +8,6 @@ constraintSource: https://docs.aws.amazon.com/lambda/latest/api/API_FileSystemCo
 upstream: none
 repro:
   method: real-deploy
-  evidence: "bench 2026-11-16 us-east-1: PENDING -> S3FilesConfig can only be specified for S3 Files file systems (ROLLBACK_COMPLETE)"
+  evidence: "bench 2026-11-16 us-east-1: S3FilesConfig on an EFS access point -> \"S3FilesConfig can only be specified for S3 Files file systems.\" (ROLLBACK_COMPLETE); pass without S3FilesConfig -> CREATE_COMPLETE."
   expect: "S3FilesConfig can only be specified for S3 Files file systems"
 addedOn: 2026-11-16

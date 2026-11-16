@@ -8,6 +8,6 @@ constraintSource: https://docs.aws.amazon.com/sns/latest/dg/large-message-payloa
 upstream: none
 repro:
   method: real-deploy
-  evidence: "bench 2026-11-16 us-east-1: PENDING -> MaximumMessageSize greater than 262144 bytes is not supported for the following protocol: [https] (ROLLBACK_COMPLETE)"
+  evidence: "bench 2026-11-16 us-east-1: MaximumMessageSize 262145 with an https subscription (inline and as AWS::SNS::Subscription) -> \"Invalid parameter: MaximumMessageSize greater than 262144 bytes is not supported for the following protocol: [https]\" (ROLLBACK_COMPLETE); pass 262144 with the same https subscriptions -> CREATE_COMPLETE. The endpoint must resolve (https://example.com/): an .invalid host is rejected as Unreachable Endpoint regardless of size."
   expect: "MaximumMessageSize greater than 262144 bytes is not supported for the following protocol: [https]"
 addedOn: 2026-11-16

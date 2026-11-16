@@ -8,6 +8,6 @@ constraintSource: https://docs.aws.amazon.com/eks/latest/userguide/control-plane
 upstream: none
 repro:
   method: real-deploy
-  evidence: "bench 2026-11-16 us-east-1: PENDING -> kubeApiServerConfig.serviceNodePortRange minPort (10259) is below minimum allowed value (10260) (ROLLBACK_COMPLETE)"
+  evidence: "bench 2026-11-16 us-east-1: MinPort 10259 -> \"kubeApiServerConfig.serviceNodePortRange minPort (10259) is below minimum allowed value (10260).\" (ROLLBACK_COMPLETE); probe with only MaxPort 32768 -> \"kubeApiServerConfig.serviceNodePortRange maxPort (32768) exceeds maximum allowed value (32767).\" (ROLLBACK_COMPLETE); pass 10260-32767 -> CREATE_COMPLETE."
   expect: "kubeApiServerConfig.serviceNodePortRange minPort (10259) is below minimum allowed value (10260)"
 addedOn: 2026-11-16
