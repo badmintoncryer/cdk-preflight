@@ -1,0 +1,13 @@
+id: pf-sns-large-message-subscription-protocol
+service: sns
+benchRegion: us-east-1
+resourceTypes: [AWS::SNS::Topic, AWS::SNS::Subscription]
+severity: ERROR
+title: "Topics above 256 KiB accept only sqs, lambda and firehose subscriptions"
+constraintSource: https://docs.aws.amazon.com/sns/latest/dg/large-message-payloads.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-11-16 us-east-1: PENDING -> MaximumMessageSize greater than 262144 bytes is not supported for the following protocol: [https] (ROLLBACK_COMPLETE)"
+  expect: "MaximumMessageSize greater than 262144 bytes is not supported for the following protocol: [https]"
+addedOn: 2026-11-16

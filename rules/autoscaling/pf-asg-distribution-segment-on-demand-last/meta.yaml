@@ -1,0 +1,13 @@
+id: pf-asg-distribution-segment-on-demand-last
+service: autoscaling
+benchRegion: us-east-1
+resourceTypes: [AWS::AutoScaling::AutoScalingGroup]
+severity: ERROR
+title: "on-demand must be the last TargetCapacityTypes entry of a distribution segment"
+constraintSource: https://docs.aws.amazon.com/autoscaling/ec2/userguide/distribution-segments.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-11-16 us-east-1: PENDING -> If 'on-demand' is specified in TargetCapacityTypes, it must be the last element (ROLLBACK_COMPLETE)"
+  expect: "If 'on-demand' is specified in TargetCapacityTypes, it must be the last element"
+addedOn: 2026-11-16

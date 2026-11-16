@@ -1,0 +1,47 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Resources": {
+    "Cluster": {
+      "Type": "AWS::ECS::Cluster"
+    },
+    "TaskDef": {
+      "Type": "AWS::ECS::TaskDefinition",
+      "Properties": {
+        "RequiresCompatibilities": [
+          "EC2"
+        ],
+        "NetworkMode": "bridge",
+        "ContainerDefinitions": [
+          {
+            "Name": "c",
+            "Image": "public.ecr.aws/docker/library/busybox:latest",
+            "Memory": 64,
+            "Essential": true
+          }
+        ]
+      }
+    },
+    "Service": {
+      "Type": "AWS::ECS::Service",
+      "Properties": {
+        "Cluster": {
+          "Ref": "Cluster"
+        },
+        "TaskDefinition": {
+          "Ref": "TaskDef"
+        },
+        "LaunchType": "EC2",
+        "DesiredCount": 0,
+        "DeploymentConfiguration": {
+          "MinimumHealthyPercent": 50,
+          "MaximumPercent": 200,
+          "EarlySuccessCriteria": {
+            "Enable": true,
+            "HealthyPercent": 49,
+            "SourceServiceRevisionCleanup": "DEFERRED"
+          }
+        }
+      }
+    }
+  }
+}

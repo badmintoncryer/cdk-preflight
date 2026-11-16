@@ -1,0 +1,13 @@
+id: pf-eks-cluster-scoring-strategy-type
+service: eks
+benchRegion: us-east-1
+resourceTypes: [AWS::EKS::Cluster]
+severity: ERROR
+title: "NodeResourcesFit ScoringStrategy.Type must be LeastAllocated or MostAllocated"
+constraintSource: https://docs.aws.amazon.com/eks/latest/userguide/control-plane-parameters.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-11-16 us-east-1: PENDING -> Allowed values: [LeastAllocated, MostAllocated] (ROLLBACK_COMPLETE)"
+  expect: "Allowed values: [LeastAllocated, MostAllocated]"
+addedOn: 2026-11-16

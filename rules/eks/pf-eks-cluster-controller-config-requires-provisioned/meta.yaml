@@ -1,0 +1,13 @@
+id: pf-eks-cluster-controller-config-requires-provisioned
+service: eks
+benchRegion: us-east-1
+resourceTypes: [AWS::EKS::Cluster]
+severity: ERROR
+title: "HPA sync period and pod GC threshold need a Provisioned Control Plane tier"
+constraintSource: https://docs.aws.amazon.com/eks/latest/userguide/control-plane-parameters.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-11-16 us-east-1: PENDING -> is not supported for this Provisioned Control Plane scaling tier (ROLLBACK_COMPLETE)"
+  expect: "is not supported for this Provisioned Control Plane scaling tier"
+addedOn: 2026-11-16

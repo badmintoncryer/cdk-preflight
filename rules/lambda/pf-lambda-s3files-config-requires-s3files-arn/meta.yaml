@@ -1,0 +1,13 @@
+id: pf-lambda-s3files-config-requires-s3files-arn
+service: lambda
+benchRegion: us-east-1
+resourceTypes: [AWS::Lambda::Function]
+severity: ERROR
+title: "FileSystemConfigs S3FilesConfig needs an S3 Files file system, not EFS"
+constraintSource: https://docs.aws.amazon.com/lambda/latest/api/API_FileSystemConfig.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-11-16 us-east-1: PENDING -> S3FilesConfig can only be specified for S3 Files file systems (ROLLBACK_COMPLETE)"
+  expect: "S3FilesConfig can only be specified for S3 Files file systems"
+addedOn: 2026-11-16

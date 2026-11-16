@@ -1,0 +1,13 @@
+id: pf-eks-cluster-event-ttl-range
+service: eks
+benchRegion: us-east-1
+resourceTypes: [AWS::EKS::Cluster]
+severity: ERROR
+title: "KubeApiServerConfig.EventTtl must be between 10m and 60m"
+constraintSource: https://docs.aws.amazon.com/eks/latest/userguide/control-plane-parameters.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-11-16 us-east-1: PENDING -> kubeApiServerConfig.eventTtl value '9m' is below minimum '10m' (ROLLBACK_COMPLETE)"
+  expect: "kubeApiServerConfig.eventTtl value '9m' is below minimum '10m'"
+addedOn: 2026-11-16
