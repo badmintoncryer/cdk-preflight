@@ -12,7 +12,7 @@
   <a href="https://github.com/badmintoncryer/cdk-preflight/actions/workflows/monthly-verify.yml"><img src="https://github.com/badmintoncryer/cdk-preflight/actions/workflows/monthly-verify.yml/badge.svg" alt="monthly real-deploy verification"></a>
   <a href="https://www.npmjs.com/package/cdk-preflight"><img src="https://img.shields.io/npm/v/cdk-preflight.svg" alt="npm version"></a>
   <a href="https://www.npmjs.com/package/cdk-preflight"><img src="https://img.shields.io/npm/dt/cdk-preflight.svg" alt="npm total downloads"></a>
-  <a href="docs/rules.md"><img src="https://img.shields.io/badge/rules-3358-blue" alt="3358 bundled rules"></a>
+  <a href="docs/rules.md"><img src="https://img.shields.io/badge/rules-3368-blue" alt="3368 bundled rules"></a>
 </p>
 
 Some CloudFormation constraints are not expressed in resource provider schemas — they live only in documentation, in service API validation, or across multiple properties. Templates that violate them pass `cdk synth`, pass CloudFormation pre-deployment validation, and then fail minutes into a deployment, burning a rollback cycle.
@@ -269,7 +269,7 @@ Resource names are relative to `AWS::<Service>::`; the number in parentheses is 
 | **AppSync** | `Api` (7), `ApiCache` (4), `ApiKey` (2), `ChannelNamespace` (5), `DataSource` (15), `DomainName` (1), `FunctionConfiguration` (24), `GraphQLApi` (16), `GraphQLSchema` (12), `Resolver` (32), `SourceApiAssociation` (3) |
 | **APS** | `AnomalyDetector` (9), `ResourcePolicy` (5), `RuleGroupsNamespace` (10), `Workspace` (12) |
 | **Athena** | `DataCatalog` (6), `WorkGroup` (8) |
-| **AutoScaling** | `AutoScalingGroup` (38), `LifecycleHook` (8), `ScalingPolicy` (41), `ScheduledAction` (13), `WarmPool` (4) |
+| **AutoScaling** | `AutoScalingGroup` (39), `LifecycleHook` (8), `ScalingPolicy` (41), `ScheduledAction` (13), `WarmPool` (4) |
 | **Backup** | `BackupPlan` (12), `BackupSelection` (5), `BackupVault` (3), `Framework` (3), `LogicallyAirGappedBackupVault` (2), `ReportPlan` (2), `RestoreTestingPlan` (5), `RestoreTestingSelection` (3) |
 | **Batch** | `ComputeEnvironment` (40), `ConsumableResource` (2), `JobDefinition` (109), `JobQueue` (18), `SchedulingPolicy` (8), `ServiceEnvironment` (6) |
 | **Bedrock** | `ApplicationInferenceProfile` (2), `AutomatedReasoningPolicy` (3), `Blueprint` (3), `DataAutomationProject` (8), `DataSource` (12), `Flow` (14), `Guardrail` (19), `IntelligentPromptRouter` (5), `KnowledgeBase` (18), `Prompt` (4) |
@@ -291,9 +291,9 @@ Resource names are relative to `AWS::<Service>::`; the number in parentheses is 
 | **DynamoDB** | `GlobalTable` (25), `Table` (28) |
 | **EC2** | `ClientVpnAuthorizationRule` (1), `ClientVpnEndpoint` (6), `DHCPOptions` (2), `EIPAssociation` (1), `FlowLog` (4), `Instance` (10), `KeyPair` (1), `LaunchTemplate` (12), `NatGateway` (2), `NetworkAclEntry` (1), `NetworkInterface` (2), `PlacementGroup` (3), `PrefixList` (3), `Route` (1), `SecurityGroup` (7), `SecurityGroupEgress` (5), `SecurityGroupIngress` (5), `Subnet` (14), `TrafficMirrorTarget` (1), `TransitGateway` (2), `TransitGatewayRoute` (1), `Volume` (6), `VPC` (2), `VPCCidrBlock` (1), `VPCEndpoint` (4), `VPCGatewayAttachment` (1), `VPNConnection` (5) |
 | **ECR** | `PullThroughCacheRule` (3), `RegistryScanningConfiguration` (1), `ReplicationConfiguration` (1), `Repository` (7), `RepositoryCreationTemplate` (8), `SigningConfiguration` (1) |
-| **ECS** | `CapacityProvider` (3), `Cluster` (5), `Service` (37), `TaskDefinition` (66), `TaskSet` (2) |
+| **ECS** | `CapacityProvider` (3), `Cluster` (5), `Service` (39), `TaskDefinition` (66), `TaskSet` (2) |
 | **EFS** | `AccessPoint` (1), `FileSystem` (7), `MountTarget` (4) |
-| **EKS** | `AccessEntry` (14), `Addon` (5), `Cluster` (21), `FargateProfile` (5), `IdentityProviderConfig` (3), `Nodegroup` (21), `PodIdentityAssociation` (5) |
+| **EKS** | `AccessEntry` (14), `Addon` (5), `Cluster` (26), `FargateProfile` (5), `IdentityProviderConfig` (3), `Nodegroup` (21), `PodIdentityAssociation` (5) |
 | **ElastiCache** | `CacheCluster` (9), `ReplicationGroup` (14), `User` (2), `UserGroup` (1) |
 | **ElasticBeanstalk** | `Application` (2), `ConfigurationTemplate` (37), `Environment` (35) |
 | **ElasticLoadBalancingV2** | `Listener` (57), `ListenerCertificate` (2), `ListenerRule` (38), `LoadBalancer` (37), `TargetGroup` (58), `TrustStore` (1), `TrustStoreRevocation` (1) |
@@ -308,7 +308,7 @@ Resource names are relative to `AWS::<Service>::`; the number in parentheses is 
 | **KinesisAnalyticsV2** | `Application` (20), `ApplicationCloudWatchLoggingOption` (1), `ApplicationOutput` (1), `ApplicationReferenceDataSource` (1) |
 | **KinesisFirehose** | `DeliveryStream` (68) |
 | **KMS** | `Alias` (2), `Key` (12), `ReplicaKey` (4) |
-| **Lambda** | `Alias` (7), `CodeSigningConfig` (1), `EventInvokeConfig` (5), `EventSourceMapping` (54), `Function` (48), `LayerVersion` (8), `LayerVersionPermission` (3), `Permission` (8), `Url` (8), `Version` (1) |
+| **Lambda** | `Alias` (7), `CodeSigningConfig` (1), `EventInvokeConfig` (5), `EventSourceMapping` (54), `Function` (49), `LayerVersion` (8), `LayerVersionPermission` (3), `Permission` (8), `Url` (8), `Version` (1) |
 | **Logs** | `AccountPolicy` (6), `DeliveryDestination` (3), `Destination` (1), `LogAnomalyDetector` (2), `LogGroup` (10), `MetricFilter` (7), `QueryDefinition` (1), `ResourcePolicy` (1), `SubscriptionFilter` (6), `Transformer` (3) |
 | **MediaConvert** | `JobTemplate` (9), `Preset` (32), `Queue` (2) |
 | **MemoryDB** | `Cluster` (8), `User` (1) |
@@ -331,7 +331,7 @@ Resource names are relative to `AWS::<Service>::`; the number in parentheses is 
 | **SecretsManager** | `RotationSchedule` (4), `Secret` (5), `SecretTargetAttachment` (1) |
 | **ServiceDiscovery** | `HttpNamespace` (3), `Instance` (19), `PrivateDnsNamespace` (4), `PublicDnsNamespace` (4), `Service` (13) |
 | **SES** | `ConfigurationSetEventDestination` (8), `ContactList` (1), `EmailIdentity` (6), `ReceiptRule` (6), `ReceiptRuleSet` (1), `Template` (1) |
-| **SNS** | `Subscription` (10), `Topic` (14), `TopicPolicy` (1) |
+| **SNS** | `Subscription` (11), `Topic` (15), `TopicPolicy` (1) |
 | **SQS** | `Queue` (10), `QueuePolicy` (1) |
 | **SSM** | `Association` (4), `Document` (3), `MaintenanceWindow` (2), `MaintenanceWindowTarget` (1), `MaintenanceWindowTask` (1), `Parameter` (5) |
 | **StepFunctions** | `Activity` (3), `StateMachine` (26) |

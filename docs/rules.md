@@ -351,6 +351,7 @@
 | `pf-asg-capacity-reservation-none-target-exclusive` | AWS::AutoScaling::AutoScalingGroup | A capacity reservation target needs the capacity-reservations-only preference | ERROR | none |
 | `pf-asg-cooldown-non-negative` | AWS::AutoScaling::AutoScalingGroup | Cooldown cannot be negative | ERROR | none |
 | `pf-asg-desired-capacity-range` | AWS::AutoScaling::AutoScalingGroup | DesiredCapacity must sit between MinSize and MaxSize | ERROR | none |
+| `pf-asg-distribution-segment-on-demand-last` | AWS::AutoScaling::AutoScalingGroup | on-demand must be the last TargetCapacityTypes entry of a distribution segment | ERROR | none |
 | `pf-asg-exactcapacity-nonnegative` | AWS::AutoScaling::ScalingPolicy | ExactCapacity takes no negative ScalingAdjustment | ERROR | none |
 | `pf-asg-health-check-grace-period` | AWS::AutoScaling::AutoScalingGroup | HealthCheckGracePeriod cannot be negative | ERROR | none |
 | `pf-asg-healthchecktype-ec2-exclusive-with-others` | AWS::AutoScaling::AutoScalingGroup | EC2 health checks do not combine with the others | ERROR | none |
@@ -1554,6 +1555,8 @@
 | `pf-ecs-svc-connect-without-namespace` | AWS::ECS::Service | Service Connect needs a Namespace on the service or the cluster | ERROR | none |
 | `pf-ecs-svc-daemon-max-percent` | AWS::ECS::Service | A DAEMON service requires DeploymentConfiguration.MaximumPercent 100 | ERROR | none |
 | `pf-ecs-svc-daemon-with-placement-strategies` | AWS::ECS::Service | A DAEMON service does not accept placement strategies | ERROR | none |
+| `pf-ecs-svc-early-success-below-min-healthy` | AWS::ECS::Service | EarlySuccessCriteria.HealthyPercent must not be below MinimumHealthyPercent | ERROR | none |
+| `pf-ecs-svc-early-success-rolling-only` | AWS::ECS::Service | EarlySuccessCriteria is only supported with the ROLLING deployment strategy | ERROR | none |
 | `pf-ecs-svc-ebs-iops-unsupported-type` | AWS::ECS::Service | ManagedEBSVolume Iops is only valid for io1, io2 and gp3 | ERROR | none |
 | `pf-ecs-svc-ebs-name-not-in-taskdef` | AWS::ECS::Service | VolumeConfigurations.Name must match a ConfiguredAtLaunch volume | ERROR | none |
 | `pf-ecs-svc-ebs-throughput-non-gp3` | AWS::ECS::Service | ManagedEBSVolume Throughput is only valid for gp3 | ERROR | none |
@@ -1610,16 +1613,21 @@
 | `pf-eks-cluster-automode-all-three` | AWS::EKS::Cluster | EKS Auto Mode needs compute, load balancing and block storage switched together | ERROR | none |
 | `pf-eks-cluster-automode-nodepools-need-noderole` | AWS::EKS::Cluster | ComputeConfig.NodePools requires ComputeConfig.NodeRoleArn | ERROR | none |
 | `pf-eks-cluster-automode-requires-api-auth` | AWS::EKS::Cluster | EKS Auto Mode requires an API access authentication mode | ERROR | none |
+| `pf-eks-cluster-controller-config-requires-provisioned` | AWS::EKS::Cluster | HPA sync period and pod GC threshold need a Provisioned Control Plane tier | ERROR | none |
 | `pf-eks-cluster-encryption-kms-key-region` | AWS::EKS::Cluster | The EncryptionConfig KMS key must live in the cluster's own region | ERROR | none |
 | `pf-eks-cluster-encryption-resources-secrets-only` | AWS::EKS::Cluster | EncryptionConfig.Resources only accepts secrets | ERROR | none |
 | `pf-eks-cluster-endpoint-both-disabled` | AWS::EKS::Cluster | A cluster must keep at least one of the public and private API endpoints enabled | ERROR | none |
+| `pf-eks-cluster-event-ttl-range` | AWS::EKS::Cluster | KubeApiServerConfig.EventTtl must be between 10m and 60m | ERROR | none |
 | `pf-eks-cluster-ipv6-forbids-service-ipv4-cidr` | AWS::EKS::Cluster | An ipv6 cluster may not carry a ServiceIpv4Cidr | ERROR | none |
+| `pf-eks-cluster-node-port-min-le-max` | AWS::EKS::Cluster | ServiceNodePortRange MinPort must not exceed MaxPort | ERROR | none |
+| `pf-eks-cluster-node-port-range` | AWS::EKS::Cluster | ServiceNodePortRange ports must be between 10260 and 32767 | ERROR | none |
 | `pf-eks-cluster-remote-network-overlaps-service-cidr` | AWS::EKS::Cluster | Remote networks may not overlap the Kubernetes service range | ERROR | none |
 | `pf-eks-cluster-remote-network-requires-api-auth` | AWS::EKS::Cluster | A cluster with remote networks requires an API access authentication mode | ERROR | none |
 | `pf-eks-cluster-remote-network-rfc1918` | AWS::EKS::Cluster | Remote node and pod networks must be private address space | ERROR | none |
 | `pf-eks-cluster-remote-node-pod-network-overlap` | AWS::EKS::Cluster | Remote node networks may not overlap remote pod networks | ERROR | none |
 | `pf-eks-cluster-remote-pod-network-requires-node-network` | AWS::EKS::Cluster | RemoteNetworkConfig requires RemoteNodeNetworks | ERROR | none |
 | `pf-eks-cluster-role-arn-account` | AWS::EKS::Cluster | The cluster service role must live in the deploy account | ERROR | none |
+| `pf-eks-cluster-scoring-strategy-type` | AWS::EKS::Cluster | NodeResourcesFit ScoringStrategy.Type must be LeastAllocated or MostAllocated | ERROR | none |
 | `pf-eks-cluster-service-ipv4-cidr-prefix-range` | AWS::EKS::Cluster | ServiceIpv4Cidr must have a netmask between /12 and /24 | ERROR | none |
 | `pf-eks-cluster-service-ipv4-cidr-private-range` | AWS::EKS::Cluster | ServiceIpv4Cidr must sit inside an RFC 1918 block | ERROR | none |
 | `pf-eks-cluster-sg-and-subnets-same-vpc` | AWS::EKS::Cluster<br>AWS::EC2::SecurityGroup<br>AWS::EC2::Subnet | A cluster's security groups and subnets must belong to one VPC | ERROR | none |
@@ -2302,6 +2310,7 @@
 | `pf-lambda-runtime-manual-requires-arn` | AWS::Lambda::Function | Manual runtime updates need a runtime version ARN | ERROR | none |
 | `pf-lambda-runtime-version-arn-region` | AWS::Lambda::Function | A runtime version ARN names the deploy region | ERROR | none |
 | `pf-lambda-s3-storage-mode-zip-only` | AWS::Lambda::Function | S3ObjectStorageMode belongs to .zip functions | ERROR | none |
+| `pf-lambda-s3files-config-requires-s3files-arn` | AWS::Lambda::Function | FileSystemConfigs S3FilesConfig needs an S3 Files file system, not EFS | ERROR | none |
 | `pf-lambda-scaling-min-max-pair` | AWS::Lambda::Function | FunctionScalingConfig takes both bounds | WARN | none |
 | `pf-lambda-scaling-min-zero-requires-max-zero` | AWS::Lambda::Function | Scaling to zero means both bounds are zero | WARN | none |
 | `pf-lambda-system-log-level-enum` | AWS::Lambda::Function | SystemLogLevel takes DEBUG, INFO or WARN | ERROR | pending-engine |
@@ -3098,6 +3107,7 @@
 | `pf-sns-fifo-topic-protocol` | AWS::SNS::Subscription<br>AWS::SNS::Topic | A FIFO topic only accepts sqs subscriptions (lambda, http/https, email, email-json, sms, firehose are rejected) | ERROR | none |
 | `pf-sns-filter-policy` | AWS::SNS::Subscription<br>AWS::SNS::Topic | FilterPolicy shape: at most 5 keys, every value an array or object, no empty arrays, no arrays inside arrays, nesting only with FilterPolicyScope MessageBody, and FilterPolicyScope is MessageAttributes or MessageBody | ERROR | none |
 | `pf-sns-firehose-subscription-role` | AWS::SNS::Subscription<br>AWS::SNS::Topic | A firehose subscription requires SubscriptionRoleArn | ERROR | none |
+| `pf-sns-large-message-subscription-protocol` | AWS::SNS::Topic<br>AWS::SNS::Subscription | Topics above 256 KiB accept only sqs, lambda and firehose subscriptions | ERROR | none |
 | `pf-sns-raw-message-delivery` | AWS::SNS::Subscription<br>AWS::SNS::Topic | RawMessageDelivery is only supported for sqs, http, https and firehose subscriptions | ERROR | none |
 | `pf-sns-subscription-endpoint` | AWS::SNS::Subscription<br>AWS::SNS::Topic | Subscription Protocol is one of the nine SNS protocols and the Endpoint matches it: an ARN of the right service for sqs/lambda/firehose/application, an email address, a URL with the same scheme for http/https, a phone number for sms | ERROR | none |
 | `pf-sns-subscription-redrive` | AWS::SNS::Subscription<br>AWS::SNS::Topic | Subscription RedrivePolicy needs deadLetterTargetArn, which must be an SQS queue ARN in the deploy region | ERROR | none |
