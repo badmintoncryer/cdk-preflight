@@ -8,7 +8,7 @@
         "Subscription": [
           {
             "Protocol": "https",
-            "Endpoint": "https://cdkpf-fixture.invalid/"
+            "Endpoint": "https://example.com/"
           }
         ]
       }
@@ -26,7 +26,7 @@
           "Ref": "Topic2"
         },
         "Protocol": "https",
-        "Endpoint": "https://cdkpf-fixture.invalid/"
+        "Endpoint": "https://example.com/"
       }
     }
   }
