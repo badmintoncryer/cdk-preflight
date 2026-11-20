@@ -2,7 +2,7 @@ id: pf-lambda-timeout-max
 service: lambda
 resourceTypes: [AWS::Lambda::Function]
 severity: ERROR
-title: Timeout tops out at 900 seconds
+title: Timeout tops out at 1800 seconds without CapacityProviderConfig
 constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-lambda-function.html
 upstream: retired
 supersededBy:
@@ -11,5 +11,5 @@ supersededBy:
   engineRules: [E3717]
 repro:
   method: real-deploy
-  evidence: "bench 2026-09-03 ap-northeast-1: Timeout 901 (t02) -> \"Value '901' at 'timeout' failed to satisfy constraint: Member must have value less than or equal to 900\". ROLLBACK_COMPLETE. The registry schema carries the 1 minimum but no maximum - upstream schema-patch candidate."
+  evidence: "bench 2026-09-03 ap-northeast-1: Timeout 901 (t02) -> \"Value '901' at 'timeout' failed to satisfy constraint: Member must have value less than or equal to 900\". ROLLBACK_COMPLETE. The registry schema carries the 1 minimum but no maximum - upstream schema-patch candidate. bench 2026-11-20 us-east-1: Timeout 1800 without CapacityProviderConfig -> CREATE_COMPLETE (get-function-configuration Timeout 1800) after the 2026-11-19 raise to 30 minutes, so the cap moved from 900 to 1800."
 addedOn: 2026-09-03
