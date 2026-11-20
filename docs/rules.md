@@ -792,6 +792,7 @@
 | `pf-agentcore-gateway-target-openapi-schema` | AWS::BedrockAgentCore::GatewayTarget | Inline OpenAPI schemas for gateway targets must be OpenAPI 3 with a servers list and an operationId on every operation | ERROR | none |
 | `pf-agentcore-harness-endpoint-name-default` | AWS::BedrockAgentCore::HarnessEndpoint | A HarnessEndpoint cannot be named DEFAULT (the name is reserved) | ERROR | none |
 | `pf-agentcore-harness-endpoint-name-unique` | AWS::BedrockAgentCore::HarnessEndpoint | Endpoint names must be unique within one harness | ERROR | none |
+| `pf-agentcore-harness-lifecycle-timeout-order` | AWS::BedrockAgentCore::Harness | AgentCore Harness IdleRuntimeSessionTimeout must not exceed MaxLifetime | ERROR | none |
 | `pf-agentcore-jwt-authorizer-claims` | AWS::BedrockAgentCore::Gateway<br>AWS::BedrockAgentCore::Runtime<br>AWS::BedrockAgentCore::Harness | A CustomJWTAuthorizer needs at least one of AllowedAudience, AllowedClients, AllowedScopes, or CustomClaims | ERROR | none |
 | `pf-agentcore-kms-key-region` | AWS::BedrockAgentCore::Dataset<br>AWS::BedrockAgentCore::Evaluator<br>AWS::BedrockAgentCore::ConfigurationBundle | A KmsKeyArn must name a key in the deploy region | ERROR | none |
 | `pf-agentcore-memory-custom-strategy-execution-role` | AWS::BedrockAgentCore::Memory | Memories with a custom strategy require MemoryExecutionRoleArn | ERROR | none |
@@ -1009,6 +1010,7 @@
 | `pf-cloudwatch-alarm-metrics-max` | AWS::CloudWatch::Alarm | An alarm takes at most 10 MetricStat queries | ERROR | none |
 | `pf-cloudwatch-alarm-period` | AWS::CloudWatch::Alarm | Period must be 10, 20, 30 or a multiple of 60 | ERROR | none |
 | `pf-cloudwatch-alarm-search-expression` | AWS::CloudWatch::Alarm | SEARCH() cannot be used in a metric alarm | ERROR | none |
+| `pf-cloudwatch-alarm-tags-propagation-include-exclude-exclusive` | AWS::CloudWatch::Alarm | AlarmTagsPropagation takes IncludedTagKeys or ExcludedTagKeys, not both | ERROR | pending-engine |
 | `pf-cloudwatch-alarm-threshold` | AWS::CloudWatch::Alarm | Standard operators need Threshold, range operators need ThresholdMetricId | ERROR | none |
 | `pf-cloudwatch-anomaly-detector-excluded-range-order` | AWS::CloudWatch::AnomalyDetector | An excluded time range must start before it ends | ERROR | none |
 | `pf-cloudwatch-anomaly-detector-exclusive` | AWS::CloudWatch::AnomalyDetector | SingleMetricAnomalyDetector and MetricMathAnomalyDetector are mutually exclusive | ERROR | none |
@@ -1519,6 +1521,8 @@
 | `pf-ecs-fargate-shared-memory-size` | AWS::ECS::TaskDefinition | LinuxParameters.SharedMemorySize is not supported on Fargate | ERROR | none |
 | `pf-ecs-fargate-task-cpu-memory` | AWS::ECS::TaskDefinition | FARGATE compatibility requires task-level Cpu and Memory | ERROR | retired: engine E3048 covers it from aws-cdk-lib 2.268.0 |
 | `pf-ecs-fargate-windows-cpu-under-1vcpu` | AWS::ECS::TaskDefinition | Windows tasks on Fargate need at least 1 vCPU | ERROR | none |
+| `pf-ecs-gpu-sharing-mixed-across-containers` | AWS::ECS::TaskDefinition | Containers in one task cannot mix GPU Value and SharingStrategy | ERROR | pending-engine |
+| `pf-ecs-gpu-value-sharing-exclusive` | AWS::ECS::TaskDefinition | A GPU resource requirement takes Value or SharingStrategy, not both | ERROR | pending-engine |
 | `pf-ecs-healthcheck-interval-range` | AWS::ECS::TaskDefinition | HealthCheck.Interval must be 5-300 seconds | ERROR | none |
 | `pf-ecs-healthcheck-retries-range` | AWS::ECS::TaskDefinition | HealthCheck.Retries must be 1-10 | ERROR | none |
 | `pf-ecs-healthcheck-start-period-range` | AWS::ECS::TaskDefinition | HealthCheck.StartPeriod must be 0-300 seconds | ERROR | none |
@@ -1678,6 +1682,8 @@
 | `pf-elasticache-port` | AWS::ElastiCache::ReplicationGroup<br>AWS::ElastiCache::CacheCluster | Port must be in 1150-8004 or 8006-65535 | ERROR | none |
 | `pf-elasticache-preferred-availability-zones` | AWS::ElastiCache::ReplicationGroup<br>AWS::ElastiCache::CacheCluster | The preferred Availability Zone list must have exactly one entry per node | ERROR | none |
 | `pf-elasticache-replication-group-clusters` | AWS::ElastiCache::ReplicationGroup | Automatic failover needs at least two cache clusters (CloudFormation turns it on by default), and NumCacheClusters cannot be combined with NumNodeGroups | ERROR | none |
+| `pf-elasticache-serverless-public-valkey-only` | AWS::ElastiCache::ServerlessCache | ConnectionType public is only for the valkey engine | ERROR | pending-engine |
+| `pf-elasticache-serverless-public-valkey9` | AWS::ElastiCache::ServerlessCache | ConnectionType public needs valkey major version 9 or later | ERROR | pending-engine |
 | `pf-elasticache-snapshot-retention` | AWS::ElastiCache::ReplicationGroup<br>AWS::ElastiCache::CacheCluster | SnapshotRetentionLimit is 0-35 days and Memcached does not support snapshots at all | ERROR | none |
 | `pf-elasticache-snapshot-source-engine` | AWS::ElastiCache::CacheCluster | SnapshotArns and SnapshotName only restore Redis clusters | ERROR | none |
 | `pf-elasticache-snapshot-window` | AWS::ElastiCache::ReplicationGroup<br>AWS::ElastiCache::CacheCluster | SnapshotWindow must be hh24:mi-hh24:mi and must not overlap the maintenance window | ERROR | none |
@@ -1898,11 +1904,11 @@
 | `pf-events-input-transformer-json-var` | AWS::Events::Rule | <aws.events.event.json> needs a JSON object InputTemplate | ERROR | none |
 | `pf-events-input-transformer-limits` | AWS::Events::Rule | InputPathsMap is capped at 100 entries and may not use reserved variable names | ERROR | none |
 | `pf-events-input-transformer-placeholders` | AWS::Events::Rule | InputTemplate placeholders must be declared in InputPathsMap | ERROR | none |
-| `pf-events-pattern-empty` | AWS::Events::Rule | An empty EventPattern counts as no pattern at all | ERROR | none |
-| `pf-events-pattern-empty-array` | AWS::Events::Rule<br>AWS::Events::Archive | An event pattern may not hold an empty array | ERROR | none |
-| `pf-events-pattern-operator` | AWS::Events::Rule<br>AWS::Events::Archive | Event pattern matchers must name a real operator and give it the right shape | ERROR | none |
-| `pf-events-pattern-or-exclusive` | AWS::Events::Rule<br>AWS::Events::Archive | $or cannot share an object with other keys | ERROR | none |
-| `pf-events-pattern-scalar-value` | AWS::Events::Rule<br>AWS::Events::Archive | Event pattern values must be arrays or objects, not scalars | ERROR | none |
+| `pf-events-pattern-empty` | AWS::Events::Rule | An empty EventPattern counts as no pattern at all | ERROR | retired: engine E9014 covers it from aws-cdk-lib 2.276.0 |
+| `pf-events-pattern-empty-array` | AWS::Events::Rule<br>AWS::Events::Archive | An event pattern may not hold an empty array | ERROR | retired: engine E9014 covers it from aws-cdk-lib 2.276.0 |
+| `pf-events-pattern-operator` | AWS::Events::Rule<br>AWS::Events::Archive | Event pattern matchers must name a real operator and give it the right shape | ERROR | retired: engine E9014 covers it from aws-cdk-lib 2.276.0 |
+| `pf-events-pattern-or-exclusive` | AWS::Events::Rule<br>AWS::Events::Archive | $or cannot share an object with other keys | ERROR | retired: engine E9014 covers it from aws-cdk-lib 2.276.0 |
+| `pf-events-pattern-scalar-value` | AWS::Events::Rule<br>AWS::Events::Archive | Event pattern values must be arrays or objects, not scalars | ERROR | retired: engine E9014 covers it from aws-cdk-lib 2.276.0 |
 | `pf-events-rule-cron-fields` | AWS::Events::Rule | cron() fields must stay in range and keep | ERROR | none |
 | `pf-events-rule-name-duplicate` | AWS::Events::Rule | Two rules in one template may not share a name | ERROR | none |
 | `pf-events-rule-schedule-default-bus` | AWS::Events::Rule | A scheduled rule only works on the default event bus | ERROR | none |
@@ -2071,7 +2077,7 @@
 | `pf-grafana-ws-saml-idp-metadata-source` | AWS::Grafana::Workspace | A SAML identity provider names exactly one metadata source | ERROR | none |
 | `pf-iam-identity-policy-no-principal` | AWS::IAM::Role<br>AWS::IAM::Policy<br>AWS::IAM::ManagedPolicy | Identity policies cannot carry a Principal field | ERROR | retired: engine E3510 covers it from aws-cdk-lib 2.268.0 |
 | `pf-iam-inline-policy-size` | AWS::IAM::Policy<br>AWS::IAM::RolePolicy<br>AWS::IAM::UserPolicy<br>AWS::IAM::GroupPolicy | Inline policy documents are limited per identity (role 10240 / group 5120 / user 2048 characters) | ERROR | none |
-| `pf-iam-instance-profile-single-role` | AWS::IAM::InstanceProfile | An instance profile holds exactly one role | ERROR | none |
+| `pf-iam-instance-profile-single-role` | AWS::IAM::InstanceProfile | An instance profile holds exactly one role | ERROR | retired: engine F3032 covers it from aws-cdk-lib 2.276.0 |
 | `pf-iam-managed-policy-count` | AWS::IAM::Role<br>AWS::IAM::User<br>AWS::IAM::Group | Managed policies per identity are capped (hard maximums role 25 / user 20 / group 10) | ERROR | none |
 | `pf-iam-managed-policy-size` | AWS::IAM::ManagedPolicy | Managed policy documents are limited to 6144 characters (whitespace excluded) | ERROR | none |
 | `pf-iam-name-format` | AWS::IAM::Role<br>AWS::IAM::User<br>AWS::IAM::Group<br>AWS::IAM::ManagedPolicy | IAM entity names allow only alphanumerics and +=,.@-_ | ERROR | none |
@@ -2153,6 +2159,7 @@
 | `pf-kinesis-encryption-key-region` | AWS::Kinesis::Stream | The stream encryption key must live in the stream region | ERROR | none |
 | `pf-kinesis-on-demand-shard-count` | AWS::Kinesis::Stream | An on-demand stream cannot set ShardCount | ERROR | none |
 | `pf-kinesis-provisioned-shard-count` | AWS::Kinesis::Stream | A provisioned stream must set ShardCount | ERROR | none |
+| `pf-kinesis-record-distribution-on-demand-only` | AWS::Kinesis::Stream | RecordDistributionStrategy is only for ON_DEMAND streams | ERROR | pending-engine |
 | `pf-kinesis-resource-policy-action` | AWS::Kinesis::ResourcePolicy | Resource policy actions must be plain kinesis: actions | ERROR | none |
 | `pf-kinesis-resource-policy-principal` | AWS::Kinesis::ResourcePolicy | Every policy statement needs a Principal (and no NotPrincipal) | ERROR | none |
 | `pf-kinesis-resource-policy-region` | AWS::Kinesis::ResourcePolicy | A resource policy must target a stream in its own region | ERROR | none |
@@ -2219,6 +2226,7 @@
 | `pf-lambda-eic-onsuccess-no-s3` | AWS::Lambda::EventInvokeConfig | An S3 bucket is an on-failure destination only | ERROR | none |
 | `pf-lambda-env-key-start-letter` | AWS::Lambda::Function | An environment variable name starts with a letter | ERROR | none |
 | `pf-lambda-env-size` | AWS::Lambda::Function | Lambda environment variables are limited to 4096 bytes in total | ERROR | none |
+| `pf-lambda-ephemeral-storage-max` | AWS::Lambda::Function | EphemeralStorage tops out at 10240 MB (32768 MB with AcceleratorConfig) | ERROR | pending-engine |
 | `pf-lambda-esm-batchsize-window` | AWS::Lambda::EventSourceMapping | SQS batch sizes over 10 need a batching window | ERROR | none |
 | `pf-lambda-esm-bisect-batch-stream-only` | AWS::Lambda::EventSourceMapping | BisectBatchOnFunctionError only applies to Kinesis and DynamoDB streams | ERROR | none |
 | `pf-lambda-esm-client-certificate-kafka-only` | AWS::Lambda::EventSourceMapping | CLIENT_CERTIFICATE_TLS_AUTH is not accepted on Amazon MQ | ERROR | none |
@@ -2317,7 +2325,7 @@
 | `pf-lambda-tenancy-no-function-url` | AWS::Lambda::Function | A tenant-isolated function cannot have a function URL | ERROR | none |
 | `pf-lambda-tenancy-no-provisioned-concurrency` | AWS::Lambda::Function | A tenant-isolated function cannot use provisioned concurrency | ERROR | none |
 | `pf-lambda-tenancy-no-snapstart` | AWS::Lambda::Function | A tenant-isolated function cannot use SnapStart | ERROR | pending-engine |
-| `pf-lambda-timeout-max` | AWS::Lambda::Function | Timeout tops out at 900 seconds | ERROR | retired: engine E3717 covers it from aws-cdk-lib 2.271.0 |
+| `pf-lambda-timeout-max` | AWS::Lambda::Function | Timeout tops out at 1800 seconds without CapacityProviderConfig | ERROR | retired: engine E3717 covers it from aws-cdk-lib 2.271.0 |
 | `pf-lambda-tracing-mode-enum` | AWS::Lambda::Function | TracingConfig.Mode takes Active or PassThrough | ERROR | pending-engine |
 | `pf-lambda-url-auth-type-enum` | AWS::Lambda::Url | AuthType is AWS_IAM or NONE | ERROR | pending-engine |
 | `pf-lambda-url-cors-allow-methods-wildcard-mix` | AWS::Lambda::Url | CORS methods are a wildcard or a list, not both | ERROR | none |
