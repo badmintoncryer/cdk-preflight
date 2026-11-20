@@ -460,9 +460,16 @@ describe('report formatting', () => {
     }],
   }];
 
-  test('the borrowed CDK formatter is still resolvable', () => {
+  test('the borrowed CDK formatter resolves exactly on the aws-cdk-lib versions that ship it', () => {
     // 解決できなくなったら fallbackFormat に落ちる。壊れたことに気づくための番人。
-    expect(loadFormatter()).toBeDefined();
+    // aws-cdk-lib 2.275.0 で core/lib/validation/private/modern-formatter.js が消え、
+    // それ以降は fallbackFormat が唯一の整形になる（2026-11-20、2.274.0 / 2.275.0 の tarball で確認）。
+    const [, minor] = require('aws-cdk-lib/package.json').version.split('.').map(Number);
+    if (minor < 275) {
+      expect(loadFormatter()).toBeDefined();
+    } else {
+      expect(loadFormatter()).toBeUndefined();
+    }
   });
 
   test('fallback formatting stays readable without the CDK formatter', () => {
