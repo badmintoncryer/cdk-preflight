@@ -464,7 +464,7 @@ describe('report formatting', () => {
     // 解決できなくなったら fallbackFormat に落ちる。壊れたことに気づくための番人。
     // aws-cdk-lib 2.275.0 で core/lib/validation/private/modern-formatter.js が消え、
     // それ以降は fallbackFormat が唯一の整形になる（2026-11-20、2.274.0 / 2.275.0 の tarball で確認）。
-    const [, minor] = require('aws-cdk-lib/package.json').version.split('.').map(Number);
+    const [, minor] = (JSON.parse(fs.readFileSync(require.resolve('aws-cdk-lib/package.json'), 'utf8')).version as string).split('.').map(Number);
     if (minor < 275) {
       expect(loadFormatter()).toBeDefined();
     } else {
