@@ -22,7 +22,7 @@ Preflight.apply(app);
 const stack = new Stack(app, 'Smoke');
 
 // 素の CDK アプリにも出てくる形。VIOLATE=1 のときだけ Timeout を上限超えにする
-// （pf-lambda-timeout-max: 900 秒が上限）。
+// （pf-lambda-timeout-max: CapacityProviderConfig 無しで 1800 秒が上限。2026-11-19 に 900 から引き上げ）。
 new CfnResource(stack, 'Fn', {
   type: 'AWS::Lambda::Function',
   properties: {
@@ -30,7 +30,7 @@ new CfnResource(stack, 'Fn', {
     Handler: 'index.handler',
     Role: 'arn:aws:iam::123456789012:role/smoke',
     Code: { ZipFile: 'exports.handler = async () => {};' },
-    Timeout: process.env.VIOLATE === '1' ? 1000 : 30,
+    Timeout: process.env.VIOLATE === '1' ? 1801 : 30,
   },
 });
 
