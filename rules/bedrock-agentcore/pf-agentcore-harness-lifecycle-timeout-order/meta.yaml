@@ -1,0 +1,12 @@
+id: pf-agentcore-harness-lifecycle-timeout-order
+service: bedrock-agentcore
+benchRegion: us-east-1
+resourceTypes: [AWS::BedrockAgentCore::Harness]
+severity: ERROR
+title: AgentCore Harness IdleRuntimeSessionTimeout must not exceed MaxLifetime
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-bedrockagentcore-harness-lifecycleconfiguration.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "PENDING real-deploy gate"
+addedOn: 2026-11-20
