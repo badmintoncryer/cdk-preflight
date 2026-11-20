@@ -1,0 +1,13 @@
+id: pf-ecs-gpu-sharing-mixed-across-containers
+service: ecs
+benchRegion: us-east-1
+resourceTypes: [AWS::ECS::TaskDefinition]
+severity: ERROR
+title: "Containers in one task cannot mix GPU Value and SharingStrategy"
+constraintSource: https://docs.aws.amazon.com/AmazonECS/latest/developerguide/ecs-gpu.html
+upstream: pending-engine
+repro:
+  method: real-deploy
+  evidence: "bench 2026-11-16 us-east-1: c0 SharingStrategy NvidiaMps with c1 Value 1 -> Invalid GPU resource configuration. A task cannot mix 'value' and 'sharingStrategy' across containers. (ClientException, ROLLBACK_COMPLETE); pass both SharingStrategy -> CREATE_COMPLETE"
+  expect: "A task cannot mix 'value' and 'sharingStrategy' across containers"
+addedOn: 2026-11-20

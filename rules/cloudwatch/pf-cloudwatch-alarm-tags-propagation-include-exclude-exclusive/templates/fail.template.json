@@ -1,0 +1,27 @@
+{
+  "Resources": {
+    "A": {
+      "Type": "AWS::CloudWatch::Alarm",
+      "Properties": {
+        "Namespace": "CdkpfVerify",
+        "MetricName": "M",
+        "Statistic": "Average",
+        "Period": 60,
+        "EvaluationPeriods": 1,
+        "Threshold": 1,
+        "ComparisonOperator": "GreaterThanThreshold",
+        "ActionConfiguration": {
+          "AlarmTagsPropagation": {
+            "Enabled": true,
+            "IncludedTagKeys": [
+              "a"
+            ],
+            "ExcludedTagKeys": [
+              "b"
+            ]
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "Resources": {
+    "K": {
+      "Type": "AWS::Kinesis::Stream",
+      "Properties": {
+        "StreamModeDetails": {
+          "StreamMode": "PROVISIONED"
+        },
+        "RecordDistributionStrategy": "AUTO",
+        "RetentionPeriodHours": 24,
+        "ShardCount": 1
+      }
+    }
+  }
+}

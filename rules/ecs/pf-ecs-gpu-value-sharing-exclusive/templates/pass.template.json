@@ -1,0 +1,30 @@
+{
+  "Resources": {
+    "Td": {
+      "Type": "AWS::ECS::TaskDefinition",
+      "Properties": {
+        "RequiresCompatibilities": [
+          "EC2"
+        ],
+        "ContainerDefinitions": [
+          {
+            "Name": "c0",
+            "Image": "public.ecr.aws/docker/library/busybox:latest",
+            "Memory": 128,
+            "Essential": true,
+            "ResourceRequirements": [
+              {
+                "Type": "GPU",
+                "SharingStrategy": {
+                  "NvidiaMps": {
+                    "Memory": 2000
+                  }
+                }
+              }
+            ]
+          }
+        ]
+      }
+    }
+  }
+}

@@ -1,0 +1,43 @@
+{
+  "Resources": {
+    "E": {
+      "Type": "AWS::ElastiCache::ServerlessCache",
+      "Properties": {
+        "ServerlessCacheName": {
+          "Fn::Join": [
+            "",
+            [
+              "cv",
+              {
+                "Fn::Select": [
+                  0,
+                  {
+                    "Fn::Split": [
+                      "-",
+                      {
+                        "Fn::Select": [
+                          2,
+                          {
+                            "Fn::Split": [
+                              "/",
+                              {
+                                "Ref": "AWS::StackId"
+                              }
+                            ]
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          ]
+        },
+        "Engine": "valkey",
+        "ConnectionType": "public",
+        "MajorEngineVersion": "8"
+      }
+    }
+  }
+}

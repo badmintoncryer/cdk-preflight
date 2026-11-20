@@ -1,0 +1,13 @@
+id: pf-ecs-gpu-value-sharing-exclusive
+service: ecs
+benchRegion: us-east-1
+resourceTypes: [AWS::ECS::TaskDefinition]
+severity: ERROR
+title: "A GPU resource requirement takes Value or SharingStrategy, not both"
+constraintSource: https://docs.aws.amazon.com/AmazonECS/latest/developerguide/ecs-gpu.html
+upstream: pending-engine
+repro:
+  method: real-deploy
+  evidence: "bench 2026-11-16 us-east-1: GPU requirement with Value 1 and SharingStrategy NvidiaMps -> Invalid GPU resource configuration. Only one of 'value' or 'sharingStrategy' can be specified. (ClientException, ROLLBACK_COMPLETE); pass SharingStrategy only -> CREATE_COMPLETE"
+  expect: "Invalid GPU resource configuration. Only one of 'value' or 'sharingStrategy' can be specified"
+addedOn: 2026-11-20

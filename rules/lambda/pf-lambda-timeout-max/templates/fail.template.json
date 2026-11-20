@@ -9,7 +9,7 @@
         },
         "Runtime": "python3.12",
         "Handler": "index.handler",
-        "Timeout": 901
+        "Timeout": 1801
       }
     }
   }

@@ -86,7 +86,7 @@ const project = new awscdk.AwsCdkConstructLibrary({
 // 下限は据え置いて古いエンジンの利用者にもルールを届けつつ、開発と CI は最新のエンジンで回して
 // 「エンジンが追いついたルール」（meta.yaml#supersededBy）を最初に見つける（AGENTS.md「Rule lifecycle」）。
 project.deps.removeDependency('aws-cdk-lib', DependencyType.BUILD);
-project.deps.addDependency('aws-cdk-lib@2.271.0', DependencyType.BUILD);
+project.deps.addDependency('aws-cdk-lib@2.277.0', DependencyType.BUILD);
 project.deps.addDependency('constructs@10.5.1', DependencyType.BUILD);
 
 // src/rules.generated.ts は rules/** から決定的に作られ preCompile で必ず生成されるので、コミットしない。
