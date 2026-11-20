@@ -1,0 +1,13 @@
+id: pf-cloudwatch-alarm-tags-propagation-include-exclude-exclusive
+service: cloudwatch
+benchRegion: us-east-1
+resourceTypes: [AWS::CloudWatch::Alarm]
+severity: ERROR
+title: "AlarmTagsPropagation takes IncludedTagKeys or ExcludedTagKeys, not both"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-cloudwatch-alarm-alarmtagspropagation.html
+upstream: pending-engine
+repro:
+  method: real-deploy
+  evidence: "bench 2026-11-16 us-east-1: IncludedTagKeys [a] with ExcludedTagKeys [b] -> IncludedTagKeys and ExcludedTagKeys cannot be specified in the same AlarmTagsPropagation (Service: CloudWatch, Status Code: 400, HandlerErrorCode: GeneralServiceException) (ROLLBACK_COMPLETE); pass IncludedTagKeys only -> CREATE_COMPLETE"
+  expect: "IncludedTagKeys and ExcludedTagKeys cannot be specified in the same AlarmTagsPropagation"
+addedOn: 2026-11-20

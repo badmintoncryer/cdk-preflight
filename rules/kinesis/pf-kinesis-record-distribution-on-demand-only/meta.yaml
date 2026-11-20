@@ -1,0 +1,13 @@
+id: pf-kinesis-record-distribution-on-demand-only
+service: kinesis
+benchRegion: us-east-1
+resourceTypes: [AWS::Kinesis::Stream]
+severity: ERROR
+title: "RecordDistributionStrategy is only for ON_DEMAND streams"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-kinesis-stream.html
+upstream: pending-engine
+repro:
+  method: real-deploy
+  evidence: "bench 2026-11-16 us-east-1: PROVISIONED stream with RecordDistributionStrategy AUTO -> RecordDistributionStrategy can only be set for ON_DEMAND streams (HandlerErrorCode: InvalidRequest) (ROLLBACK_COMPLETE); pass ON_DEMAND with AUTO -> CREATE_COMPLETE"
+  expect: "RecordDistributionStrategy can only be set for ON_DEMAND streams"
+addedOn: 2026-11-20

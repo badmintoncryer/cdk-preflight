@@ -6,7 +6,7 @@ import rego.v1
 # set AcceleratorConfig (GPU on Lambda Managed Instances, 2026-11). The engine
 # carries the 512 floor but no cap (clean on 10241 with engine 1.12.1 / 1.17.1).
 _pf_ephst_cap(name) := 32768 if {
-	object.get(input.Resources[name], ["Properties", "AcceleratorConfig"], null) != null
+	resolve(name, "Properties.AcceleratorConfig") != null
 } else := 10240
 
 violation contains make_diag_full("pf-lambda-ephemeral-storage-max", "ERROR", name,

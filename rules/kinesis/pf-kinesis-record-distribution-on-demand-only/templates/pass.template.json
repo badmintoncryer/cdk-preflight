@@ -1,0 +1,14 @@
+{
+  "Resources": {
+    "K": {
+      "Type": "AWS::Kinesis::Stream",
+      "Properties": {
+        "StreamModeDetails": {
+          "StreamMode": "ON_DEMAND"
+        },
+        "RecordDistributionStrategy": "AUTO",
+        "RetentionPeriodHours": 24
+      }
+    }
+  }
+}
