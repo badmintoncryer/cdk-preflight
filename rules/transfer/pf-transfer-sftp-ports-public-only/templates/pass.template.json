@@ -1,0 +1,22 @@
+{
+ "AWSTemplateFormatVersion": "2010-09-09",
+ "Resources": {
+  "X": {
+   "Type": "AWS::Transfer::Server",
+   "Properties": {
+    "Protocols": [
+     "SFTP"
+    ],
+    "IdentityProviderType": "SERVICE_MANAGED",
+    "ProtocolDetails": {
+     "SftpPorts": [
+      {
+       "SftpPort": 2222
+      }
+     ]
+    },
+    "EndpointType": "PUBLIC"
+   }
+  }
+ }
+}

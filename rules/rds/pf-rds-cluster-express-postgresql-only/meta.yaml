@@ -1,0 +1,13 @@
+id: pf-rds-cluster-express-postgresql-only
+service: rds
+benchRegion: us-east-1
+resourceTypes: [AWS::RDS::DBCluster]
+severity: ERROR
+title: "WithExpressConfiguration is only for aurora-postgresql"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-rds-dbcluster.html
+upstream: pending-engine
+repro:
+  method: real-deploy
+  evidence: "bench 2026-11-16 us-east-1: DBCluster aurora-mysql with WithExpressConfiguration true -> Amazon RDS can't enable Internet Access Gateway because this feature isn't available in your account for the specified Region or engine. Try creating the cluster in a different Region or with Aurora PostgreSQL. (Service: Rds, Status Code: 400, HandlerErrorCode: InvalidRequest) (ROLLBACK_COMPLETE); pass (a running express cluster) not deployed for cost"
+  expect: "Amazon RDS can't enable Internet Access Gateway because this feature isn't available"
+addedOn: 2026-11-23

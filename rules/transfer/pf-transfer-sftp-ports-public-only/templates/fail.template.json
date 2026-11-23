@@ -1,0 +1,57 @@
+{
+ "AWSTemplateFormatVersion": "2010-09-09",
+ "Resources": {
+  "Vpc": {
+   "Type": "AWS::EC2::VPC",
+   "Properties": {
+    "CidrBlock": "10.84.0.0/16",
+    "EnableDnsSupport": true,
+    "EnableDnsHostnames": true
+   }
+  },
+  "SubA": {
+   "Type": "AWS::EC2::Subnet",
+   "Properties": {
+    "VpcId": {
+     "Ref": "Vpc"
+    },
+    "CidrBlock": "10.84.1.0/24",
+    "AvailabilityZone": {
+     "Fn::Select": [
+      0,
+      {
+       "Fn::GetAZs": ""
+      }
+     ]
+    }
+   }
+  },
+  "X": {
+   "Type": "AWS::Transfer::Server",
+   "Properties": {
+    "Protocols": [
+     "SFTP"
+    ],
+    "IdentityProviderType": "SERVICE_MANAGED",
+    "ProtocolDetails": {
+     "SftpPorts": [
+      {
+       "SftpPort": 2222
+      }
+     ]
+    },
+    "EndpointType": "VPC",
+    "EndpointDetails": {
+     "VpcId": {
+      "Ref": "Vpc"
+     },
+     "SubnetIds": [
+      {
+       "Ref": "SubA"
+      }
+     ]
+    }
+   }
+  }
+ }
+}
