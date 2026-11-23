@@ -7,5 +7,6 @@ constraintSource: https://docs.aws.amazon.com/directoryservice/latest/admin-guid
 upstream: none
 repro:
   method: real-deploy
-  evidence: "PENDING real-deploy gate (guard 2026-11-22 engine 1.14.0: clean)"
+  evidence: "bench 2026-11-23 us-east-1: VPC 198.19.0.0/16 -> ROLLBACK_COMPLETE Directory 400 InvalidRequest \"Invalid VPC with CIDR block as 198.19.0.0/16. Please read the documentation for supported CIDR for Microsoft AD\"; pass (198.20.0.0/16) not deployed to avoid a 30-min billed directory."
+  expect: "Please read the documentation for supported CIDR for Microsoft AD"
 addedOn: 2026-11-23

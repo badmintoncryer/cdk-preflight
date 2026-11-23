@@ -7,5 +7,6 @@ constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateR
 upstream: none
 repro:
   method: real-deploy
-  evidence: "PENDING real-deploy gate (guard 2026-11-22 engine 1.14.0: clean)"
+  evidence: "bench 2026-11-23 us-east-1: two subnets with the same Fn::Select 0 of GetAZs -> ROLLBACK_COMPLETE Directory 400 InvalidRequest \"Invalid subnet ID(s). The two subnets must be in different Availability Zones.\"; pass (index 0 and 1) not deployed to avoid a 30-min billed directory, same shape as the verified pf-ds-msad-password-no-admin pass."
+  expect: "The two subnets must be in different Availability Zones"
 addedOn: 2026-11-23

@@ -7,5 +7,6 @@ constraintSource: https://docs.aws.amazon.com/directoryservice/latest/admin-guid
 upstream: none
 repro:
   method: real-deploy
-  evidence: "PENDING real-deploy gate (guard 2026-11-22 engine 1.14.0: clean)"
+  evidence: "bench 2026-11-23 us-east-1: Password xAdmin#2026 (meets length and 3 of 4 categories) -> ROLLBACK_COMPLETE Directory 400 InvalidRequest \"Invalid password. The password must be between 8 and 64 characters, not contain the word admin, and must have at least one character from three of these four categories...\" (capital Admin rejected, so the check ignores case); pass xAdmi#2026n -> CREATE_COMPLETE (Standard, 31 min), deleted."
+  expect: "not contain the word"
 addedOn: 2026-11-23

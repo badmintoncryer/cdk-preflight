@@ -7,5 +7,6 @@ constraintSource: https://docs.aws.amazon.com/directoryservice/latest/admin-guid
 upstream: none
 repro:
   method: real-deploy
-  evidence: "PENDING real-deploy gate (guard 2026-11-22 engine 1.14.0: clean)"
+  evidence: "bench 2026-11-23 us-east-1: VPC InstanceTenancy dedicated -> ROLLBACK_COMPLETE Directory 400 InvalidRequest \"Invalid VPC: vpc-... Dedicated tenancy VPCs are not supported.\"; pass (default) not deployed to avoid a 30-min billed directory."
+  expect: "Dedicated tenancy VPCs are not supported"
 addedOn: 2026-11-23
