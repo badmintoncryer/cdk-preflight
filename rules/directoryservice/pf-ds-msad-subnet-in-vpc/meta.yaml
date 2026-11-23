@@ -1,0 +1,12 @@
+id: pf-ds-msad-subnet-in-vpc
+service: directoryservice
+resourceTypes: [AWS::DirectoryService::MicrosoftAD]
+severity: ERROR
+title: AWS Managed Microsoft AD subnets must belong to VpcSettings.VpcId
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-directoryservice-microsoftad-vpcsettings.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-11-23 us-east-1: second subnet in another template VPC -> ROLLBACK_COMPLETE Directory 400 InvalidRequest \"Invalid subnet ID(s). Both subnets must belong to the specified VPC.\"; pass (both subnets in the directory VPC) not deployed to avoid a 30-min billed directory."
+  expect: "Both subnets must belong to the specified VPC"
+addedOn: 2026-11-23

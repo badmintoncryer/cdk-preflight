@@ -1,0 +1,12 @@
+id: pf-ds-msad-vpc-reserved-cidr
+service: directoryservice
+resourceTypes: [AWS::DirectoryService::MicrosoftAD]
+severity: ERROR
+title: AWS Managed Microsoft AD cannot be created in a VPC that uses 198.18.0.0/15
+constraintSource: https://docs.aws.amazon.com/directoryservice/latest/admin-guide/ms_ad_getting_started.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-11-23 us-east-1: VPC 198.19.0.0/16 -> ROLLBACK_COMPLETE Directory 400 InvalidRequest \"Invalid VPC with CIDR block as 198.19.0.0/16. Please read the documentation for supported CIDR for Microsoft AD\"; pass (198.20.0.0/16) not deployed to avoid a 30-min billed directory."
+  expect: "Please read the documentation for supported CIDR for Microsoft AD"
+addedOn: 2026-11-23
