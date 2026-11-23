@@ -1,0 +1,11 @@
+id: pf-ds-msad-vpc-default-tenancy
+service: directoryservice
+resourceTypes: [AWS::DirectoryService::MicrosoftAD]
+severity: ERROR
+title: AWS Managed Microsoft AD needs a VPC with default instance tenancy
+constraintSource: https://docs.aws.amazon.com/directoryservice/latest/admin-guide/ms_ad_getting_started.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "PENDING real-deploy gate (guard 2026-11-22 engine 1.14.0: clean)"
+addedOn: 2026-11-23
