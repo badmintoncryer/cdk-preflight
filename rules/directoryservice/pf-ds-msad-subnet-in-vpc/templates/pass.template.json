@@ -44,7 +44,7 @@
     "Directory": {
       "Type": "AWS::DirectoryService::MicrosoftAD",
       "Properties": {
-        "Name": "corp.cdkpf.example",
+        "Name": "corp.cdkpfverify.com",
         "Edition": "Standard",
         "Password": "Passw0rd#2026",
         "VpcSettings": {
