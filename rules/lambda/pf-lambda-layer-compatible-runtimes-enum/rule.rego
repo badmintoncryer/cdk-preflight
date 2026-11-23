@@ -7,10 +7,11 @@ _pf_llcr_fix := "List runtime identifiers Lambda knows, such as python3.12 or no
 _pf_llcr_url := "https://docs.aws.amazon.com/lambda/latest/api/API_PublishLayerVersion.html"
 
 _pf_llcr_known := {
-	"nodejs18.x", "nodejs20.x", "nodejs22.x",
-	"python3.9", "python3.10", "python3.11", "python3.12", "python3.13",
-	"java11", "java17", "java21",
-	"dotnet6", "dotnet8", "ruby3.2", "ruby3.3",
+	"nodejs16.x", "nodejs18.x", "nodejs20.x", "nodejs22.x", "nodejs24.x", "nodejs26.x",
+	"python3.8", "python3.9", "python3.10", "python3.11", "python3.12", "python3.13", "python3.14", "python3.15",
+	"java8.al2", "java8.al2023", "java11", "java11.al2023", "java17", "java17.al2023", "java21", "java25",
+	"dotnet6", "dotnet8", "dotnet10",
+	"ruby3.2", "ruby3.3", "ruby3.4", "ruby4.0",
 	"provided.al2", "provided.al2023",
 }
 

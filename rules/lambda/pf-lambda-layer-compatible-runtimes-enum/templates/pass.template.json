@@ -12,7 +12,15 @@
           "S3Key": "l.zip"
         },
         "CompatibleRuntimes": [
-          "python3.12"
+          "python3.12",
+          "python3.14",
+          "python3.15",
+          "nodejs24.x",
+          "nodejs26.x",
+          "java25",
+          "dotnet10",
+          "ruby3.4",
+          "ruby4.0"
         ]
       }
     }
