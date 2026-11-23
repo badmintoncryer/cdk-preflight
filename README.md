@@ -12,7 +12,7 @@
   <a href="https://github.com/badmintoncryer/cdk-preflight/actions/workflows/monthly-verify.yml"><img src="https://github.com/badmintoncryer/cdk-preflight/actions/workflows/monthly-verify.yml/badge.svg" alt="monthly real-deploy verification"></a>
   <a href="https://www.npmjs.com/package/cdk-preflight"><img src="https://img.shields.io/npm/v/cdk-preflight.svg" alt="npm version"></a>
   <a href="https://www.npmjs.com/package/cdk-preflight"><img src="https://img.shields.io/npm/dt/cdk-preflight.svg" alt="npm total downloads"></a>
-  <a href="docs/rules.md"><img src="https://img.shields.io/badge/rules-3383-blue" alt="3383 bundled rules"></a>
+  <a href="docs/rules.md"><img src="https://img.shields.io/badge/rules-3388-blue" alt="3388 bundled rules"></a>
 </p>
 
 Some CloudFormation constraints are not expressed in resource provider schemas — they live only in documentation, in service API validation, or across multiple properties. Templates that violate them pass `cdk synth`, pass CloudFormation pre-deployment validation, and then fail minutes into a deployment, burning a rollback cycle.
@@ -256,7 +256,7 @@ See [docs/rules.md](docs/rules.md) for the generated rule table.
 
 <!-- supported-resources:start -->
 <details>
-<summary><b>433 resource types across 79 services</b> — click to expand</summary>
+<summary><b>434 resource types across 80 services</b> — click to expand</summary>
 
 Resource names are relative to `AWS::<Service>::`; the number in parentheses is how many rules target that type.
 
@@ -286,6 +286,7 @@ Resource names are relative to `AWS::<Service>::`; the number in parentheses is 
 | **CodePipeline** | `CustomActionType` (3), `Pipeline` (25), `Webhook` (2) |
 | **Cognito** | `IdentityPool` (3), `IdentityPoolRoleAttachment` (7), `LogDeliveryConfiguration` (3), `ManagedLoginBranding` (2), `UserPool` (52), `UserPoolClient` (21), `UserPoolDomain` (7), `UserPoolGroup` (1), `UserPoolIdentityProvider` (11), `UserPoolResourceServer` (4), `UserPoolRiskConfigurationAttachment` (6), `UserPoolUICustomizationAttachment` (2) |
 | **Config** | `ConfigRule` (6), `ConfigurationAggregator` (2), `ConfigurationRecorder` (7), `ConformancePack` (1), `RemediationConfiguration` (2) |
+| **DirectoryService** | `MicrosoftAD` (5) |
 | **DocDB** | `DBCluster` (14), `DBInstance` (1), `DBSubnetGroup` (2), `EventSubscription` (1) |
 | **DocDBElastic** | `Cluster` (7) |
 | **DynamoDB** | `GlobalTable` (25), `Table` (28) |

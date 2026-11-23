@@ -1308,6 +1308,11 @@
 | `pf-config-rule-scope-resource-id-requires-single-type` | AWS::Config::ConfigRule | Scope.ComplianceResourceId needs exactly one ComplianceResourceTypes entry | ERROR | none |
 | `pf-config-rule-scope-tag-value-requires-tag-key` | AWS::Config::ConfigRule | Scope.TagValue is only read together with Scope.TagKey | ERROR | none |
 | `pf-config-rule-source-detail-frequency-requires-scheduled` | AWS::Config::ConfigRule | A SourceDetail's MaximumExecutionFrequency only applies to ScheduledNotification | ERROR | none |
+| `pf-ds-msad-password-no-admin` | AWS::DirectoryService::MicrosoftAD | AWS Managed Microsoft AD Admin password cannot include the word admin | ERROR | none |
+| `pf-ds-msad-subnet-in-vpc` | AWS::DirectoryService::MicrosoftAD | AWS Managed Microsoft AD subnets must belong to VpcSettings.VpcId | ERROR | none |
+| `pf-ds-msad-subnets-distinct-az` | AWS::DirectoryService::MicrosoftAD | AWS Managed Microsoft AD needs its two subnets in different Availability Zones | ERROR | none |
+| `pf-ds-msad-vpc-default-tenancy` | AWS::DirectoryService::MicrosoftAD | AWS Managed Microsoft AD needs a VPC with default instance tenancy | ERROR | none |
+| `pf-ds-msad-vpc-reserved-cidr` | AWS::DirectoryService::MicrosoftAD | AWS Managed Microsoft AD cannot be created in a VPC that uses 198.18.0.0/15 | ERROR | none |
 | `pf-docdb-backup-maintenance-overlap` | AWS::DocDB::DBCluster | The backup window and the maintenance window must not overlap | ERROR | none |
 | `pf-docdb-backup-window-duration` | AWS::DocDB::DBCluster | The backup window must be at least 30 minutes | ERROR | none |
 | `pf-docdb-backup-window-format` | AWS::DocDB::DBCluster | PreferredBackupWindow must be hh24:mi-hh24:mi | ERROR | none |
