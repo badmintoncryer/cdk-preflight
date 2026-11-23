@@ -8,6 +8,6 @@ constraintSource: https://docs.aws.amazon.com/transfer/latest/APIReference/API_P
 upstream: pending-engine
 repro:
   method: real-deploy
-  evidence: "bench 2026-11-16 us-east-1: PUBLIC SFTP server with SftpPort 1999 -> Invalid port value (Service: Transfer, Status Code: 400, HandlerErrorCode: InvalidRequest) (ROLLBACK_COMPLETE); pass SftpPort 2222 -> CREATE_COMPLETE"
+  evidence: "bench 2026-11-16 us-east-1: PUBLIC SFTP server with SftpPort 1999 -> Invalid port value (Service: Transfer, Status Code: 400, HandlerErrorCode: InvalidRequest) (ROLLBACK_COMPLETE); pass SftpPort 2222 -> CREATE_COMPLETE. bench 2026-11-23 us-east-1: 1999 -> Invalid port value (ROLLBACK_COMPLETE); pass 2000 -> CREATE_COMPLETE"
   expect: "Invalid port value"
 addedOn: 2026-11-23

@@ -11,8 +11,9 @@ violation contains make_diag_full("pf-ecs-trusted-exec-managed-instances-only", 
 	_pf_ecste_isolated(name)
 	rc := [it.value | some it in flatten_list(name, "Properties.RequiresCompatibilities")]
 	count(rc) > 0
-	every v in rc { is_string(v) }
-	not "MANAGED_INSTANCES" in rc
+	some v in rc
+	is_string(v)
+	v != "MANAGED_INSTANCES"
 }
 
 _pf_ecste_isolated(name) if {

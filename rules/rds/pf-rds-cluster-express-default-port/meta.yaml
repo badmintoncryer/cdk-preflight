@@ -8,6 +8,6 @@ constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateR
 upstream: pending-engine
 repro:
   method: real-deploy
-  evidence: "bench 2026-11-16 us-east-1: express aurora-postgresql cluster with Port 5433 -> Amazon RDS requires a default port value of 5432 for DB engine aurora-postgresql when Internet Access Gateway is enabled. Use the default port and try again. (Service: Rds, Status Code: 400, HandlerErrorCode: InvalidRequest) (ROLLBACK_COMPLETE); pass (Port 5432) not deployed for cost"
+  evidence: "bench 2026-11-16 us-east-1: express aurora-postgresql cluster with Port 5433 -> Amazon RDS requires a default port value of 5432 for DB engine aurora-postgresql when Internet Access Gateway is enabled. Use the default port and try again. (Service: Rds, Status Code: 400, HandlerErrorCode: InvalidRequest) (ROLLBACK_COMPLETE); pass (Port 5432) not deployed for cost bench 2026-11-23 us-east-1: CloudFormation's DBCluster handler returned Status Code 500 for every express template (fail and valid pass alike); the same settings sent straight to rds create-db-cluster --with-express-configuration were rejected synchronously with the same message, and the valid aurora-postgresql default-port cluster became available."
   expect: "Amazon RDS requires a default port value of 5432"
 addedOn: 2026-11-23

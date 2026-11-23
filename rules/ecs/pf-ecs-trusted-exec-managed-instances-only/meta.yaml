@@ -8,6 +8,6 @@ constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateR
 upstream: pending-engine
 repro:
   method: real-deploy
-  evidence: "TODO"
-  expect: "TODO"
+  evidence: "bench 2026-11-23 us-east-1: task definition with RequiresCompatibilities FARGATE and IsolationMode ISOLATED_SANDBOX -> Invalid request provided: Create TaskDefinition: trustedExecutionConfiguration with isolationMode ISOLATED_SANDBOX requires the requiresCompatibilities field to contain only MANAGED_INSTANCES, but found: [FARGATE]. (Service: AmazonECS; Status Code: 400; Error Code: ClientException) (HandlerErrorCode: InvalidRequest, ROLLBACK_COMPLETE); pass MANAGED_INSTANCES -> CREATE_COMPLETE"
+  expect: "requires the requiresCompatibilities field to contain only MANAGED_INSTANCES"
 addedOn: 2026-11-23
