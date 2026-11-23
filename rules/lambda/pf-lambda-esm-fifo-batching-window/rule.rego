@@ -20,9 +20,13 @@ _pf_lfbw_is_fifo(name) if {
 violation contains make_diag_full("pf-lambda-esm-fifo-batching-window", "ERROR", name,
 	"Properties.MaximumBatchingWindowInSeconds",
 	"Batching window on a FIFO queue source; the mapping create fails with \"Invalid request provided: Batching window is not supported for FIFO queues\"",
-	"Drop MaximumBatchingWindowInSeconds, or use a standard queue",
+	"Drop MaximumBatchingWindowInSeconds, use a standard queue, or use provisioned mode (ProvisionedPollerConfig)",
 	"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-lambda-eventsourcemapping.html") if {
 	some name in resources_of_type("AWS::Lambda::EventSourceMapping")
 	_pf_lfbw_is_fifo(name)
 	_pf_num(name, "Properties.MaximumBatchingWindowInSeconds") > 0
+	not _pf_lfbw_provisioned(name)
 }
+
+# Provisioned mode allows a FIFO batching window of up to 300 seconds (2026-11-20).
+_pf_lfbw_provisioned(name) if resolve(name, "Properties.ProvisionedPollerConfig") != null

@@ -1,0 +1,13 @@
+id: pf-transfer-sftp-ports-public-only
+service: transfer
+benchRegion: us-east-1
+resourceTypes: [AWS::Transfer::Server]
+severity: ERROR
+title: "SftpPorts is only for PUBLIC endpoints"
+constraintSource: https://docs.aws.amazon.com/transfer/latest/APIReference/API_ProtocolDetails.html
+upstream: pending-engine
+repro:
+  method: real-deploy
+  evidence: "bench 2026-11-16 us-east-1: VPC endpoint SFTP server with SftpPort 2222 -> SFTP custom ports unsupported for EndpointType: VPC (Service: Transfer, Status Code: 400, HandlerErrorCode: InvalidRequest) (ROLLBACK_COMPLETE); pass PUBLIC with SftpPort 2222 -> CREATE_COMPLETE"
+  expect: "SFTP custom ports unsupported for EndpointType"
+addedOn: 2026-11-23

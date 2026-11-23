@@ -1,0 +1,13 @@
+{
+ "AWSTemplateFormatVersion": "2010-09-09",
+ "Resources": {
+  "D": {
+   "Type": "AWS::RDS::DBCluster",
+   "Properties": {
+    "Engine": "aurora-postgresql",
+    "WithExpressConfiguration": true,
+    "Port": 5433
+   }
+  }
+ }
+}

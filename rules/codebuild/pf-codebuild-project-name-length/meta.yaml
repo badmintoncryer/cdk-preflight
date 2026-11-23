@@ -5,7 +5,11 @@ benchRegion: us-east-1
 severity: ERROR
 title: The project name stays within 150 characters
 constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-codebuild-project.html
-upstream: none
+upstream: retired
+supersededBy:
+  engine: 1.15.0
+  cdk: 2.278.0
+  engineRules: [F3031]
 repro:
   method: real-deploy
   evidence: "bench 2026-09-14 us-east-1: fail template (151-character Name) -> \"Project name length cannot be greater than 150 characters\" (ROLLBACK_COMPLETE); pass template (150-character Name) -> CREATE_COMPLETE. Only the upper bound is ruled on: the documented 2-character minimum cannot be reached through CreateProject, whose own parameter validation rejects a 1-character name before the service sees it."

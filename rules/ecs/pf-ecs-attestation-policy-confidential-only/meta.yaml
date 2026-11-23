@@ -1,0 +1,13 @@
+id: pf-ecs-attestation-policy-confidential-only
+service: ecs
+benchRegion: us-east-1
+resourceTypes: [AWS::ECS::TaskDefinition]
+severity: ERROR
+title: "AttestationPolicy is only for CONFIDENTIAL_SANDBOX"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-ecs-taskdefinition-trustedexecutionconfiguration.html
+upstream: pending-engine
+repro:
+  method: real-deploy
+  evidence: "bench 2026-11-23 us-east-1: IsolationMode ISOLATED_SANDBOX with AttestationPolicy -> Invalid request provided: Create TaskDefinition: Unsupported isolationMode value ISOLATED_SANDBOX for attestationPolicy (Service: AmazonECS; Status Code: 400; Error Code: ClientException) (HandlerErrorCode: InvalidRequest, ROLLBACK_COMPLETE); pass ISOLATED_SANDBOX without a policy -> CREATE_COMPLETE"
+  expect: "Unsupported isolationMode value ISOLATED_SANDBOX for attestationPolicy"
+addedOn: 2026-11-23

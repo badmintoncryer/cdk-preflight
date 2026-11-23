@@ -5,7 +5,11 @@ benchRegion: us-east-1
 severity: ERROR
 title: A project declares at most 12 secondary artifacts
 constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-codebuild-project.html
-upstream: none
+upstream: retired
+supersededBy:
+  engine: 1.15.0
+  cdk: 2.278.0
+  engineRules: [F3032]
 repro:
   method: real-deploy
   evidence: "bench 2026-09-14 us-east-1: fail template (13 SecondaryArtifacts entries) -> \"Invalid input: the maximum number of artifact definitions in secondaryArtifacts is 12\" (ROLLBACK_COMPLETE); pass template (12 entries) -> CREATE_COMPLETE."

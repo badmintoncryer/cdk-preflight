@@ -5,7 +5,7 @@ import rego.v1
 # Cross-resource: only fires when the referenced placement group is in
 # the template with Strategy cluster. A literal (pre-existing) group
 # name carries no strategy information and stays silent.
-_pf_ec2pgb_burstable(fam) if fam in {"t2", "t3", "t3a", "t4g"}
+_pf_ec2pgb_burstable(fam) if regex.match(`^t[0-9]+[a-z]*$`, fam)
 
 violation contains make_diag_full("pf-ec2-pg-cluster-burstable", "ERROR", name,
 	"Properties.InstanceType",
