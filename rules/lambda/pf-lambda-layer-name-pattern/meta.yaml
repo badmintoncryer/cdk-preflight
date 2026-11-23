@@ -5,7 +5,11 @@ severity: ERROR
 title: "A layer name is letters, digits, dashes and underscores"
 constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-lambda-layerversion.html
 benchRegion: us-east-1
-upstream: none
+upstream: retired
+supersededBy:
+  engine: 1.17.1
+  cdk: 2.278.0
+  engineRules: [F3031]
 repro:
   method: real-deploy
   evidence: 'PublishLayerVersion (us-east-1, 2026-09-07): "1 validation error detected: Value ''cdkpf.layer'' at ''layerName'' failed to satisfy constraint: Member must satisfy regular expression pattern: (arn:(aws[a-zA-Z-]*)?:lambda:(eusc-)?[a-z]{2}((-gov)|(-iso([a-z]?)))?-[a-z]+-\d{1}:\d{12}:layer:[a-zA-Z0-9-_]+)|[a-zA-Z0-9-_]+"'
