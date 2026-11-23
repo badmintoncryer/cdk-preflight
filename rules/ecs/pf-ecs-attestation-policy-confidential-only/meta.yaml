@@ -1,0 +1,13 @@
+id: pf-ecs-attestation-policy-confidential-only
+service: ecs
+benchRegion: us-east-1
+resourceTypes: [AWS::ECS::TaskDefinition]
+severity: ERROR
+title: "AttestationPolicy is only for CONFIDENTIAL_SANDBOX"
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-ecs-taskdefinition-trustedexecutionconfiguration.html
+upstream: pending-engine
+repro:
+  method: real-deploy
+  evidence: "TODO"
+  expect: "TODO"
+addedOn: 2026-11-23
