@@ -12,7 +12,7 @@
   <a href="https://github.com/badmintoncryer/cdk-preflight/actions/workflows/monthly-verify.yml"><img src="https://github.com/badmintoncryer/cdk-preflight/actions/workflows/monthly-verify.yml/badge.svg" alt="monthly real-deploy verification"></a>
   <a href="https://www.npmjs.com/package/cdk-preflight"><img src="https://img.shields.io/npm/v/cdk-preflight.svg" alt="npm version"></a>
   <a href="https://www.npmjs.com/package/cdk-preflight"><img src="https://img.shields.io/npm/dt/cdk-preflight.svg" alt="npm total downloads"></a>
-  <a href="docs/rules.md"><img src="https://img.shields.io/badge/rules-3376-blue" alt="3376 bundled rules"></a>
+  <a href="docs/rules.md"><img src="https://img.shields.io/badge/rules-3383-blue" alt="3383 bundled rules"></a>
 </p>
 
 Some CloudFormation constraints are not expressed in resource provider schemas — they live only in documentation, in service API validation, or across multiple properties. Templates that violate them pass `cdk synth`, pass CloudFormation pre-deployment validation, and then fail minutes into a deployment, burning a rollback cycle.
@@ -256,7 +256,7 @@ See [docs/rules.md](docs/rules.md) for the generated rule table.
 
 <!-- supported-resources:start -->
 <details>
-<summary><b>432 resource types across 78 services</b> — click to expand</summary>
+<summary><b>433 resource types across 79 services</b> — click to expand</summary>
 
 Resource names are relative to `AWS::<Service>::`; the number in parentheses is how many rules target that type.
 
@@ -291,7 +291,7 @@ Resource names are relative to `AWS::<Service>::`; the number in parentheses is 
 | **DynamoDB** | `GlobalTable` (25), `Table` (28) |
 | **EC2** | `ClientVpnAuthorizationRule` (1), `ClientVpnEndpoint` (6), `DHCPOptions` (2), `EIPAssociation` (1), `FlowLog` (4), `Instance` (10), `KeyPair` (1), `LaunchTemplate` (12), `NatGateway` (2), `NetworkAclEntry` (1), `NetworkInterface` (2), `PlacementGroup` (3), `PrefixList` (3), `Route` (1), `SecurityGroup` (7), `SecurityGroupEgress` (5), `SecurityGroupIngress` (5), `Subnet` (14), `TrafficMirrorTarget` (1), `TransitGateway` (2), `TransitGatewayRoute` (1), `Volume` (6), `VPC` (2), `VPCCidrBlock` (1), `VPCEndpoint` (4), `VPCGatewayAttachment` (1), `VPNConnection` (5) |
 | **ECR** | `PullThroughCacheRule` (3), `RegistryScanningConfiguration` (1), `ReplicationConfiguration` (1), `Repository` (7), `RepositoryCreationTemplate` (8), `SigningConfiguration` (1) |
-| **ECS** | `CapacityProvider` (3), `Cluster` (5), `Service` (39), `TaskDefinition` (68), `TaskSet` (2) |
+| **ECS** | `CapacityProvider` (3), `Cluster` (5), `Service` (39), `TaskDefinition` (70), `TaskSet` (2) |
 | **EFS** | `AccessPoint` (1), `FileSystem` (7), `MountTarget` (4) |
 | **EKS** | `AccessEntry` (14), `Addon` (5), `Cluster` (26), `FargateProfile` (5), `IdentityProviderConfig` (3), `Nodegroup` (21), `PodIdentityAssociation` (5) |
 | **ElastiCache** | `CacheCluster` (9), `ReplicationGroup` (14), `ServerlessCache` (2), `User` (2), `UserGroup` (1) |
@@ -308,7 +308,7 @@ Resource names are relative to `AWS::<Service>::`; the number in parentheses is 
 | **KinesisAnalyticsV2** | `Application` (20), `ApplicationCloudWatchLoggingOption` (1), `ApplicationOutput` (1), `ApplicationReferenceDataSource` (1) |
 | **KinesisFirehose** | `DeliveryStream` (68) |
 | **KMS** | `Alias` (2), `Key` (12), `ReplicaKey` (4) |
-| **Lambda** | `Alias` (7), `CodeSigningConfig` (1), `EventInvokeConfig` (5), `EventSourceMapping` (54), `Function` (50), `LayerVersion` (8), `LayerVersionPermission` (3), `Permission` (8), `Url` (8), `Version` (1) |
+| **Lambda** | `Alias` (7), `CodeSigningConfig` (1), `EventInvokeConfig` (5), `EventSourceMapping` (54), `Function` (51), `LayerVersion` (8), `LayerVersionPermission` (3), `Permission` (8), `Url` (8), `Version` (1) |
 | **Logs** | `AccountPolicy` (6), `DeliveryDestination` (3), `Destination` (1), `LogAnomalyDetector` (2), `LogGroup` (10), `MetricFilter` (7), `QueryDefinition` (1), `ResourcePolicy` (1), `SubscriptionFilter` (6), `Transformer` (3) |
 | **MediaConvert** | `JobTemplate` (9), `Preset` (32), `Queue` (2) |
 | **MemoryDB** | `Cluster` (8), `User` (1) |
@@ -319,7 +319,7 @@ Resource names are relative to `AWS::<Service>::`; the number in parentheses is 
 | **OpenSearchServerless** | `AccessPolicy` (7), `Collection` (2), `CollectionGroup` (3), `LifecyclePolicy` (4), `SecurityConfig` (5), `SecurityPolicy` (14) |
 | **OpenSearchService** | `Domain` (65) |
 | **Pipes** | `Pipe` (9) |
-| **RDS** | `DBCluster` (19), `DBInstance` (33), `DBParameterGroup` (2), `DBProxy` (4), `DBProxyTargetGroup` (2), `DBShardGroup` (1), `DBSubnetGroup` (3), `EventSubscription` (3), `OptionGroup` (1) |
+| **RDS** | `DBCluster` (21), `DBInstance` (33), `DBParameterGroup` (2), `DBProxy` (4), `DBProxyTargetGroup` (2), `DBShardGroup` (1), `DBSubnetGroup` (3), `EventSubscription` (3), `OptionGroup` (1) |
 | **Redshift** | `Cluster` (20), `EventSubscription` (1), `ScheduledAction` (2) |
 | **RedshiftServerless** | `Namespace` (5), `Workgroup` (6) |
 | **Route53** | `CidrCollection` (11), `DNSSEC` (3), `HealthCheck` (30), `HostedZone` (14), `KeySigningKey` (9), `RecordSet` (74), `RecordSetGroup` (76) |
@@ -336,6 +336,7 @@ Resource names are relative to `AWS::<Service>::`; the number in parentheses is 
 | **SSM** | `Association` (4), `Document` (3), `MaintenanceWindow` (2), `MaintenanceWindowTarget` (1), `MaintenanceWindowTask` (1), `Parameter` (5) |
 | **StepFunctions** | `Activity` (3), `StateMachine` (26) |
 | **Synthetics** | `Canary` (16) |
+| **Transfer** | `Server` (2) |
 | **VerifiedPermissions** | `IdentitySource` (3), `Policy` (26), `PolicyStore` (23), `PolicyStoreAlias` (1), `PolicyTemplate` (29) |
 | **VpcLattice** | `AccessLogSubscription` (3), `AuthPolicy` (3), `DomainVerification` (1), `Listener` (12), `ResourceConfiguration` (30), `ResourceGateway` (6), `ResourcePolicy` (1), `Rule` (7), `Service` (2), `ServiceNetwork` (1), `ServiceNetworkResourceAssociation` (3), `ServiceNetworkServiceAssociation` (3), `ServiceNetworkVpcAssociation` (8), `TargetGroup` (14) |
 | **WAFv2** | `IPSet` (3), `LoggingConfiguration` (3), `RegexPatternSet` (3), `RuleGroup` (18), `WebACL` (23), `WebACLAssociation` (2) |

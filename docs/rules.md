@@ -1079,18 +1079,18 @@
 | `pf-codebuild-local-source-cache-needs-source` | AWS::CodeBuild::Project | LOCAL_SOURCE_CACHE goes with a project that has a source | ERROR | none |
 | `pf-codebuild-logs-s3-requires-location` | AWS::CodeBuild::Project | Enabled S3 build logs name the bucket and prefix | ERROR | none |
 | `pf-codebuild-privileged-mode-not-on-windows` | AWS::CodeBuild::Project | PrivilegedMode is not set on a Windows environment | ERROR | none |
-| `pf-codebuild-project-description-length` | AWS::CodeBuild::Project | The project description stays within 255 characters | ERROR | none |
-| `pf-codebuild-project-name-length` | AWS::CodeBuild::Project | The project name stays within 150 characters | ERROR | none |
+| `pf-codebuild-project-description-length` | AWS::CodeBuild::Project | The project description stays within 255 characters | ERROR | retired: engine F3033 covers it from aws-cdk-lib 2.278.0 |
+| `pf-codebuild-project-name-length` | AWS::CodeBuild::Project | The project name stays within 150 characters | ERROR | retired: engine F3031 covers it from aws-cdk-lib 2.278.0 |
 | `pf-codebuild-report-build-status-provider` | AWS::CodeBuild::Project | ReportBuildStatus is only set on a source provider that reports status | ERROR | none |
 | `pf-codebuild-reportgroup-no-export-forbids-destination` | AWS::CodeBuild::ReportGroup | A NO_EXPORT report group carries no S3 destination | ERROR | none |
 | `pf-codebuild-reportgroup-s3-export-requires-destination` | AWS::CodeBuild::ReportGroup | An S3 report group names its destination | ERROR | none |
 | `pf-codebuild-secondary-artifact-identifier-unique` | AWS::CodeBuild::Project | Secondary artifact identifiers are unique within a project | ERROR | none |
 | `pf-codebuild-secondary-artifacts-identifier-required` | AWS::CodeBuild::Project | Every secondary artifact carries an ArtifactIdentifier | ERROR | none |
-| `pf-codebuild-secondary-artifacts-max-12` | AWS::CodeBuild::Project | A project declares at most 12 secondary artifacts | ERROR | none |
+| `pf-codebuild-secondary-artifacts-max-12` | AWS::CodeBuild::Project | A project declares at most 12 secondary artifacts | ERROR | retired: engine F3032 covers it from aws-cdk-lib 2.278.0 |
 | `pf-codebuild-secondary-artifacts-s3-only` | AWS::CodeBuild::Project | Secondary artifacts publish to S3 | ERROR | none |
 | `pf-codebuild-secondary-source-identifier-unique` | AWS::CodeBuild::Project | Secondary source identifiers are unique within a project | ERROR | none |
 | `pf-codebuild-secondary-sources-identifier-required` | AWS::CodeBuild::Project | Every secondary source carries a SourceIdentifier | ERROR | none |
-| `pf-codebuild-secondary-sources-max-12` | AWS::CodeBuild::Project | A project declares at most 12 secondary sources | ERROR | none |
+| `pf-codebuild-secondary-sources-max-12` | AWS::CodeBuild::Project | A project declares at most 12 secondary sources | ERROR | retired: engine F3032 covers it from aws-cdk-lib 2.278.0 |
 | `pf-codebuild-source-codepipeline-requires-artifacts-codepipeline` | AWS::CodeBuild::Project | The CODEPIPELINE source and artifact types are set together | ERROR | none |
 | `pf-codebuild-source-location-required` | AWS::CodeBuild::Project | Every source that lives outside CodeBuild carries a Location | ERROR | none |
 | `pf-codebuild-source-no-source-no-location` | AWS::CodeBuild::Project | A NO_SOURCE project carries no Source.Location | ERROR | none |
@@ -1099,8 +1099,8 @@
 | `pf-codebuild-sourcecredential-codeconnections-arn` | AWS::CodeBuild::SourceCredential | A CODECONNECTIONS credential carries a connection ARN as its Token | ERROR | none |
 | `pf-codebuild-sourcecredential-oauth-not-supported` | AWS::CodeBuild::SourceCredential | OAUTH source credentials are not imported through CloudFormation | ERROR | none |
 | `pf-codebuild-sourcecredential-one-per-server-type` | AWS::CodeBuild::SourceCredential | One source credential per server type per Region | ERROR | none |
-| `pf-codebuild-vpc-security-groups-max-5` | AWS::CodeBuild::Project | VpcConfig names at most 5 security groups | ERROR | cfn-schema |
-| `pf-codebuild-vpc-subnets-max-16` | AWS::CodeBuild::Project | VpcConfig names at most 16 subnets | ERROR | cfn-schema |
+| `pf-codebuild-vpc-security-groups-max-5` | AWS::CodeBuild::Project | VpcConfig names at most 5 security groups | ERROR | retired: engine F3032 covers it from aws-cdk-lib 2.278.0 |
+| `pf-codebuild-vpc-subnets-max-16` | AWS::CodeBuild::Project | VpcConfig names at most 16 subnets | ERROR | retired: engine F3032 covers it from aws-cdk-lib 2.278.0 |
 | `pf-codecommit-code-branch-name-valid` | AWS::CodeCommit::Repository | Code.BranchName must be a valid Git branch name | ERROR | none |
 | `pf-codecommit-kms-key-region` | AWS::CodeCommit::Repository | KmsKeyId must name a KMS key in the repository's Region | ERROR | none |
 | `pf-codecommit-trigger-branch-name-valid` | AWS::CodeCommit::Repository | Trigger branch names must be valid Git branch names | ERROR | none |
@@ -1470,6 +1470,7 @@
 | `pf-ecr-replication-destination` | AWS::ECR::ReplicationConfiguration | A replication destination must be another registry: not the deploy account in the deploy region, and not another partition | ERROR | none |
 | `pf-ecr-repository-creation-template-applied-for` | AWS::ECR::RepositoryCreationTemplate | AppliedFor accepts REPLICATION, PULL_THROUGH_CACHE and CREATE_ON_PUSH only | ERROR | cfn-schema |
 | `pf-ecr-signing-profile-region` | AWS::ECR::SigningConfiguration | A signing profile ARN must be in the same region as the registry | ERROR | none |
+| `pf-ecs-attestation-policy-confidential-only` | AWS::ECS::TaskDefinition | AttestationPolicy is only for CONFIDENTIAL_SANDBOX | ERROR | pending-engine |
 | `pf-ecs-awsfirelens-without-router` | AWS::ECS::TaskDefinition | The awsfirelens log driver requires a FireLens router container | ERROR | none |
 | `pf-ecs-awslogs-fargate-missing-stream-prefix` | AWS::ECS::TaskDefinition | awslogs on Fargate requires the awslogs-stream-prefix option | ERROR | none |
 | `pf-ecs-awslogs-missing-group` | AWS::ECS::TaskDefinition | The awslogs log driver requires the awslogs-group option | ERROR | none |
@@ -1580,6 +1581,7 @@
 | `pf-ecs-taskdef-family` | AWS::ECS::TaskDefinition | Task definition Family allows only letters, numbers, hyphen and underscore | ERROR | none |
 | `pf-ecs-taskset-lb-container-missing` | AWS::ECS::TaskSet | TaskSet LoadBalancers.ContainerName must name a container of the task definition | ERROR | none |
 | `pf-ecs-taskset-platform-version-ec2` | AWS::ECS::TaskSet | TaskSet PlatformVersion is not allowed with the EC2 launch type | ERROR | none |
+| `pf-ecs-trusted-exec-managed-instances-only` | AWS::ECS::TaskDefinition | TrustedExecutionConfiguration is only for Managed Instances | ERROR | pending-engine |
 | `pf-ecs-ulimit-soft-over-hard` | AWS::ECS::TaskDefinition | A Ulimit SoftLimit must not exceed its HardLimit | ERROR | none |
 | `pf-ecs-volume-not-referenced` | AWS::ECS::TaskDefinition | Every task definition volume must be mounted by a container | ERROR | none |
 | `pf-ecs-volumesfrom-source-container-missing` | AWS::ECS::TaskDefinition | VolumesFrom.SourceContainer must name a container of the task definition | ERROR | none |
@@ -2182,7 +2184,7 @@
 | `pf-kinesisanalytics-runtime-deprecated` | AWS::KinesisAnalyticsV2::Application | Deprecated runtime environments can no longer be created | ERROR | none |
 | `pf-kinesisanalytics-service-role-account` | AWS::KinesisAnalyticsV2::Application | ServiceExecutionRole must belong to the deploying account | ERROR | none |
 | `pf-kinesisanalytics-snapshot-runtime` | AWS::KinesisAnalyticsV2::Application | ApplicationSnapshotConfiguration is not applicable to Studio runtimes | ERROR | none |
-| `pf-kinesisanalytics-sql-configuration-runtime` | AWS::KinesisAnalyticsV2::Application | SqlApplicationConfiguration belongs to the SQL runtime only | ERROR | cfn-schema |
+| `pf-kinesisanalytics-sql-configuration-runtime` | AWS::KinesisAnalyticsV2::Application | SqlApplicationConfiguration belongs to the SQL runtime only | ERROR | retired: engine F3002 covers it from aws-cdk-lib 2.278.0 |
 | `pf-kinesisanalytics-sql-only-resource` | AWS::KinesisAnalyticsV2::ApplicationOutput<br>AWS::KinesisAnalyticsV2::ApplicationReferenceDataSource | Outputs and reference data sources need a SQL application | ERROR | none |
 | `pf-kinesisanalytics-sql-runtime-unsupported` | AWS::KinesisAnalyticsV2::Application | SQL applications can no longer be created | ERROR | none |
 | `pf-kinesisanalytics-system-rollback-runtime` | AWS::KinesisAnalyticsV2::Application | ApplicationSystemRollbackConfiguration is not applicable to Studio runtimes | ERROR | none |
@@ -2198,6 +2200,7 @@
 | `pf-kms-key-spec-region` | AWS::KMS::Key | KeySpec SM2 exists only in China regions | ERROR | none |
 | `pf-kms-key-spec-usage` | AWS::KMS::Key | KeyUsage must match KeySpec (symmetric: ENCRYPT_DECRYPT, HMAC: GENERATE_VERIFY_MAC, RSA: ENCRYPT_DECRYPT\|SIGN_VERIFY, NIST ECC: SIGN_VERIFY\|KEY_AGREEMENT, ed25519/secp256k1/ML-DSA: SIGN_VERIFY) and is required for every non-symmetric key | ERROR | none |
 | `pf-kms-replica-primary-arn` | AWS::KMS::ReplicaKey | ReplicaKey.PrimaryKeyArn must be the ARN of a multi-Region primary key (key/mrk-...) in a different region of the same partition, so a primary key in the same stack can never be replicated by it | ERROR | none |
+| `pf-lambda-accelerator-requires-capacity-provider` | AWS::Lambda::Function | AcceleratorConfig needs CapacityProviderConfig | ERROR | pending-engine |
 | `pf-lambda-alias-additional-version-distinct` | AWS::Lambda::Alias | A weighted alias must route to a different version | ERROR | none |
 | `pf-lambda-alias-additional-version-not-latest` | AWS::Lambda::Alias | A routing entry cannot name $LATEST | ERROR | none |
 | `pf-lambda-alias-additional-versions-max-one` | AWS::Lambda::Alias | An alias can carry only one additional version | ERROR | none |
@@ -2291,7 +2294,7 @@
 | `pf-lambda-layer-compatible-runtimes-enum` | AWS::Lambda::LayerVersion | CompatibleRuntimes are known runtime identifiers | ERROR | pending-engine |
 | `pf-lambda-layer-content-storage-mode-enum` | AWS::Lambda::LayerVersion | S3ObjectStorageMode is COPY or REFERENCE | ERROR | pending-engine |
 | `pf-lambda-layer-cross-account-needs-permission` | AWS::Lambda::Function | A cross-account layer needs a share | WARN | none |
-| `pf-lambda-layer-name-pattern` | AWS::Lambda::LayerVersion | A layer name is letters, digits, dashes and underscores | ERROR | none |
+| `pf-lambda-layer-name-pattern` | AWS::Lambda::LayerVersion | A layer name is letters, digits, dashes and underscores | ERROR | retired: engine F3031 covers it from aws-cdk-lib 2.278.0 |
 | `pf-lambda-layer-reference-glacier-storage-class` | AWS::Lambda::LayerVersion | REFERENCE content cannot be archived | WARN | none |
 | `pf-lambda-layer-reference-needs-bucket-policy` | AWS::Lambda::LayerVersion | REFERENCE content needs a bucket policy for Lambda | WARN | none |
 | `pf-lambda-layer-reference-needs-object-version` | AWS::Lambda::LayerVersion | REFERENCE content needs an object version | ERROR | none |
@@ -2635,6 +2638,8 @@
 | `pf-rds-character-set-engine` | AWS::RDS::DBInstance | CharacterSetName is only accepted by Oracle engines | ERROR | none |
 | `pf-rds-cluster-allocated-storage-aurora` | AWS::RDS::DBCluster | AllocatedStorage is only for Multi-AZ DB clusters, not Aurora | ERROR | none |
 | `pf-rds-cluster-az-count` | AWS::RDS::DBCluster | AvailabilityZones accepts at most 3 zones | ERROR | none |
+| `pf-rds-cluster-express-default-port` | AWS::RDS::DBCluster | An express cluster keeps the default port 5432 | ERROR | pending-engine |
+| `pf-rds-cluster-express-postgresql-only` | AWS::RDS::DBCluster | WithExpressConfiguration is only for aurora-postgresql | ERROR | pending-engine |
 | `pf-rds-cluster-instance-class-aurora` | AWS::RDS::DBCluster | DBClusterInstanceClass is only for Multi-AZ DB clusters, not Aurora | ERROR | none |
 | `pf-rds-cluster-logs-exports-engine` | AWS::RDS::DBCluster | Cluster EnableCloudwatchLogsExports values depend on the Aurora engine | ERROR | none |
 | `pf-rds-cluster-port-range` | AWS::RDS::DBCluster | DBCluster Port must be between 1150 and 65535 | ERROR | none |
@@ -3194,6 +3199,8 @@
 | `pf-synthetics-canary-timeout-within-schedule` | AWS::Synthetics::Canary | A canary's run timeout cannot exceed its own run frequency | ERROR | none |
 | `pf-tags-aws-prefix` | * | Tag keys may not use the reserved aws: prefix | ERROR | none |
 | `pf-tags-count-max` | * | A resource may carry at most 50 tags | ERROR | none |
+| `pf-transfer-sftp-port-range` | AWS::Transfer::Server | SftpPort is 22 or 2000-65535 | ERROR | pending-engine |
+| `pf-transfer-sftp-ports-public-only` | AWS::Transfer::Server | SftpPorts is only for PUBLIC endpoints | ERROR | pending-engine |
 | `pf-avp-alias-name-prefix` | AWS::VerifiedPermissions::PolicyStoreAlias | AliasName starts with policy-store-alias/ | ERROR | none |
 | `pf-avp-identity-source-one-per-policy-store` | AWS::VerifiedPermissions::IdentitySource | A policy store has at most one identity source | ERROR | none |
 | `pf-avp-oidc-issuer-no-query-or-fragment` | AWS::VerifiedPermissions::IdentitySource | An OIDC Issuer carries no query string or fragment | ERROR | none |
