@@ -1,0 +1,36 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Resources": {
+    "AdSecret": {
+      "Type": "AWS::SecretsManager::Secret",
+      "Properties": {
+        "SecretString": "{\"CUSTOMER_MANAGED_ACTIVE_DIRECTORY_USERNAME\": \"svc-rds\", \"CUSTOMER_MANAGED_ACTIVE_DIRECTORY_PASSWORD\": \"Passw0rd#2026\"}"
+      }
+    },
+    "Db": {
+      "Type": "AWS::RDS::DBInstance",
+      "DeletionPolicy": "Delete",
+      "Properties": {
+        "Engine": "sqlserver-ex",
+        "DBInstanceClass": "db.t3.small",
+        "AllocatedStorage": "20",
+        "MasterUsername": "cdkpfmaster",
+        "MasterUserPassword": "Passw0rd#2026",
+        "BackupRetentionPeriod": 0,
+        "DeletionProtection": false,
+        "LicenseModel": "license-included",
+        "Domain": "d-9066000000",
+        "DomainIAMRoleName": "rds-directoryservice-access-role",
+        "DomainFqdn": "corp.cdkpfverify.com",
+        "DomainOu": "OU=RDS,DC=corp,DC=cdkpfverify,DC=com",
+        "DomainAuthSecretArn": {
+          "Ref": "AdSecret"
+        },
+        "DomainDnsIps": [
+          "10.71.0.10",
+          "10.71.0.11"
+        ]
+      }
+    }
+  }
+}

@@ -1,0 +1,13 @@
+id: pf-rds-domain-fqdn-exclusive
+service: rds
+benchRegion: us-east-1
+resourceTypes: [AWS::RDS::DBInstance]
+severity: ERROR
+title: RDS Domain (AWS Managed AD) and DomainFqdn (self-managed AD) cannot be combined
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-rds-dbinstance.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-11-24 us-east-1: PENDING placeholder awaiting gate -> ROLLBACK_COMPLETE"
+  expect: "PENDING placeholder awaiting gate"
+addedOn: 2026-11-24

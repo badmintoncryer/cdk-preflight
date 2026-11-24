@@ -1,0 +1,13 @@
+id: pf-fsx-windows-ad-fqdn-max-47
+service: fsx
+benchRegion: us-east-1
+resourceTypes: [AWS::FSx::FileSystem]
+severity: ERROR
+title: FSx for Windows Single-AZ 2 and Multi-AZ need an AD FQDN of at most 47 characters
+constraintSource: https://docs.aws.amazon.com/fsx/latest/WindowsGuide/fsx-aws-managed-ad.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-11-24 us-east-1: PENDING placeholder awaiting gate -> ROLLBACK_COMPLETE"
+  expect: "PENDING placeholder awaiting gate"
+addedOn: 2026-11-24
