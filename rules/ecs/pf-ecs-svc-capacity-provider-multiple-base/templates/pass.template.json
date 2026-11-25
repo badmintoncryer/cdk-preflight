@@ -27,6 +27,7 @@
           },
           {
             "CapacityProvider": "FARGATE_SPOT",
+            "Base": 0,
             "Weight": 1
           }
         ]
