@@ -59,7 +59,7 @@ export const claimKey = (type: string, p: string) => `${type}.${p.split('.').map
  * 省略したらルールが鳴る（＝「省略すると落ちる」と主張している）プロパティを全部出す。
  * meta.omissionFails に書いてあるものも含めて返す（突き合わせは呼び出し側）。
  */
-export function omissionClaims(filters: string[] = []): OmissionClaim[] {
+export function omissionClaims(filters: string[] = [], onClaim?: (c: OmissionClaim, mutant: unknown) => void): OmissionClaim[] {
   const rules = BUNDLED_RULES.filter((r) => !filters.length || filters.some((f) => r.id === f || r.service === f));
   const services = [...new Set(rules.map((r) => r.service))];
   const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'cdkpf-omit-'));
@@ -92,7 +92,11 @@ export function omissionClaims(filters: string[] = []): OmissionClaim[] {
           }).diagnostics ?? []) as Diagnostic[];
           // 必須プロパティを抜いた（エンジンのスキーマ検査が止める）変異体は、エンジンの持ち場
           if (ds.some((d) => d.source !== 'CUSTOM' && (d.severity === 'ERROR' || d.severity === 'FATAL'))) continue;
-          if (ds.some((d) => d.source === 'CUSTOM' && d.ruleId === rule.id)) out.set(`${rule.id} ${key}`, { rule: rule.id, key });
+          if (ds.some((d) => d.source === 'CUSTOM' && d.ruleId === rule.id)) {
+            const c = { rule: rule.id, key };
+            out.set(`${rule.id} ${key}`, c);
+            onClaim?.(c, mutant);
+          }
         }
       }
     }
@@ -135,7 +139,42 @@ export function omissionProblems(claims: OmissionClaim[], declared: Set<string>,
   return problems;
 }
 
+/**
+ * 実測用に、主張ごとのルールの写しを書き出す: <out>/<service>/<rule>--<n>/ に meta.yaml（repro.expect を外したもの）、
+ * pass テンプレート、fail テンプレート = 変異体。bench/verify-rule.sh を CDKPF_RULES_DIR=<out> で
+ * <rule>--<n> --fail-only と回すと、exit 0（落ちた: 主張は正しい）か 2（通った: 省略を値と読んでいる）が出る。
+ * 対応表は <out>/claims.tsv（copy-id, rule-id, key）。
+ */
+export function emitMutants(out: string, filters: string[]): OmissionClaim[] {
+  const rows: string[] = [];
+  const n = new Map<string, number>();
+  const claims = omissionClaims(filters, (c, mutant) => {
+    const rule = BUNDLED_RULES.find((r) => r.id === c.rule)!;
+    const i = (n.get(c.rule) ?? 0) + 1;
+    n.set(c.rule, i);
+    const copy = `${c.rule}--${i}`;
+    const src = path.join(ROOT, 'rules', rule.service, rule.id);
+    const dst = path.join(out, rule.service, copy);
+    fs.mkdirSync(path.join(dst, 'templates'), { recursive: true });
+    const meta = fs.readFileSync(path.join(src, 'meta.yaml'), 'utf8').split('\n').filter((l) => !/^\s+expect:/.test(l)).join('\n');
+    fs.writeFileSync(path.join(dst, 'meta.yaml'), meta);
+    fs.copyFileSync(path.join(src, 'templates', 'pass.template.json'), path.join(dst, 'templates', 'pass.template.json'));
+    fs.writeFileSync(path.join(dst, 'templates', 'fail.template.json'), JSON.stringify(mutant, null, 2));
+    rows.push(`${copy}\t${c.rule}\t${c.key}`);
+  });
+  fs.writeFileSync(path.join(out, 'claims.tsv'), rows.join('\n') + '\n');
+  return claims;
+}
+
 if (require.main === module) {
+  const emitAt = process.argv.indexOf('--emit-mutants');
+  if (emitAt >= 0) {
+    const out = path.resolve(process.argv[emitAt + 1]);
+    const ids = process.argv.slice(2).filter((a, i) => !a.startsWith('--') && i !== emitAt - 1);
+    const claims = emitMutants(out, ids);
+    console.error(`-- wrote ${claims.length} mutants to ${out} (claims.tsv)`);
+    process.exit(0);
+  }
   const write = process.argv.includes('--write-baseline');
   const filters = process.argv.slice(2).filter((a) => !a.startsWith('--'));
   const claims = omissionClaims(filters);
