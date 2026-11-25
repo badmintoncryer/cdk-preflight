@@ -470,6 +470,46 @@ describe('deploy_region rules', () => {
     };
     expect(ids(diagnoseTemplate(t, 'ap-northeast-1'))).toHaveLength(0);
   });
+
+  /**
+   * issue #395: Cognito が受け付ける SES のリージョンはプールのリージョンで決まる
+   * （開発者ガイド "Amazon SES email configuration Regions" の表）。プールと同じリージョンの
+   * SES は使えるので、固定の 3 リージョンだけで判定すると in-Region の構成を誤検知する。
+   */
+  describe('pf-cognito-email-sourcearn-region follows the pool Region (#395)', () => {
+    const RULE = 'pf-cognito-email-sourcearn-region';
+    const pool = (sourceArn: unknown) => ({
+      Resources: {
+        Pool: {
+          Type: 'AWS::Cognito::UserPool',
+          Properties: { EmailConfiguration: { EmailSendingAccount: 'DEVELOPER', From: 'noreply@example.com', SourceArn: sourceArn } },
+        },
+      },
+    });
+    // UserPoolEmail.withSES が合成する形
+    const cdkArn = (region: string) => ({
+      'Fn::Join': ['', ['arn:', { Ref: 'AWS::Partition' }, `:ses:${region}:123456789012:identity/example.com`]],
+    });
+
+    test('stays silent on an SES identity in the pool Region', () => {
+      expect(ids(diagnoseTemplate(pool(cdkArn('ap-northeast-1')), 'ap-northeast-1'))).not.toContain(RULE);
+      expect(ids(diagnoseTemplate(pool(cdkArn('us-west-1')), 'us-west-1'))).not.toContain(RULE);
+    });
+
+    test('stays silent on a documented alternate Region and on a wildcard Region', () => {
+      expect(ids(diagnoseTemplate(pool(cdkArn('eu-central-1')), 'me-central-1'))).not.toContain(RULE);
+      expect(ids(diagnoseTemplate(pool('arn:aws:ses:*:123456789012:identity/example.com'), 'ap-east-1'))).not.toContain(RULE);
+    });
+
+    test('stays silent when the deploy Region is unknown', () => {
+      expect(ids(diagnoseTemplate(pool('arn:aws:ses:ap-northeast-1:123456789012:identity/example.com')))).not.toContain(RULE);
+    });
+
+    test('still fires on an identity in a Region the pool Region cannot use', () => {
+      expect(ids(diagnoseTemplate(pool(cdkArn('ap-northeast-1')), 'us-east-1'))).toContain(RULE);
+      expect(ids(diagnoseTemplate(pool(cdkArn('ap-southeast-2')), 'ap-northeast-1'))).toContain(RULE);
+    });
+  });
 });
 
 describe('ecs task definition rules', () => {
