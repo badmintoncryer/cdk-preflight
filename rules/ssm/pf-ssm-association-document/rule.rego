@@ -148,7 +148,12 @@ violation contains make_diag_full("pf-ssm-association-document", "ERROR", name,
 	object.get(def, "default", "__pf_absent") == "__pf_absent"
 	given := object.get(_pf_ssmad_props(name), "Parameters", {})
 	not _pf_ssmad_given(given, k)
+	not _pf_ssmad_target_param(name, k)
 }
+
+# An Automation association with AutomationTargetParameterName fills that parameter from each
+# target (rate-controlled execution), and the parameter must not be passed in Parameters (#410).
+_pf_ssmad_target_param(name, k) if resolve(name, "Properties.AutomationTargetParameterName") == k
 
 _pf_ssmad_given(given, k) if {
 	is_object(given)

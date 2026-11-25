@@ -4,6 +4,12 @@ import rego.v1
 
 # Judged only when the pool is a sibling resource: an imported pool can carry
 # providers this template cannot see.
+#
+# A WARN, not an error (#412): even a pool in this template can have providers
+# registered outside CloudFormation (a SAML provider added in the console with
+# metadata from another team, then referenced by name). Those deploys succeed and
+# the template alone cannot tell them from a typo, the same situation as a
+# cross-account Lambda layer.
 
 _pf_cgsipe_declared(pool, v) if {
 	some idp in resources_of_type("AWS::Cognito::UserPoolIdentityProvider")
@@ -11,9 +17,9 @@ _pf_cgsipe_declared(pool, v) if {
 	resolve(idp, "Properties.ProviderName") == v
 }
 
-violation contains make_diag_full("pf-cognito-supported-identity-providers-exists", "ERROR", name,
+violation contains make_diag_full("pf-cognito-supported-identity-providers-exists", "WARN", name,
 	sprintf("Properties.SupportedIdentityProviders.%d", [p.index]),
-	sprintf("identity provider '%s' is not defined for this pool; the client create fails with \"The provider %s does not exist for User Pool\"", [v, v]),
+	sprintf("identity provider '%s' is not defined for this pool in this template; unless it was added outside CloudFormation, the client create fails with \"The provider %s does not exist for User Pool\"", [v, v]),
 	"Add an AWS::Cognito::UserPoolIdentityProvider with that ProviderName, or drop it from SupportedIdentityProviders",
 	"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-cognito-userpoolclient.html") if {
 	some name in resources_of_type("AWS::Cognito::UserPoolClient")
