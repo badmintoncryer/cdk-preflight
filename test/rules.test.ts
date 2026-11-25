@@ -2072,7 +2072,7 @@ describe('ecs service and cloudwatch dashboard rules', () => {
  * issue #394: サービスが拒否するのは Base が 0 より大きいエントリーが 2 つ以上ある戦略で、
  * meta.yaml#repro.expect の実測メッセージもそう言っている。`Base: 0` を数えてはいけない。
  */
-describe('pf-ecs-svc-capacity-provider-multiple-base counts only Base > 0 (#394)', () => {
+describe('ECS capacity provider strategies count only Base > 0 (#394)', () => {
   const customIds = (tpl: unknown) => diagnoseTemplate(tpl).filter((d) => d.source === 'CUSTOM').map((d) => d.ruleId);
   const svc = (strategy: unknown[]) => ({
     Resources: {
@@ -2114,6 +2114,23 @@ describe('pf-ecs-svc-capacity-provider-multiple-base counts only Base > 0 (#394)
       { CapacityProvider: 'FARGATE', Base: '1', Weight: 1 },
     ]);
     expect(customIds(tpl)).toContain('pf-ecs-svc-capacity-provider-multiple-base');
+  });
+
+  // CreateCluster の文言は "a base value defined" だが、Base: 0 は受け付けた（bench 2026-11-25）
+  test('pf-ecs-cluster-default-strategy-multiple-base also counts only Base above zero', () => {
+    const cluster = (strategy: unknown[]) => ({
+      Resources: {
+        Cluster: { Type: 'AWS::ECS::Cluster', Properties: { CapacityProviders: ['FARGATE', 'FARGATE_SPOT'], DefaultCapacityProviderStrategy: strategy } },
+      },
+    });
+    expect(customIds(cluster([
+      { CapacityProvider: 'FARGATE', Base: 1, Weight: 1 },
+      { CapacityProvider: 'FARGATE_SPOT', Base: 0, Weight: 1 },
+    ]))).not.toContain('pf-ecs-cluster-default-strategy-multiple-base');
+    expect(customIds(cluster([
+      { CapacityProvider: 'FARGATE', Base: 1, Weight: 1 },
+      { CapacityProvider: 'FARGATE_SPOT', Base: 2, Weight: 1 },
+    ]))).toContain('pf-ecs-cluster-default-strategy-multiple-base');
   });
 });
 
