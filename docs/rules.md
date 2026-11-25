@@ -80,7 +80,7 @@
 | `pf-apigw-stage-cache-ttl-range` | AWS::ApiGateway::Stage | Method setting cache TTL tops out at 3600 seconds | ERROR | none |
 | `pf-apigw-stage-method-setting-http-method` | AWS::ApiGateway::Stage | Method setting HttpMethod is a verb or * | ERROR | none |
 | `pf-apigw-stage-method-setting-resource-path` | AWS::ApiGateway::Stage | Method setting paths start with / and encode slashes as ~1 | ERROR | retired: engine E3723 covers it from aws-cdk-lib 2.271.0 |
-| `pf-apigw-stage-name-charset` | AWS::ApiGateway::Stage | Stage names allow only a-zA-Z0-9_ | ERROR | none |
+| `pf-apigw-stage-name-charset` | AWS::ApiGateway::Stage | Stage names allow only a-zA-Z0-9_- | ERROR | none |
 | `pf-apigw-stage-variable-name` | AWS::ApiGateway::Stage | Stage variable names allow only word characters | ERROR | none |
 | `pf-apigw-stage-variable-value` | AWS::ApiGateway::Stage | Stage variable values have a restricted character set | ERROR | none |
 | `pf-apigw-token-authorizer-identity-source` | AWS::ApiGateway::Authorizer | TOKEN authorizers need IdentitySource | ERROR | none |
@@ -109,7 +109,7 @@
 | `pf-apigwv2-http-route-selection` | AWS::ApiGatewayV2::Api | HTTP APIs accept only the method-path route selection expression | ERROR | none |
 | `pf-apigwv2-integration-response-websocket-only` | AWS::ApiGatewayV2::IntegrationResponse | Integration responses exist on WebSocket APIs only | ERROR | none |
 | `pf-apigwv2-integration-subtype-credentials` | AWS::ApiGatewayV2::Integration | A subtype integration needs a CredentialsArn | ERROR | none |
-| `pf-apigwv2-integration-subtype-known` | AWS::ApiGatewayV2::Integration | IntegrationSubtype is one of the ten AWS service subtypes | ERROR | none |
+| `pf-apigwv2-integration-subtype-known` | AWS::ApiGatewayV2::Integration | IntegrationSubtype is one of the ten AWS service subtypes | WARN | none |
 | `pf-apigwv2-integration-subtype-payload-version` | AWS::ApiGatewayV2::Integration | Subtype integrations are payload format 1.0 only | ERROR | none |
 | `pf-apigwv2-integration-subtype-required-parameters` | AWS::ApiGatewayV2::Integration | Each integration subtype has mandatory request parameters | ERROR | none |
 | `pf-apigwv2-integration-timeout-range` | AWS::ApiGatewayV2::Integration | HTTP API integration timeouts are 50-30000 ms | ERROR | none |
@@ -293,7 +293,7 @@
 | `pf-appsync-schema-requires-query-root` | AWS::AppSync::GraphQLSchema | A schema needs a query root type | ERROR | none |
 | `pf-appsync-schema-root-type-missing` | AWS::AppSync::GraphQLSchema | The schema block may only name declared types | ERROR | none |
 | `pf-appsync-schema-undefined-type-reference` | AWS::AppSync::GraphQLSchema | Every field type must be declared in the schema | ERROR | none |
-| `pf-appsync-schema-unknown-scalar` | AWS::AppSync::GraphQLSchema | Only AppSync's own AWS scalars exist | ERROR | none |
+| `pf-appsync-schema-unknown-scalar` | AWS::AppSync::GraphQLSchema | Only AppSync's own AWS scalars exist | WARN | none |
 | `pf-appsync-source-api-merge-type-value` | AWS::AppSync::SourceApiAssociation | MergeType is AUTO_MERGE or MANUAL_MERGE | ERROR | cfn-schema |
 | `pf-appsync-source-api-merged-not-source` | AWS::AppSync::SourceApiAssociation | A merged API cannot be a source API | ERROR | none |
 | `pf-appsync-source-api-not-merged-target` | AWS::AppSync::SourceApiAssociation | The association target must be a MERGED API | ERROR | none |
@@ -375,7 +375,7 @@
 | `pf-asg-lifecyclehookspec-max-5` | AWS::AutoScaling::AutoScalingGroup | A group creates at most five lifecycle hooks inline | ERROR | none |
 | `pf-asg-max-instance-lifetime-range` | AWS::AutoScaling::AutoScalingGroup | MaxInstanceLifetime is zero or a day to a year | ERROR | none |
 | `pf-asg-metrics-granularity-enum` | AWS::AutoScaling::AutoScalingGroup | Group metrics come at one-minute granularity | ERROR | none |
-| `pf-asg-metrics-name-enum` | AWS::AutoScaling::AutoScalingGroup | Collected group metrics come from the published list | ERROR | none |
+| `pf-asg-metrics-name-enum` | AWS::AutoScaling::AutoScalingGroup | Collected group metrics come from the published list | WARN | none |
 | `pf-asg-minadjustmagnitude-positive` | AWS::AutoScaling::ScalingPolicy | MinAdjustmentMagnitude is greater than zero | ERROR | none |
 | `pf-asg-minadjustmagnitude-requires-percent` | AWS::AutoScaling::ScalingPolicy | MinAdjustmentMagnitude only goes with PercentChangeInCapacity | ERROR | none |
 | `pf-asg-notification-sns-topics-max-10` | AWS::AutoScaling::AutoScalingGroup | A group notifies at most ten topics | ERROR | none |
@@ -432,7 +432,7 @@
 | `pf-asg-tags-aws-prefix-rejected` | AWS::AutoScaling::AutoScalingGroup | A group tag key does not start with the reserved aws: prefix | ERROR | none |
 | `pf-asg-tags-max-50` | AWS::AutoScaling::AutoScalingGroup | A group carries at most 50 tags | ERROR | none |
 | `pf-asg-target-value-positive` | AWS::AutoScaling::ScalingPolicy | Target tracking needs a positive TargetValue | ERROR | none |
-| `pf-asg-termination-policy-lambda-arn-format` | AWS::AutoScaling::AutoScalingGroup | A termination policy is a published name or a Lambda ARN | ERROR | none |
+| `pf-asg-termination-policy-lambda-arn-format` | AWS::AutoScaling::AutoScalingGroup | A termination policy is a published name or a Lambda ARN | WARN | none |
 | `pf-asg-tt-alb-requires-resourcelabel` | AWS::AutoScaling::ScalingPolicy | The ALB request-count metric needs a ResourceLabel | ERROR | none |
 | `pf-asg-tt-custom-metrics-array-exclusive` | AWS::AutoScaling::ScalingPolicy | A metric-math specification takes none of the single-metric fields | ERROR | none |
 | `pf-asg-tt-custom-simple-requires-namespace-and-statistic` | AWS::AutoScaling::ScalingPolicy | A single-metric specification names its Namespace and Statistic | ERROR | none |
@@ -716,7 +716,7 @@
 | `pf-bedrock-guardrail-pii-entity-unique` | AWS::Bedrock::Guardrail | A guardrail must not configure the same PII entity type twice | ERROR | none |
 | `pf-bedrock-guardrail-policy-required` | AWS::Bedrock::Guardrail | A guardrail needs at least one policy | ERROR | none |
 | `pf-bedrock-guardrail-profile-account` | AWS::Bedrock::Guardrail | A guardrail profile ARN must carry the deploying account | ERROR | none |
-| `pf-bedrock-guardrail-profile-geo` | AWS::Bedrock::Guardrail | A guardrail profile must belong to the deploy Region's geography | ERROR | none |
+| `pf-bedrock-guardrail-profile-geo` | AWS::Bedrock::Guardrail | A guardrail profile must belong to the deploy Region's geography | WARN | none |
 | `pf-bedrock-guardrail-profile-region` | AWS::Bedrock::Guardrail | A guardrail profile ARN must carry the guardrail's own Region | ERROR | none |
 | `pf-bedrock-guardrail-prompt-attack-output-strength` | AWS::Bedrock::Guardrail | The PROMPT_ATTACK content filter must use OutputStrength NONE | ERROR | none |
 | `pf-bedrock-guardrail-regex-pattern-length` | AWS::Bedrock::Guardrail | A guardrail regex pattern is limited to 500 characters | ERROR | none |
@@ -958,7 +958,7 @@
 | `pf-cloudfront-public-key-pem-format` | AWS::CloudFront::PublicKey | PublicKey EncodedKey must be a PEM-encoded public key | ERROR | none |
 | `pf-cloudfront-realtime-log-endpoint-count` | AWS::CloudFront::RealtimeLogConfig | A real-time log configuration takes exactly one endpoint | ERROR | none |
 | `pf-cloudfront-realtime-log-endpoint-stream-type` | AWS::CloudFront::RealtimeLogConfig | Real-time log endpoints must have StreamType Kinesis | ERROR | none |
-| `pf-cloudfront-realtime-log-field-names` | AWS::CloudFront::RealtimeLogConfig | Real-time log Fields must name fields CloudFront defines | ERROR | none |
+| `pf-cloudfront-realtime-log-field-names` | AWS::CloudFront::RealtimeLogConfig | Real-time log Fields must name fields CloudFront defines | WARN | none |
 | `pf-cloudfront-response-headers-policy-name-charset` | AWS::CloudFront::ResponseHeadersPolicy | Response headers policy names allow only alphanumerics, dash and underscore | ERROR | none |
 | `pf-cloudfront-rhp-cors-allow-methods-enum` | AWS::CloudFront::ResponseHeadersPolicy | AccessControlAllowMethods accepts only the eight documented values | ERROR | pending-engine |
 | `pf-cloudfront-rhp-custom-header-blocklist` | AWS::CloudFront::ResponseHeadersPolicy | CustomHeadersConfig cannot carry headers CloudFront reserves | ERROR | none |
@@ -1203,7 +1203,7 @@
 | `pf-cognito-email-developer-requires-sourcearn` | AWS::Cognito::UserPool | DEVELOPER email sending needs a SES SourceArn | ERROR | none |
 | `pf-cognito-email-from-format` | AWS::Cognito::UserPool | EmailConfiguration.From must be an email address | ERROR | none |
 | `pf-cognito-email-reply-to-format` | AWS::Cognito::UserPool | ReplyToEmailAddress must be an email address | ERROR | retired: engine F3031 covers it from aws-cdk-lib 2.268.0 |
-| `pf-cognito-email-sourcearn-region` | AWS::Cognito::UserPool | The SES SourceArn must be in a Cognito-supported SES region | ERROR | none |
+| `pf-cognito-email-sourcearn-region` | AWS::Cognito::UserPool | The SES SourceArn must be in a Cognito-supported SES region | WARN | none |
 | `pf-cognito-email-verification-message-placeholder` | AWS::Cognito::UserPool | EmailVerificationMessage needs the {####} code placeholder | ERROR | retired: engine F3031 covers it from aws-cdk-lib 2.268.0 |
 | `pf-cognito-explicit-auth-flows-legacy-mix` | AWS::Cognito::UserPoolClient | Legacy and ALLOW_ auth flow names cannot be mixed | ERROR | none |
 | `pf-cognito-group-role-arn-account` | AWS::Cognito::UserPoolGroup | A group role must be in the deploying account | ERROR | none |
@@ -1252,7 +1252,7 @@
 | `pf-cognito-risk-compromised-event-filter-enum` | AWS::Cognito::UserPoolRiskConfigurationAttachment | Compromised credentials event filter takes three values | ERROR | none |
 | `pf-cognito-risk-ip-range-cidr` | AWS::Cognito::UserPoolRiskConfigurationAttachment | Blocked and skipped IP ranges are CIDR blocks | ERROR | none |
 | `pf-cognito-risk-ip-range-max` | AWS::Cognito::UserPoolRiskConfigurationAttachment | At most 200 blocked IP ranges | ERROR | none |
-| `pf-cognito-risk-notify-source-arn-region` | AWS::Cognito::UserPoolRiskConfigurationAttachment | The notification SourceArn must be in a Cognito-supported SES region | ERROR | none |
+| `pf-cognito-risk-notify-source-arn-region` | AWS::Cognito::UserPoolRiskConfigurationAttachment | The notification SourceArn must be in a Cognito-supported SES region | WARN | none |
 | `pf-cognito-role-attachment-roles-keys` | AWS::Cognito::IdentityPoolRoleAttachment | Roles keys are authenticated and unauthenticated | ERROR | none |
 | `pf-cognito-role-mapping-rule-match-type` | AWS::Cognito::IdentityPoolRoleAttachment | MatchType is Equals, Contains, StartsWith or NotEqual | ERROR | none |
 | `pf-cognito-role-mapping-rules-max` | AWS::Cognito::IdentityPoolRoleAttachment | At most 25 rules per role mapping | ERROR | none |
@@ -1273,7 +1273,7 @@
 | `pf-cognito-sms-caller-arn-account` | AWS::Cognito::UserPool | The SMS caller role must be in the deploying account | ERROR | none |
 | `pf-cognito-sms-configuration-sns-region` | AWS::Cognito::UserPool | SnsRegion must be the region the pool deploys to | ERROR | none |
 | `pf-cognito-sms-verification-message-placeholder` | AWS::Cognito::UserPool | SmsVerificationMessage needs the {####} code placeholder | ERROR | retired: engine F3031 covers it from aws-cdk-lib 2.268.0 |
-| `pf-cognito-supported-identity-providers-exists` | AWS::Cognito::UserPoolClient<br>AWS::Cognito::UserPoolIdentityProvider | Supported identity providers must exist on the pool | ERROR | none |
+| `pf-cognito-supported-identity-providers-exists` | AWS::Cognito::UserPoolClient<br>AWS::Cognito::UserPoolIdentityProvider | Supported identity providers must exist on the pool | WARN | none |
 | `pf-cognito-temporary-password-validity-range` | AWS::Cognito::UserPool | TemporaryPasswordValidityDays must be between 0 and 365 | ERROR | retired: engine F3034 covers it from aws-cdk-lib 2.268.0 |
 | `pf-cognito-token-expiration-order` | AWS::Cognito::UserPoolClient | Access and id tokens cannot outlive the refresh token | ERROR | none |
 | `pf-cognito-token-validity-range` | AWS::Cognito::UserPoolClient | Token validity ranges depend on token type and unit | ERROR | none |
@@ -1413,7 +1413,7 @@
 | `pf-ec2-eni-public-ip-device-index` | AWS::EC2::Instance | AssociatePublicIpAddress is only valid on device index 0 | ERROR | none |
 | `pf-ec2-flow-log-aggregation-interval` | AWS::EC2::FlowLog | Flow log MaxAggregationInterval accepts only 60 or 600 seconds | ERROR | none |
 | `pf-ec2-flow-log-destination-config` | AWS::EC2::FlowLog | Flow log destination type requires its matching destination property | ERROR | none |
-| `pf-ec2-flow-log-format-fields` | AWS::EC2::FlowLog | Flow log LogFormat accepts only documented field names | ERROR | none |
+| `pf-ec2-flow-log-format-fields` | AWS::EC2::FlowLog | Flow log LogFormat accepts only documented field names | WARN | none |
 | `pf-ec2-flow-log-transit-gateway-traffic-type` | AWS::EC2::FlowLog | A Transit Gateway flow log cannot take TrafficType | ERROR | none |
 | `pf-ec2-host-resource-group-tenancy` | AWS::EC2::Instance | HostResourceGroupArn requires Tenancy host | ERROR | none |
 | `pf-ec2-instance-ami-arch` | AWS::EC2::Instance | Instance type architecture must match the SSM public-parameter AMI architecture | ERROR | none |
@@ -1585,7 +1585,7 @@
 | `pf-ecs-svc-placement-strategies-max6` | AWS::ECS::Service | A service accepts at most 5 placement strategies | ERROR | none |
 | `pf-ecs-svc-random-with-field` | AWS::ECS::Service | A random placement strategy takes no Field | ERROR | none |
 | `pf-ecs-svc-registries-multiple` | AWS::ECS::Service | A service accepts at most one service registry | ERROR | none |
-| `pf-ecs-svc-registries-port-with-awsvpc` | AWS::ECS::Service | awsvpc services address a registry by Port, not ContainerName/ContainerPort | ERROR | none |
+| `pf-ecs-svc-registries-port-with-awsvpc` | AWS::ECS::Service<br>AWS::ServiceDiscovery::Service | awsvpc services address a registry by Port, not ContainerName/ContainerPort | ERROR | none |
 | `pf-ecs-svc-role-with-awsvpc` | AWS::ECS::Service | awsvpc services must use the service-linked role, not Role | ERROR | none |
 | `pf-ecs-svc-role-without-load-balancers` | AWS::ECS::Service | Service Role is only valid together with LoadBalancers | ERROR | none |
 | `pf-ecs-taskdef-family` | AWS::ECS::TaskDefinition | Task definition Family allows only letters, numbers, hyphen and underscore | ERROR | none |
@@ -1725,7 +1725,7 @@
 | `pf-elasticbeanstalk-opt-instances-type-count` | AWS::ElasticBeanstalk::ConfigurationTemplate<br>AWS::ElasticBeanstalk::Environment | InstanceTypes takes 1 to 40 distinct instance types | ERROR | none |
 | `pf-elasticbeanstalk-opt-logs-retention` | AWS::ElasticBeanstalk::ConfigurationTemplate<br>AWS::ElasticBeanstalk::Environment | Log retention takes a supported number of days | ERROR | none |
 | `pf-elasticbeanstalk-opt-managed-actions-requires` | AWS::ElasticBeanstalk::ConfigurationTemplate<br>AWS::ElasticBeanstalk::Environment | Managed actions need PreferredStartTime and UpdateLevel | ERROR | none |
-| `pf-elasticbeanstalk-opt-namespace-known` | AWS::ElasticBeanstalk::ConfigurationTemplate<br>AWS::ElasticBeanstalk::Environment | OptionSettings namespaces must exist | ERROR | none |
+| `pf-elasticbeanstalk-opt-namespace-known` | AWS::ElasticBeanstalk::ConfigurationTemplate<br>AWS::ElasticBeanstalk::Environment | OptionSettings namespaces must exist | WARN | none |
 | `pf-elasticbeanstalk-opt-process-range` | AWS::ElasticBeanstalk::ConfigurationTemplate<br>AWS::ElasticBeanstalk::Environment | Environment process port and health check timeout are within range | ERROR | none |
 | `pf-elasticbeanstalk-opt-regex-catalog` | AWS::ElasticBeanstalk::ConfigurationTemplate<br>AWS::ElasticBeanstalk::Environment | Format-checked options must match their pattern | ERROR | none |
 | `pf-elasticbeanstalk-opt-rolling-duration` | AWS::ElasticBeanstalk::ConfigurationTemplate<br>AWS::ElasticBeanstalk::Environment | Rolling update Timeout and PauseTime are ISO 8601 durations within limits | ERROR | none |
@@ -1769,7 +1769,7 @@
 | `pf-elbv2-lambda-target-protocol` | AWS::ElasticLoadBalancingV2::TargetGroup | Lambda target groups cannot specify Protocol | ERROR | none |
 | `pf-elbv2-lb-attr-access-logs-bucket-required` | AWS::ElasticLoadBalancingV2::LoadBalancer | Enabling access logs needs the destination bucket | ERROR | none |
 | `pf-elbv2-lb-attr-alb-cross-zone-immutable` | AWS::ElasticLoadBalancingV2::LoadBalancer | Cross-zone load balancing cannot be turned off on an application load balancer | ERROR | none |
-| `pf-elbv2-lb-attr-alb-only-on-gwlb` | AWS::ElasticLoadBalancingV2::LoadBalancer | A gateway load balancer takes only the two common attributes | ERROR | none |
+| `pf-elbv2-lb-attr-alb-only-on-gwlb` | AWS::ElasticLoadBalancingV2::LoadBalancer | A gateway load balancer takes only the two common attributes | WARN | none |
 | `pf-elbv2-lb-attr-boolean-value` | AWS::ElasticLoadBalancingV2::LoadBalancer | A boolean load balancer attribute takes only true or false | ERROR | none |
 | `pf-elbv2-lb-attr-client-keep-alive-range` | AWS::ElasticLoadBalancingV2::LoadBalancer | The client keep-alive duration is 60-604800 seconds | ERROR | none |
 | `pf-elbv2-lb-attr-connection-logs-bucket-required` | AWS::ElasticLoadBalancingV2::LoadBalancer | Enabling connection logs needs the destination bucket | ERROR | none |
@@ -1777,8 +1777,8 @@
 | `pf-elbv2-lb-attr-desync-mitigation-mode` | AWS::ElasticLoadBalancingV2::LoadBalancer | Desync mitigation mode is monitor, defensive or strictest | ERROR | none |
 | `pf-elbv2-lb-attr-dns-record-client-routing-policy` | AWS::ElasticLoadBalancingV2::LoadBalancer | The DNS client routing policy is one of three zonal affinity values | ERROR | none |
 | `pf-elbv2-lb-attr-duplicate-key` | AWS::ElasticLoadBalancingV2::LoadBalancer | A load balancer attribute key appears at most once | ERROR | none |
-| `pf-elbv2-lb-attr-key-known` | AWS::ElasticLoadBalancingV2::LoadBalancer | A load balancer attribute key must be one the service recognises | ERROR | none |
-| `pf-elbv2-lb-attr-key-lb-type` | AWS::ElasticLoadBalancingV2::LoadBalancer | A load balancer attribute key is bound to the load balancer type | ERROR | none |
+| `pf-elbv2-lb-attr-key-known` | AWS::ElasticLoadBalancingV2::LoadBalancer | A load balancer attribute key must be one the service recognises | WARN | none |
+| `pf-elbv2-lb-attr-key-lb-type` | AWS::ElasticLoadBalancingV2::LoadBalancer | A load balancer attribute key is bound to the load balancer type | WARN | none |
 | `pf-elbv2-lb-attr-secondary-ips-range` | AWS::ElasticLoadBalancingV2::LoadBalancer | Auto-assigned secondary IPs per subnet are 0-7 | ERROR | none |
 | `pf-elbv2-lb-attr-xff-header-processing-mode` | AWS::ElasticLoadBalancingV2::LoadBalancer | X-Forwarded-For processing is append, preserve or remove | ERROR | none |
 | `pf-elbv2-lb-dualstack-no-public-ipv4-alb-only` | AWS::ElasticLoadBalancingV2::LoadBalancer | dualstack-without-public-ipv4 is an application load balancer address type | ERROR | none |
@@ -1805,8 +1805,8 @@
 | `pf-elbv2-listener-alpn-tls-only` | AWS::ElasticLoadBalancingV2::Listener | ALPN is negotiated on a TLS listener only | ERROR | none |
 | `pf-elbv2-listener-alpn-values` | AWS::ElasticLoadBalancingV2::Listener | An ALPN policy is one of five named values | ERROR | none |
 | `pf-elbv2-listener-attr-header-name-format` | AWS::ElasticLoadBalancingV2::Listener | A renamed request header is a valid HTTP header name | ERROR | none |
-| `pf-elbv2-listener-attr-key-known` | AWS::ElasticLoadBalancingV2::Listener | A listener attribute key is one the service knows | ERROR | none |
-| `pf-elbv2-listener-attr-key-lb-type` | AWS::ElasticLoadBalancingV2::Listener<br>AWS::ElasticLoadBalancingV2::LoadBalancer | A listener attribute belongs to the load balancer type it is set on | ERROR | none |
+| `pf-elbv2-listener-attr-key-known` | AWS::ElasticLoadBalancingV2::Listener | A listener attribute key is one the service knows | WARN | none |
+| `pf-elbv2-listener-attr-key-lb-type` | AWS::ElasticLoadBalancingV2::Listener<br>AWS::ElasticLoadBalancingV2::LoadBalancer | A listener attribute belongs to the load balancer type it is set on | WARN | none |
 | `pf-elbv2-listener-attr-server-enabled-value` | AWS::ElasticLoadBalancingV2::Listener | The response server header switch is true or false | ERROR | none |
 | `pf-elbv2-listener-attr-tcp-idle-timeout-range` | AWS::ElasticLoadBalancingV2::Listener | The TCP idle timeout runs from 60 to 6000 seconds | ERROR | none |
 | `pf-elbv2-listener-attr-x-content-type-options-value` | AWS::ElasticLoadBalancingV2::Listener | X-Content-Type-Options is nosniff | ERROR | none |
@@ -2010,7 +2010,7 @@
 | `pf-firehose-snowflake-variant-columns` | AWS::KinesisFirehose::DeliveryStream | Variant content and metadata mapping needs both column names | ERROR | none |
 | `pf-firehose-splunk-hec-endpoint-https` | AWS::KinesisFirehose::DeliveryStream | A Splunk HEC endpoint must be an HTTPS URL | ERROR | none |
 | `pf-fsx-windows-ad-fqdn-max-47` | AWS::FSx::FileSystem | FSx for Windows Single-AZ 2 and Multi-AZ need an AD FQDN of at most 47 characters | ERROR | none |
-| `pf-ga-endpoint-group-region-supported` | AWS::GlobalAccelerator::EndpointGroup | EndpointGroupRegion must be a real AWS Region | ERROR | none |
+| `pf-ga-endpoint-group-region-supported` | AWS::GlobalAccelerator::EndpointGroup | EndpointGroupRegion must be a real AWS Region | WARN | none |
 | `pf-ga-endpoint-group-unique-per-listener-region` | AWS::GlobalAccelerator::EndpointGroup | A listener holds at most one endpoint group per Region | ERROR | none |
 | `pf-ga-flow-logs-require-bucket-and-prefix` | AWS::GlobalAccelerator::Accelerator | Flow logs need both FlowLogsS3Bucket and FlowLogsS3Prefix | ERROR | none |
 | `pf-ga-health-check-interval-10-or-30` | AWS::GlobalAccelerator::EndpointGroup | HealthCheckIntervalSeconds must be 10 or 30 | ERROR | none |
@@ -2018,11 +2018,11 @@
 | `pf-ga-listener-port-ranges-unique-per-accelerator` | AWS::GlobalAccelerator::Listener | Listeners on one accelerator must not share port ranges | ERROR | none |
 | `pf-ga-port-override-endpoint-port-not-in-listener-range` | AWS::GlobalAccelerator::EndpointGroup | A port override must not target a listener port of the accelerator | ERROR | none |
 | `pf-ga-port-override-listener-port-in-range` | AWS::GlobalAccelerator::EndpointGroup | A port override must name a listener port the listener accepts | ERROR | none |
-| `pf-glue-classifier-csv-custom-datatype` | AWS::Glue::Classifier | Custom CSV datatypes come from the supported set | ERROR | pending-engine |
+| `pf-glue-classifier-csv-custom-datatype` | AWS::Glue::Classifier | Custom CSV datatypes come from the supported set | WARN | pending-engine |
 | `pf-glue-classifier-csv-custom-datatype-flag` | AWS::Glue::Classifier | ContainsCustomDatatype and CustomDatatypeConfigured travel together | ERROR | none |
 | `pf-glue-classifier-csv-quote-symbol` | AWS::Glue::Classifier | The CSV quote symbol differs from the delimiter | ERROR | none |
 | `pf-glue-classifier-csv-single-char` | AWS::Glue::Classifier | The CSV delimiter and quote symbol are one character each | ERROR | retired: engine F3031, F3033 covers it from aws-cdk-lib 2.268.0 |
-| `pf-glue-classifier-grok-pattern-names` | AWS::Glue::Classifier | A grok pattern only names built-in or custom patterns | ERROR | none |
+| `pf-glue-classifier-grok-pattern-names` | AWS::Glue::Classifier | A grok pattern only names built-in or custom patterns | WARN | none |
 | `pf-glue-classifier-grok-pattern-single-line` | AWS::Glue::Classifier | A grok pattern holds no line break | ERROR | pending-engine |
 | `pf-glue-connection-jdbc-credentials` | AWS::Glue::Connection | A JDBC connection needs USERNAME and PASSWORD, or SECRET_ID | ERROR | none |
 | `pf-glue-connection-network-physical-requirements` | AWS::Glue::Connection | A NETWORK connection needs PhysicalConnectionRequirements | ERROR | none |
@@ -2063,7 +2063,7 @@
 | `pf-glue-ml-transform-max-capacity-with-worker-type` | AWS::Glue::MLTransform | MLTransform MaxCapacity cannot be combined with WorkerType | ERROR | none |
 | `pf-glue-ml-transform-worker-type-and-number-of-workers` | AWS::Glue::MLTransform | MLTransform WorkerType and NumberOfWorkers have to be set together | ERROR | none |
 | `pf-glue-partition-values-match-partition-keys` | AWS::Glue::Partition | Partition Values must be as many as the table's PartitionKeys | ERROR | none |
-| `pf-glue-schema-compatibility` | AWS::Glue::Schema | Schema Compatibility must be one of the seven documented modes | ERROR | cfn-schema |
+| `pf-glue-schema-compatibility` | AWS::Glue::Schema | Schema Compatibility must be one of the seven documented modes | WARN | cfn-schema |
 | `pf-glue-schema-definition-format` | AWS::Glue::Schema | SchemaDefinition must parse as the declared DataFormat | ERROR | none |
 | `pf-glue-schema-name-charset` | AWS::Glue::Schema | A schema name is limited to letters, digits and - _ $ | ERROR | pending-engine |
 | `pf-glue-security-configuration-kms-key` | AWS::Glue::SecurityConfiguration | KMS encryption modes need a KmsKeyArn | ERROR | none |
@@ -2220,7 +2220,7 @@
 | `pf-lambda-alias-version-weight-range` | AWS::Lambda::Alias | A routing weight is a fraction between 0 and 1 | ERROR | none |
 | `pf-lambda-capacity-provider-arn-region` | AWS::Lambda::Function | A capacity provider lives in the deploy region | ERROR | none |
 | `pf-lambda-capacity-provider-json-log-only` | AWS::Lambda::Function | Managed-instance functions log in JSON | ERROR | none |
-| `pf-lambda-capacity-provider-runtime` | AWS::Lambda::Function | Managed instances support only the newer runtimes | ERROR | none |
+| `pf-lambda-capacity-provider-runtime` | AWS::Lambda::Function | Managed instances support only the newer runtimes | WARN | none |
 | `pf-lambda-cfnresponse-import` | AWS::Lambda::Function | Inline Python code must import cfnresponse with the exact statement 'import cfnresponse' | ERROR | none |
 | `pf-lambda-code-s3-pair` | AWS::Lambda::Function | S3-based Code needs both S3Bucket and S3Key | ERROR | none |
 | `pf-lambda-code-signing-arn-region` | AWS::Lambda::Function | A code signing config lives in the deploy region | ERROR | none |
@@ -2302,7 +2302,7 @@
 | `pf-lambda-imageconfig-requires-image` | AWS::Lambda::Function | ImageConfig belongs to container-image functions | ERROR | none |
 | `pf-lambda-layer-arn-region` | AWS::Lambda::Function | A layer lives in the deploy region | ERROR | none |
 | `pf-lambda-layer-compatible-architectures-enum` | AWS::Lambda::LayerVersion | CompatibleArchitectures are x86_64 or arm64 | ERROR | pending-engine |
-| `pf-lambda-layer-compatible-runtimes-enum` | AWS::Lambda::LayerVersion | CompatibleRuntimes are known runtime identifiers | ERROR | pending-engine |
+| `pf-lambda-layer-compatible-runtimes-enum` | AWS::Lambda::LayerVersion | CompatibleRuntimes are known runtime identifiers | WARN | pending-engine |
 | `pf-lambda-layer-content-storage-mode-enum` | AWS::Lambda::LayerVersion | S3ObjectStorageMode is COPY or REFERENCE | ERROR | pending-engine |
 | `pf-lambda-layer-cross-account-needs-permission` | AWS::Lambda::Function | A cross-account layer needs a share | WARN | none |
 | `pf-lambda-layer-name-pattern` | AWS::Lambda::LayerVersion | A layer name is letters, digits, dashes and underscores | ERROR | retired: engine F3031 covers it from aws-cdk-lib 2.278.0 |
@@ -2388,7 +2388,7 @@
 | `pf-logs-subscription-firehose-role` | AWS::Logs::SubscriptionFilter | A Firehose destination needs RoleArn | ERROR | none |
 | `pf-logs-subscription-kinesis-role` | AWS::Logs::SubscriptionFilter | A Kinesis destination needs RoleArn | ERROR | none |
 | `pf-logs-subscription-lambda-no-role` | AWS::Logs::SubscriptionFilter | A Lambda destination must not carry RoleArn | ERROR | none |
-| `pf-logs-transformer-grok-pattern` | AWS::Logs::Transformer | A grok match may only use supported pattern names | ERROR | none |
+| `pf-logs-transformer-grok-pattern` | AWS::Logs::Transformer | A grok match may only use supported pattern names | WARN | none |
 | `pf-logs-transformer-parser-first` | AWS::Logs::Transformer | A transformer config must begin with a parser | ERROR | none |
 | `pf-mediaconvert-aud-aac-cbr-combo` | AWS::MediaConvert::Preset | AAC CBR needs a supported profile / coding mode / sample rate / bitrate combination | ERROR | none |
 | `pf-mediaconvert-aud-aac-vbr-combo` | AWS::MediaConvert::Preset | AAC VBR needs VbrQuality and the LC profile | ERROR | none |
@@ -2431,7 +2431,7 @@
 | `pf-mediaconvert-rc-interlace-optimize` | AWS::MediaConvert::Preset | Optimized interlacing needs an interlaced output and no hard telecine | ERROR | none |
 | `pf-mediaconvert-rc-qvbr-maxbitrate` | AWS::MediaConvert::Preset | AV1 QVBR needs MaxBitrate | ERROR | none |
 | `pf-mediaconvert-rc-slowpal-framerate` | AWS::MediaConvert::Preset | SlowPal needs a specified 25 fps framerate | ERROR | none |
-| `pf-mediaconvert-sj-enum-value` | AWS::MediaConvert::Preset | The video codec and the container must be values the service lists | ERROR | none |
+| `pf-mediaconvert-sj-enum-value` | AWS::MediaConvert::Preset | The video codec and the container must be values the service lists | WARN | none |
 | `pf-mediaconvert-sj-string-format` | AWS::MediaConvert::JobTemplate | An HLS output group Destination must be an s3:// URL | ERROR | none |
 | `pf-memorydb-data-tiering-node-type` | AWS::MemoryDB::Cluster | DataTiering only works on r6gd node types | ERROR | none |
 | `pf-memorydb-engine` | AWS::MemoryDB::Cluster | MemoryDB runs Valkey or Redis, not Memcached | ERROR | none |
@@ -2452,9 +2452,9 @@
 | `pf-msk-cluster-name-pattern` | AWS::MSK::Cluster | An MSK cluster name must be alphanumeric and may only contain hyphens after the first character | ERROR | none |
 | `pf-msk-clusterpolicy-resource-matches-cluster` | AWS::MSK::ClusterPolicy | A cluster policy's Resource must be the cluster the policy is attached to | ERROR | none |
 | `pf-msk-config-custom-advertised-listeners-format` | AWS::MSK::Configuration | custom.advertised.listeners must use the LISTENER_NAME://host:port+{broker_id} form | ERROR | none |
-| `pf-msk-config-kafka-versions-unknown` | AWS::MSK::Configuration | KafkaVersionsList must name Apache Kafka versions Amazon MSK knows | ERROR | none |
+| `pf-msk-config-kafka-versions-unknown` | AWS::MSK::Configuration | KafkaVersionsList must name Apache Kafka versions Amazon MSK knows | WARN | none |
 | `pf-msk-config-name-pattern` | AWS::MSK::Configuration | An MSK configuration name must be alphanumeric and may only contain hyphens after the first character | ERROR | none |
-| `pf-msk-config-server-properties-allowed-keys` | AWS::MSK::Configuration | An MSK configuration may only set Amazon MSK's supported Apache Kafka properties | ERROR | none |
+| `pf-msk-config-server-properties-allowed-keys` | AWS::MSK::Configuration | An MSK configuration may only set Amazon MSK's supported Apache Kafka properties | WARN | none |
 | `pf-msk-express-kafka-version` | AWS::MSK::Cluster | Express brokers do not run every Apache Kafka version | ERROR | none |
 | `pf-msk-express-no-ebs-storage` | AWS::MSK::Cluster | An MSK cluster with Express brokers may not declare StorageInfo | ERROR | none |
 | `pf-msk-express-no-storage-mode` | AWS::MSK::Cluster | An MSK cluster with Express brokers may not declare StorageMode | ERROR | none |
@@ -2636,7 +2636,7 @@
 | `pf-pipes-cross-region` | AWS::Pipes::Pipe | A pipe's source and target must be in the pipe's Region | ERROR | none |
 | `pf-pipes-enrichment-type` | AWS::Pipes::Pipe | Pipe enrichment must be Lambda, Step Functions, API Gateway or an API destination | ERROR | none |
 | `pf-pipes-filter-pattern` | AWS::Pipes::Pipe | A pipe filter Pattern must be a valid, non-empty event pattern | ERROR | none |
-| `pf-pipes-input-template-variables` | AWS::Pipes::Pipe | InputTemplate may only use the aws.pipes.* reserved variables | ERROR | none |
+| `pf-pipes-input-template-variables` | AWS::Pipes::Pipe | InputTemplate may only use the aws.pipes.* reserved variables | WARN | none |
 | `pf-pipes-log-configuration` | AWS::Pipes::Pipe | A log level other than OFF needs a destination, and S3 logs must be JSON | ERROR | none |
 | `pf-pipes-source-parameters` | AWS::Pipes::Pipe | Source parameters must match the source, and stream sources require theirs | ERROR | none |
 | `pf-pipes-target-parameters` | AWS::Pipes::Pipe | Target parameters must match the target's resource type | ERROR | none |
@@ -2785,7 +2785,7 @@
 | `pf-route53-geolocation-subdivision-code-value` | AWS::Route53::RecordSet<br>AWS::Route53::RecordSetGroup | GeoLocation.SubdivisionCode must be a US state or territory code | ERROR | none |
 | `pf-route53-geolocation-subdivision-requires-us` | AWS::Route53::RecordSet<br>AWS::Route53::RecordSetGroup | GeoLocation.SubdivisionCode is only valid with CountryCode US | ERROR | none |
 | `pf-route53-geolocation-unsupported-country` | AWS::Route53::RecordSet<br>AWS::Route53::RecordSetGroup | Four ISO country codes have no Route 53 geolocation coverage | ERROR | none |
-| `pf-route53-geoproximity-awsregion-value` | AWS::Route53::RecordSet<br>AWS::Route53::RecordSetGroup | GeoProximityLocation.AWSRegion must be an existing AWS Region | ERROR | none |
+| `pf-route53-geoproximity-awsregion-value` | AWS::Route53::RecordSet<br>AWS::Route53::RecordSetGroup | GeoProximityLocation.AWSRegion must be an existing AWS Region | WARN | none |
 | `pf-route53-geoproximity-bias-range` | AWS::Route53::RecordSet<br>AWS::Route53::RecordSetGroup | GeoProximityLocation.Bias must be -99 to 99 | ERROR | retired: engine F3034 covers it from aws-cdk-lib 2.269.0 |
 | `pf-route53-geoproximity-exclusive` | AWS::Route53::RecordSet<br>AWS::Route53::RecordSetGroup | GeoProximityLocation takes exactly one of AWSRegion, LocalZoneGroup or Coordinates | ERROR | retired: engine F3018 covers it from aws-cdk-lib 2.269.0 |
 | `pf-route53-geoproximity-localzonegroup-format` | AWS::Route53::RecordSet<br>AWS::Route53::RecordSetGroup | GeoProximityLocation.LocalZoneGroup must be a Local Zone group name | ERROR | none |
@@ -2812,14 +2812,14 @@
 | `pf-route53-healthcheck-port-calculated` | AWS::Route53::HealthCheck | Port cannot be set on a CALCULATED health check | ERROR | none |
 | `pf-route53-healthcheck-port-cloudwatch-metric` | AWS::Route53::HealthCheck | Port cannot be set on a CLOUDWATCH_METRIC health check | ERROR | none |
 | `pf-route53-healthcheck-regions-endpoint-types-only` | AWS::Route53::HealthCheck | Regions is only valid on an endpoint health check | ERROR | none |
-| `pf-route53-healthcheck-regions-enum` | AWS::Route53::HealthCheck | Health checkers can only be placed in the eight regions Route 53 offers | ERROR | none |
+| `pf-route53-healthcheck-regions-enum` | AWS::Route53::HealthCheck | Health checkers can only be placed in the eight regions Route 53 offers | WARN | none |
 | `pf-route53-healthcheck-requestinterval-discrete` | AWS::Route53::HealthCheck | RequestInterval must be exactly 10 or 30 seconds | ERROR | none |
 | `pf-route53-healthcheck-requestinterval-recovery-control` | AWS::Route53::HealthCheck | RequestInterval cannot be set on a RECOVERY_CONTROL health check | WARN | none |
 | `pf-route53-healthcheck-resourcepath-http-only` | AWS::Route53::HealthCheck | ResourcePath is only valid on an HTTP or HTTPS health check | ERROR | none |
 | `pf-route53-healthcheck-routingcontrolarn-required` | AWS::Route53::HealthCheck | A RECOVERY_CONTROL health check needs a RoutingControlArn | ERROR | none |
 | `pf-route53-healthcheck-searchstring-required-strmatch` | AWS::Route53::HealthCheck | A string-matching health check needs a SearchString | ERROR | none |
 | `pf-route53-healthcheck-searchstring-strmatch-only` | AWS::Route53::HealthCheck | SearchString is only valid on a string-matching health check | ERROR | none |
-| `pf-route53-healthcheck-type-enum` | AWS::Route53::HealthCheck | HealthCheckConfig.Type must be one of the eight health check types | ERROR | none |
+| `pf-route53-healthcheck-type-enum` | AWS::Route53::HealthCheck | HealthCheckConfig.Type must be one of the eight health check types | WARN | none |
 | `pf-route53-hostedzone-duplicate-private-zone-vpc` | AWS::Route53::HostedZone | Two private hosted zones for the same domain cannot share a VPC | ERROR | none |
 | `pf-route53-hostedzone-name-charset` | AWS::Route53::HostedZone | A hosted zone name can only hold printable ASCII without spaces | ERROR | none |
 | `pf-route53-hostedzone-name-label-63` | AWS::Route53::HostedZone | Every label of a hosted zone name must be 63 bytes or fewer | ERROR | none |
@@ -2845,7 +2845,7 @@
 | `pf-route53-keysigningkey-name-unique-per-zone` | AWS::Route53::KeySigningKey | Two key signing keys in one hosted zone cannot share a name | ERROR | retired: engine E3019 covers it from aws-cdk-lib 2.268.0 |
 | `pf-route53-keysigningkey-status-enum` | AWS::Route53::KeySigningKey | A key signing key is either ACTIVE or INACTIVE | ERROR | pending-engine |
 | `pf-route53-latency-one-record-per-region` | AWS::Route53::RecordSetGroup | A latency group may hold only one record set per Region | ERROR | none |
-| `pf-route53-latency-region-enum` | AWS::Route53::RecordSet<br>AWS::Route53::RecordSetGroup | The latency Region must be an existing AWS Region | ERROR | none |
+| `pf-route53-latency-region-enum` | AWS::Route53::RecordSet<br>AWS::Route53::RecordSetGroup | The latency Region must be an existing AWS Region | WARN | none |
 | `pf-route53-mixed-routing-policy-same-name-type` | AWS::Route53::RecordSetGroup | Record sets sharing a name and type must use the same routing policy | ERROR | none |
 | `pf-route53-multivalue-alias` | AWS::Route53::RecordSet | MultiValueAnswer cannot be combined with AliasTarget | ERROR | none |
 | `pf-route53-naptr-field-count` | AWS::Route53::RecordSet<br>AWS::Route53::RecordSetGroup | A NAPTR record value needs exactly 6 space-separated fields | ERROR | none |
@@ -2863,7 +2863,7 @@
 | `pf-route53-record-name-punycode` | AWS::Route53::RecordSet<br>AWS::Route53::RecordSetGroup | A record name must be ASCII (IDNs go in as Punycode) | ERROR | none |
 | `pf-route53-record-name-total-length` | AWS::Route53::RecordSet<br>AWS::Route53::RecordSetGroup | A record name is limited to 253 characters | ERROR | none |
 | `pf-route53-record-name-wildcard-ns` | AWS::Route53::RecordSet<br>AWS::Route53::RecordSetGroup | An NS record set cannot use a wildcard name | ERROR | none |
-| `pf-route53-record-type-enum` | AWS::Route53::RecordSet<br>AWS::Route53::RecordSetGroup | Type must be one of the 17 record types Route 53 supports | ERROR | none |
+| `pf-route53-record-type-enum` | AWS::Route53::RecordSet<br>AWS::Route53::RecordSetGroup | Type must be one of the 17 record types Route 53 supports | WARN | none |
 | `pf-route53-record-type-routing-policy` | AWS::Route53::RecordSet | NS records take no routing policy; CNAME cannot be multivalue | ERROR | none |
 | `pf-route53-record-value-source` | AWS::Route53::RecordSet | A record set needs AliasTarget or the full TTL+ResourceRecords pair | ERROR | none |
 | `pf-route53-recordsetgroup-max-1000-elements` | AWS::Route53::RecordSetGroup | One RecordSetGroup may carry at most 1000 ResourceRecords values in total | ERROR | none |
@@ -2881,7 +2881,7 @@
 | `pf-route53-sshfp-fingerprint-hex` | AWS::Route53::RecordSet<br>AWS::Route53::RecordSetGroup | The SSHFP fingerprint must be hexadecimal | ERROR | none |
 | `pf-route53-sshfp-hash-type-enum` | AWS::Route53::RecordSet<br>AWS::Route53::RecordSetGroup | The SSHFP fingerprint type must be 1 or 2 | ERROR | none |
 | `pf-route53-svcb-svcpriority-range` | AWS::Route53::RecordSet<br>AWS::Route53::RecordSetGroup | The SVCB SvcPriority must be 0-32767 | ERROR | none |
-| `pf-route53-svcparams-key-enum` | AWS::Route53::RecordSet<br>AWS::Route53::RecordSetGroup | SvcParams keys are limited to the eight defined names | ERROR | none |
+| `pf-route53-svcparams-key-enum` | AWS::Route53::RecordSet<br>AWS::Route53::RecordSetGroup | SvcParams keys are limited to the eight defined names | WARN | none |
 | `pf-route53-svcparams-key-value-format` | AWS::Route53::RecordSet<br>AWS::Route53::RecordSetGroup | SvcParams that take a value must be written as key=value | ERROR | none |
 | `pf-route53-svcparams-no-default-alpn-requires-alpn` | AWS::Route53::RecordSet<br>AWS::Route53::RecordSetGroup | no-default-alpn may only be used together with alpn | ERROR | none |
 | `pf-route53-tlsa-certificate-usage-enum` | AWS::Route53::RecordSet<br>AWS::Route53::RecordSetGroup | The TLSA certificate usage must be 0-3 | ERROR | none |
@@ -2934,7 +2934,7 @@
 | `pf-route53resolver-firewallrule-override-attrs-require-override` | AWS::Route53Resolver::FirewallRuleGroup | BlockOverride properties are only allowed when BlockResponse is OVERRIDE | ERROR | none |
 | `pf-route53resolver-firewallrule-override-requires-all-three` | AWS::Route53Resolver::FirewallRuleGroup | An OVERRIDE DNS Firewall rule must set all three BlockOverride properties | ERROR | none |
 | `pf-route53resolver-firewallrule-priority-unique` | AWS::Route53Resolver::FirewallRuleGroup | DNS Firewall rule priorities must be unique inside a rule group | ERROR | none |
-| `pf-route53resolver-firewallrule-qtype-values` | AWS::Route53Resolver::FirewallRuleGroup | A DNS Firewall rule Qtype must be a known record type or TYPENUMBER | ERROR | none |
+| `pf-route53resolver-firewallrule-qtype-values` | AWS::Route53Resolver::FirewallRuleGroup | A DNS Firewall rule Qtype must be a known record type or TYPENUMBER | WARN | none |
 | `pf-route53resolver-firewallrule-redirectionaction-enum` | AWS::Route53Resolver::FirewallRuleGroup | A DNS Firewall FirewallDomainRedirectionAction must be spelled in upper case | ERROR | pending-engine |
 | `pf-route53resolver-firewallrule-ruletype-toplevel-exclusive` | AWS::Route53Resolver::FirewallRuleGroup | FirewallRuleType cannot be combined with FirewallDomainListId or DnsThreatProtection | ERROR | none |
 | `pf-route53resolver-firewallrule-threat-action-not-allow` | AWS::Route53Resolver::FirewallRuleGroup | A DnsThreatProtection rule cannot use Action ALLOW | ERROR | none |
@@ -2994,7 +2994,7 @@
 | `pf-s3-metadata-v1-v2-exclusive` | AWS::S3::Bucket | MetadataConfiguration and MetadataTableConfiguration cannot both be set | ERROR | none |
 | `pf-s3-notification-destination-region` | AWS::S3::Bucket | A notification destination must live in the bucket region | ERROR | none |
 | `pf-s3-notification-duplicate-filter-type` | AWS::S3::Bucket | A notification filter may hold one prefix rule and one suffix rule | ERROR | none |
-| `pf-s3-notification-event-name` | AWS::S3::Bucket | The notification Event must be an S3 event type | ERROR | none |
+| `pf-s3-notification-event-name` | AWS::S3::Bucket | The notification Event must be an S3 event type | WARN | none |
 | `pf-s3-notification-fifo-queue` | AWS::S3::Bucket | S3 event notifications cannot target a FIFO SQS queue | ERROR | none |
 | `pf-s3-notification-fifo-topic` | AWS::S3::Bucket | S3 event notifications cannot target a FIFO SNS topic | ERROR | none |
 | `pf-s3-notification-overlapping-filters` | AWS::S3::Bucket | Notification entries must not overlap for the same event type | ERROR | none |
@@ -3028,7 +3028,7 @@
 | `pf-s3-website-replace-key-exclusive` | AWS::S3::Bucket | ReplaceKeyWith and ReplaceKeyPrefixWith are mutually exclusive | ERROR | none |
 | `pf-s3-website-routing-rules-need-index` | AWS::S3::Bucket | RoutingRules require an IndexDocument | ERROR | none |
 | `pf-s3express-ap-name-suffix` | AWS::S3Express::AccessPoint | An S3 Express access point name must end with --<availability-zone-id>--xa-s3 | ERROR | none |
-| `pf-s3express-ap-scope-permissions` | AWS::S3Express::AccessPoint | Access point scope permissions are bare API names, not s3: actions | ERROR | cfn-schema |
+| `pf-s3express-ap-scope-permissions` | AWS::S3Express::AccessPoint | Access point scope permissions are bare API names, not s3: actions | WARN | cfn-schema |
 | `pf-s3express-ap-zone-mismatch` | AWS::S3Express::AccessPoint | An S3 Express access point must carry the same zone id as its bucket | ERROR | none |
 | `pf-s3express-bucket-key-enabled-false` | AWS::S3Express::DirectoryBucket | A directory bucket must keep BucketKeyEnabled true | ERROR | none |
 | `pf-s3express-bucket-location-region` | AWS::S3Express::DirectoryBucket | LocationName must name a zone in the region the stack deploys to | ERROR | none |
@@ -3112,7 +3112,7 @@
 | `pf-ses-dkim-next-signing-key-length-easy-dkim-only` | AWS::SES::EmailIdentity | NextSigningKeyLength cannot be combined with the BYODKIM selector and key | ERROR | none |
 | `pf-ses-dkim-private-key-base64` | AWS::SES::EmailIdentity | A BYODKIM private key must be bare base64, not a PEM block | ERROR | none |
 | `pf-ses-dkim-signing-selector-charset` | AWS::SES::EmailIdentity | A BYODKIM selector must be a single DNS label without a leading or trailing hyphen | ERROR | none |
-| `pf-ses-event-destination-matching-event-types-enum` | AWS::SES::ConfigurationSetEventDestination | MatchingEventTypes takes only the ten SES event types | ERROR | none |
+| `pf-ses-event-destination-matching-event-types-enum` | AWS::SES::ConfigurationSetEventDestination | MatchingEventTypes takes only the ten SES event types | WARN | none |
 | `pf-ses-event-destination-matching-event-types-nonempty` | AWS::SES::ConfigurationSetEventDestination | An event destination must match at least one event type | ERROR | none |
 | `pf-ses-event-destination-requires-destination` | AWS::SES::ConfigurationSetEventDestination | An event destination must carry one destination block | ERROR | none |
 | `pf-ses-eventbridge-destination-bus-region` | AWS::SES::ConfigurationSetEventDestination | An EventBridge event destination must be in the deployment Region | ERROR | none |
@@ -3244,7 +3244,7 @@
 | `pf-avp-schema-appliesto-principaltypes-declared` | AWS::VerifiedPermissions::PolicyStore | appliesTo.principalTypes names entity types the schema declares | ERROR | none |
 | `pf-avp-schema-appliesto-resourcetypes-declared` | AWS::VerifiedPermissions::PolicyStore | appliesTo.resourceTypes names entity types the schema declares | ERROR | none |
 | `pf-avp-schema-attribute-entity-name-declared` | AWS::VerifiedPermissions::PolicyStore | An Entity attribute names an entity type the schema declares | ERROR | none |
-| `pf-avp-schema-attribute-type-known` | AWS::VerifiedPermissions::PolicyStore | A type name is a Cedar built-in or something the schema declares | ERROR | none |
+| `pf-avp-schema-attribute-type-known` | AWS::VerifiedPermissions::PolicyStore | A type name is a Cedar built-in or something the schema declares | WARN | none |
 | `pf-avp-schema-entity-type-identifier` | AWS::VerifiedPermissions::PolicyStore | An entity type name is a Cedar identifier | ERROR | none |
 | `pf-avp-schema-entity-type-not-action` | AWS::VerifiedPermissions::PolicyStore | Action is not declared in entityTypes | ERROR | none |
 | `pf-avp-schema-entity-type-reserved-word` | AWS::VerifiedPermissions::PolicyStore | An entity type name is not a Cedar reserved word | ERROR | none |

@@ -331,7 +331,7 @@ Resource names are relative to `AWS::<Service>::`; the number in parentheses is 
 | **S3Express** | `AccessPoint` (3), `DirectoryBucket` (11) |
 | **Scheduler** | `Schedule` (12), `ScheduleGroup` (1) |
 | **SecretsManager** | `RotationSchedule` (4), `Secret` (5), `SecretTargetAttachment` (1) |
-| **ServiceDiscovery** | `HttpNamespace` (3), `Instance` (19), `PrivateDnsNamespace` (4), `PublicDnsNamespace` (4), `Service` (13) |
+| **ServiceDiscovery** | `HttpNamespace` (3), `Instance` (19), `PrivateDnsNamespace` (4), `PublicDnsNamespace` (4), `Service` (14) |
 | **SES** | `ConfigurationSetEventDestination` (8), `ContactList` (1), `EmailIdentity` (6), `ReceiptRule` (6), `ReceiptRuleSet` (1), `Template` (1) |
 | **SNS** | `Subscription` (11), `Topic` (15), `TopicPolicy` (1) |
 | **SQS** | `Queue` (10), `QueuePolicy` (1) |
