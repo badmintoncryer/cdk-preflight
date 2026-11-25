@@ -5,7 +5,11 @@ import rego.v1
 # FlowNodeConfiguration is a union keyed exactly like the node Type
 # (Input, Output, Prompt, …); the schema's oneOf only guarantees one member.
 # A mismatch fails CreateFlow, an absent block fails PrepareFlow (measured
-# 2026-09-06).
+# 2026-09-06 on a Prompt node). The node types whose configuration member is an
+# empty structure deploy without Configuration (bench 2026-11-25 us-east-1:
+# Input, Output, Iterator and Collector each CREATE_COMPLETE, prepared).
+_pf_fnc_empty_config_types := {"Input", "Output", "Iterator", "Collector"}
+
 _pf_fnc_url := "https://docs.aws.amazon.com/bedrock/latest/APIReference/API_agent_FlowNode.html"
 
 violation contains make_diag_full("pf-bedrock-flow-node-configuration", "ERROR", name,
@@ -17,6 +21,7 @@ violation contains make_diag_full("pf-bedrock-flow-node-configuration", "ERROR",
 	some i, n in _pf_bedrocklib_flow_nodes(name)
 	t := n.Type
 	is_string(t)
+	not t in _pf_fnc_empty_config_types
 	not _pf_bedrocklib_has(n, "Configuration")
 }
 
