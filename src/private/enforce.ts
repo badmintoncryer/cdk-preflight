@@ -9,6 +9,7 @@ import {
   type PolicyViolation,
 } from 'aws-cdk-lib';
 import type { IConstruct } from 'constructs';
+import { inactiveResourcesInFile } from './conditions';
 import { checkQuotas, type QuotaCheckOptions } from './quota';
 import { BUNDLED_LIBS, type BundledRuleData } from '../rules.generated';
 
@@ -166,8 +167,12 @@ export class PreflightEnforcePlugin implements IPolicyValidationPlugin {
         violations.push(engineErrorViolation(st, e));
         continue;
       }
+      // Condition が既定値で false と決まるリソースは作られない（issue #408）。
+      // そこに立った自前ルールの findings は構造上すべて誤検知なので捨てる。
+      const inactive = inactiveResourcesInFile(st.templatePath, { region: st.region, accountId: st.accountId });
       for (const d of (report.diagnostics ?? []) as EngineDiagnostic[]) {
-        const isOurs = d.source === 'CUSTOM' && ours.has(d.ruleId);
+        const isOurs = d.source === 'CUSTOM' && ours.has(d.ruleId)
+          && !(d.entity?.logicalId !== undefined && inactive.has(d.entity.logicalId));
         const isStrictHit = this.strict
           && d.source !== 'CUSTOM'
           && (d.severity === 'ERROR' || d.severity === 'FATAL');

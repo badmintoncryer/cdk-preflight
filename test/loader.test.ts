@@ -5,7 +5,7 @@
 import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
-import { App, Stack, Stage, Validations, aws_ec2 as ec2, aws_eks as eks, aws_iam as iam, aws_kinesis as kinesis, aws_lambda as lambda, aws_logs as logs, aws_sqs as sqs } from 'aws-cdk-lib';
+import { App, CfnCondition, CfnParameter, Fn, Stack, Stage, Validations, aws_ec2 as ec2, aws_eks as eks, aws_iam as iam, aws_kinesis as kinesis, aws_lambda as lambda, aws_logs as logs, aws_sns as sns, aws_sqs as sqs } from 'aws-cdk-lib';
 import { Preflight } from '../src';
 import {
   ENGINE_ERROR_RULE,
@@ -325,6 +325,37 @@ describe('enforce mode (default)', () => {
       expect(where.some((p) => p.startsWith('B'))).toBe(true);
       expect(where.some((p) => p.startsWith('A'))).toBe(false);
     });
+  });
+
+  test('issue #408: a finding on a resource whose Condition is false under the parameter defaults is dropped', () => {
+    const app = makeApp();
+    Preflight.apply(app, { enforce: true });
+    const stack = new Stack(app, 'S', { env: { region: 'us-east-1', account: '123456789012' } });
+    const emails = new CfnParameter(stack, 'Emails', { type: 'CommaDelimitedList', default: 'admin@example.com,' });
+    const topic = new sns.CfnTopic(stack, 'Topic');
+    for (const i of [0, 1]) {
+      const endpoint = Fn.select(i, emails.valueAsList);
+      const cond = new CfnCondition(stack, `Has${i}`, { expression: Fn.conditionNot(Fn.conditionEquals(endpoint, '')) });
+      const s = new sns.CfnSubscription(stack, `Sub${i}`, { protocol: 'email', topicArn: topic.ref, endpoint });
+      s.cfnOptions.condition = cond;
+    }
+    expect(() => app.synth()).not.toThrow();
+  });
+
+  test('a resource whose Condition cannot be decided is still checked', () => {
+    const app = makeApp();
+    Preflight.apply(app, { enforce: true });
+    const stack = new Stack(app, 'S', { env: { region: 'us-east-1', account: '123456789012' } });
+    const flag = new CfnParameter(stack, 'Flag', { type: 'String' });
+    const cond = new CfnCondition(stack, 'On', { expression: Fn.conditionEquals(flag.valueAsString, 'yes') });
+    const vpc = new ec2.CfnVPC(stack, 'Vpc', { cidrBlock: '10.0.0.0/16' });
+    const sg = new ec2.CfnSecurityGroup(stack, 'SG', {
+      groupDescription: 'cdk-preflight loader test',
+      vpcId: vpc.ref,
+      securityGroupIngress: [{ ipProtocol: 'tcp', fromPort: 99999, toPort: 99999, cidrIp: '10.0.0.0/8' }],
+    });
+    sg.cfnOptions.condition = cond;
+    expect(() => app.synth()).toThrow(/pf-ec2-sg-port-range|Validation failed/);
   });
 
   test('passes synthesis for clean stacks', () => {
