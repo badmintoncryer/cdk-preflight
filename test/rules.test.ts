@@ -1698,6 +1698,55 @@ describe('ec2 and vpc rules', () => {
   });
 });
 
+/**
+ * pf-iam-policy-version: Version を省略したポリシーを "__pf_absent" という版として誤検知していた。
+ * 2026-11-25 に us-east-1 で確かめた振る舞いを固定する。ロールのインラインポリシーと
+ * AWS::IAM::Policy は省略（既定は 2008-10-17）も 2008-10-17 も受け付け、AWS::IAM::ManagedPolicy は
+ * どちらも "Policy document must be version 2012-10-17 or greater." で拒否する。
+ */
+describe('pf-iam-policy-version follows the resource type', () => {
+  const RULE = 'pf-iam-policy-version';
+  const fired = (tpl: unknown) => diagnoseTemplate(tpl).filter((d) => d.source === 'CUSTOM' && d.ruleId === RULE);
+  const doc = (version?: unknown) => ({
+    ...(version === undefined ? {} : { Version: version }),
+    Statement: [{ Effect: 'Allow', Action: 's3:ListAllMyBuckets', Resource: '*' }],
+  });
+  const trust = { Version: '2012-10-17', Statement: [{ Effect: 'Allow', Principal: { Service: 'lambda.amazonaws.com' }, Action: 'sts:AssumeRole' }] };
+  const role = (version?: unknown) => ({
+    Resources: { R: { Type: 'AWS::IAM::Role', Properties: { AssumeRolePolicyDocument: trust, Policies: [{ PolicyName: 'p', PolicyDocument: doc(version) }] } } },
+  });
+  const policy = (version?: unknown) => ({
+    Resources: {
+      R: { Type: 'AWS::IAM::Role', Properties: { AssumeRolePolicyDocument: trust } },
+      P: { Type: 'AWS::IAM::Policy', Properties: { PolicyName: 'p', Roles: [{ Ref: 'R' }], PolicyDocument: doc(version) } },
+    },
+  });
+  const managed = (version?: unknown) => ({
+    Resources: { M: { Type: 'AWS::IAM::ManagedPolicy', Properties: { PolicyDocument: doc(version) } } },
+  });
+
+  test('inline and attached policies may omit Version or use 2008-10-17', () => {
+    expect(fired(role())).toHaveLength(0);
+    expect(fired(role('2008-10-17'))).toHaveLength(0);
+    expect(fired(policy())).toHaveLength(0);
+    expect(fired(policy('2008-10-17'))).toHaveLength(0);
+  });
+
+  test('an unknown Version still fires on inline and attached policies', () => {
+    expect(fired(role('2012-10-18'))).toHaveLength(1);
+    expect(fired(policy('2012-10-18'))).toHaveLength(1);
+  });
+
+  test('a managed policy needs 2012-10-17', () => {
+    expect(fired(managed('2012-10-17'))).toHaveLength(0);
+    const missing = fired(managed());
+    expect(missing).toHaveLength(1);
+    expect(missing[0].message).toContain('it is missing');
+    expect(fired(managed('2008-10-17'))).toHaveLength(1);
+    expect(fired(managed({ Ref: 'AWS::NoValue' }))).toHaveLength(0);
+  });
+});
+
 describe('rds and aurora rules', () => {
   const ids = (ds: Diagnostic[]) => ds.filter((d) => d.source === 'CUSTOM').map((d) => d.ruleId);
   const baseInst = {
