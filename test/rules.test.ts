@@ -473,41 +473,78 @@ describe('deploy_region rules', () => {
 
   /**
    * issue #395: Cognito が受け付ける SES のリージョンはプールのリージョンで決まる
-   * （開発者ガイド "Amazon SES email configuration Regions" の表）。プールと同じリージョンの
-   * SES は使えるので、固定の 3 リージョンだけで判定すると in-Region の構成を誤検知する。
+   * （開発者ガイド "Amazon SES email configuration Regions" の表）。2026-11-25 に実デプロイで
+   * 確かめた振る舞いを固定する。メール（EmailConfiguration）とリスク通知（NotifyConfiguration）は
+   * 同じ答えを返したので、両方のルールが _pf_coglib_ses_region_bad を使う。
    */
-  describe('pf-cognito-email-sourcearn-region follows the pool Region (#395)', () => {
-    const RULE = 'pf-cognito-email-sourcearn-region';
-    const pool = (sourceArn: unknown) => ({
+  describe('cognito SES SourceArn rules follow the pool Region (#395)', () => {
+    const EMAIL = 'pf-cognito-email-sourcearn-region';
+    const RISK = 'pf-cognito-risk-notify-source-arn-region';
+    const arn = (region: string) => ({
+      'Fn::Join': ['', ['arn:', { Ref: 'AWS::Partition' }, `:ses:${region}:123456789012:identity/example.com`]],
+    });
+    const pool = (sourceArn: unknown, sendingAccount = 'DEVELOPER') => ({
       Resources: {
         Pool: {
           Type: 'AWS::Cognito::UserPool',
-          Properties: { EmailConfiguration: { EmailSendingAccount: 'DEVELOPER', From: 'noreply@example.com', SourceArn: sourceArn } },
+          Properties: { EmailConfiguration: { EmailSendingAccount: sendingAccount, From: 'noreply@example.com', SourceArn: sourceArn } },
         },
       },
     });
-    // UserPoolEmail.withSES が合成する形
-    const cdkArn = (region: string) => ({
-      'Fn::Join': ['', ['arn:', { Ref: 'AWS::Partition' }, `:ses:${region}:123456789012:identity/example.com`]],
+    const risk = (sourceArn: unknown) => ({
+      Resources: {
+        P: { Type: 'AWS::Cognito::UserPool', Properties: {} },
+        X: {
+          Type: 'AWS::Cognito::UserPoolRiskConfigurationAttachment',
+          Properties: {
+            UserPoolId: { Ref: 'P' },
+            ClientId: 'ALL',
+            AccountTakeoverRiskConfiguration: {
+              NotifyConfiguration: { SourceArn: sourceArn },
+              Actions: { HighAction: { EventAction: 'BLOCK', Notify: true } },
+            },
+          },
+        },
+      },
     });
 
-    test('stays silent on an SES identity in the pool Region', () => {
-      expect(ids(diagnoseTemplate(pool(cdkArn('ap-northeast-1')), 'ap-northeast-1'))).not.toContain(RULE);
-      expect(ids(diagnoseTemplate(pool(cdkArn('us-west-1')), 'us-west-1'))).not.toContain(RULE);
+    test('an identity in the pool Region is accepted (backwards compatible and in-Region-only pools)', () => {
+      expect(ids(diagnoseTemplate(pool(arn('ap-northeast-1')), 'ap-northeast-1'))).not.toContain(EMAIL);
+      expect(ids(diagnoseTemplate(pool(arn('us-west-1')), 'us-west-1'))).not.toContain(EMAIL);
+      expect(ids(diagnoseTemplate(risk(arn('ap-northeast-1')), 'ap-northeast-1'))).not.toContain(RISK);
     });
 
-    test('stays silent on a documented alternate Region and on a wildcard Region', () => {
-      expect(ids(diagnoseTemplate(pool(cdkArn('eu-central-1')), 'me-central-1'))).not.toContain(RULE);
-      expect(ids(diagnoseTemplate(pool('arn:aws:ses:*:123456789012:identity/example.com'), 'ap-east-1'))).not.toContain(RULE);
+    test('a backwards compatible pool also takes the three older Regions', () => {
+      expect(ids(diagnoseTemplate(pool(arn('us-east-1')), 'ap-northeast-1'))).not.toContain(EMAIL);
+      expect(ids(diagnoseTemplate(risk(arn('eu-west-1')), 'ap-northeast-1'))).not.toContain(RISK);
+    });
+
+    test('an in-Region-only pool rejects the three older Regions', () => {
+      expect(ids(diagnoseTemplate(pool(arn('us-east-1')), 'us-west-1'))).toContain(EMAIL);
+      expect(ids(diagnoseTemplate(pool(arn('us-east-1')), 'eu-west-3'))).toContain(EMAIL);
+      expect(ids(diagnoseTemplate(risk(arn('us-east-1')), 'us-west-1'))).toContain(RISK);
+    });
+
+    test('a wildcard Region is accepted only for an alternate-Region pool', () => {
+      const wildcard = 'arn:aws:ses:*:123456789012:identity/example.com';
+      expect(ids(diagnoseTemplate(pool(wildcard, 'COGNITO_DEFAULT'), 'ap-east-1'))).not.toContain(EMAIL);
+      expect(ids(diagnoseTemplate(pool(wildcard, 'COGNITO_DEFAULT'), 'us-east-1'))).toContain(EMAIL);
+      expect(ids(diagnoseTemplate(pool(wildcard), 'ap-northeast-1'))).toContain(EMAIL);
+    });
+
+    test('an alternate-Region pool takes its listed Regions', () => {
+      expect(ids(diagnoseTemplate(pool(arn('eu-central-1')), 'me-central-1'))).not.toContain(EMAIL);
     });
 
     test('stays silent when the deploy Region is unknown', () => {
-      expect(ids(diagnoseTemplate(pool('arn:aws:ses:ap-northeast-1:123456789012:identity/example.com')))).not.toContain(RULE);
+      expect(ids(diagnoseTemplate(pool('arn:aws:ses:ap-northeast-1:123456789012:identity/example.com')))).not.toContain(EMAIL);
+      expect(ids(diagnoseTemplate(risk('arn:aws:ses:ap-northeast-1:123456789012:identity/example.com')))).not.toContain(RISK);
     });
 
-    test('still fires on an identity in a Region the pool Region cannot use', () => {
-      expect(ids(diagnoseTemplate(pool(cdkArn('ap-northeast-1')), 'us-east-1'))).toContain(RULE);
-      expect(ids(diagnoseTemplate(pool(cdkArn('ap-southeast-2')), 'ap-northeast-1'))).toContain(RULE);
+    test('still fires on an identity in a Region the pool cannot use', () => {
+      expect(ids(diagnoseTemplate(pool(arn('ap-northeast-1')), 'us-east-1'))).toContain(EMAIL);
+      expect(ids(diagnoseTemplate(pool(arn('ap-southeast-2')), 'ap-northeast-1'))).toContain(EMAIL);
+      expect(ids(diagnoseTemplate(risk(arn('ap-southeast-2')), 'ap-northeast-1'))).toContain(RISK);
     });
   });
 });
