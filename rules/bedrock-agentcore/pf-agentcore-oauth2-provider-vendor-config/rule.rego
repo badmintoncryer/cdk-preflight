@@ -23,7 +23,7 @@ _pf_oavc_expected(vendor) := "IncludedOauth2ProviderConfig" if not _pf_oavc_bloc
 
 violation contains make_diag_full("pf-agentcore-oauth2-provider-vendor-config", "ERROR", name,
 	"Properties.Oauth2ProviderConfigInput",
-	sprintf("CredentialProviderVendor is %s but Oauth2ProviderConfigInput has no %s; CreateOauth2CredentialProvider fails with \"Provided configuration does not match selected type: %s\"", [vendor, expected, vendor]),
+	sprintf("CredentialProviderVendor is %s but Oauth2ProviderConfigInput has no %s; CreateOauth2CredentialProvider fails with \"%s\"", [vendor, expected, _pf_oavc_error(inp, vendor)]),
 	sprintf("Add Oauth2ProviderConfigInput.%s (ClientId, ClientSecret, and for Custom / Included the OauthDiscovery)", [expected]),
 	"https://docs.aws.amazon.com/bedrock-agentcore-control/latest/APIReference/API_CreateOauth2CredentialProvider.html") if {
 	some name in resources_of_type("AWS::BedrockAgentCore::OAuth2CredentialProvider")
@@ -35,4 +35,13 @@ violation contains make_diag_full("pf-agentcore-oauth2-provider-vendor-config", 
 	inp := object.get(props, "Oauth2ProviderConfigInput", null)
 	is_object(inp)
 	object.get(inp, expected, "__pf_absent") == "__pf_absent"
+}
+
+# With no config block at all the service answers differently (bench 2026-11-25).
+_pf_oavc_error(inp, vendor) := "Exactly one credential provider config must be provided" if {
+	count([k | some k in object.keys(inp); endswith(k, "ProviderConfig")]) == 0
+}
+
+_pf_oavc_error(inp, vendor) := sprintf("Provided configuration does not match selected type: %s", [vendor]) if {
+	count([k | some k in object.keys(inp); endswith(k, "ProviderConfig")]) > 0
 }

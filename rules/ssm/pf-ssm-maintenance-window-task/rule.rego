@@ -32,7 +32,7 @@ violation contains make_diag_full("pf-ssm-maintenance-window-task", "ERROR", nam
 
 violation contains make_diag_full("pf-ssm-maintenance-window-task", "ERROR", name,
 	sprintf("Properties.%s", [k]),
-	sprintf("%s is required when Targets are set; RegisterTaskWithMaintenanceWindow fails with \"Max Errors must be a number of at least 0, or a percentage between 0 and 100 Max Concurrency must be a number greater than 0, or a percentage between 1 and 100\"", [k]),
+	sprintf("%s is required when Targets are set; RegisterTaskWithMaintenanceWindow fails with \"%s\"", [k, _pf_ssmmt_limit_error[k]]),
 	_pf_ssmmt_fix, _pf_ssmmt_url) if {
 	some name in resources_of_type("AWS::SSM::MaintenanceWindowTask")
 	_pf_ssmmt_targets(name)
@@ -91,4 +91,11 @@ violation contains make_diag_full("pf-ssm-maintenance-window-task", "ERROR", nam
 	is_object(rc)
 	object.get(rc, "NotificationConfig", "__pf_absent") != "__pf_absent"
 	object.get(rc, "ServiceRoleArn", "__pf_absent") == "__pf_absent"
+}
+
+# The service names each missing limit on its own (bench 2026-11-25: MaxConcurrency
+# alone -> "Max Concurrency must be ..."); with both missing it prints both.
+_pf_ssmmt_limit_error := {
+	"MaxConcurrency": "Max Concurrency must be a number greater than 0, or a percentage between 1 and 100",
+	"MaxErrors": "Max Errors must be a number of at least 0, or a percentage between 0 and 100",
 }

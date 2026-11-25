@@ -435,3 +435,16 @@ _pf_elb_lb_vpc(lb) := v if {
 	count(vpcs) == 1
 	some v in vpcs
 }
+
+# How a message names a listener. Only a Gateway Load Balancer listener omits
+# Protocol (it is GENEVE there); on any other load balancer the omission is itself
+# rejected with "A listener protocol must be specified" (bench 2026-11-25), so the
+# message must not call such a listener GENEVE.
+_pf_elb_listener_label(name) := sprintf("%s listener", [p]) if {
+	p := _pf_elb_props(name).Protocol
+	is_string(p)
+}
+
+_pf_elb_listener_label(name) := "listener without Protocol (a Gateway Load Balancer listener; any other load balancer rejects it with \"A listener protocol must be specified\")" if {
+	not "Protocol" in object.keys(_pf_elb_props(name))
+}

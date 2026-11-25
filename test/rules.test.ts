@@ -2720,6 +2720,49 @@ describe('sqs / sns rules', () => {
  * Maintenance Window / Association の cron 受理集合。ハーネスは us-east-1 /
  * 123456789012 を deploy_region / deploy_account として注入する。
  */
+/**
+ * 実デプロイで別のエラー文が返ったケースで、メッセージがテンプレートの状態を正しく言うことを固定する
+ * （bench 2026-11-25）。各ルールの pass テンプレートから 1 つプロパティを消して評価する。
+ */
+describe('messages match what the service answers for an omitted property', () => {
+  const fixture = (rule: string) => {
+    const dir = fs.readdirSync(path.join(__dirname, '..', 'rules')).find((svc) =>
+      fs.existsSync(path.join(__dirname, '..', 'rules', svc, rule)))!;
+    return JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'rules', dir, rule, 'templates', 'pass.template.json'), 'utf8'));
+  };
+  const drop = (tpl: any, type: string, keyPath: string) => {
+    const keys = keyPath.split('.');
+    for (const res of Object.values<any>(tpl.Resources)) {
+      if (res.Type !== type) continue;
+      let o = res.Properties;
+      for (const key of keys.slice(0, -1)) o = o?.[key];
+      if (o && keys[keys.length - 1] in o) { delete o[keys[keys.length - 1]]; return tpl; }
+    }
+    throw new Error(`${keyPath} not found`);
+  };
+  const LISTENER = 'AWS::ElasticLoadBalancingV2::Listener';
+  const TG = 'AWS::ElasticLoadBalancingV2::TargetGroup';
+  test.each([
+    ['pf-elbv2-listener-sslpolicy-secure-only', 'pf-elbv2-listener-cert-exactly-one', LISTENER, 'Protocol', 'listener without Protocol'],
+    ['pf-elbv2-listener-cert-insecure-protocol', 'pf-elbv2-listener-cert-exactly-one', LISTENER, 'Protocol', 'listener without Protocol'],
+    ['pf-elbv2-listener-auth-action-https-only', 'pf-elbv2-action-oidc-endpoint-https', LISTENER, 'Protocol', 'listener without Protocol'],
+    ['pf-elbv2-listener-alpn-tls-only', 'pf-elbv2-listener-alpn-single', LISTENER, 'Protocol', 'listener without Protocol'],
+    ['pf-elbv2-listener-certificate-secure-listener', 'pf-elbv2-listener-certificate-secure-listener', LISTENER, 'Protocol', 'listener without Protocol'],
+    ['pf-elbv2-listener-mtls-https-only', 'pf-elbv2-listener-mtls-ignore-expiry-verify-only', LISTENER, 'Protocol', 'listener without Protocol'],
+    ['pf-elbv2-tg-attr-slow-start-scope', 'pf-elbv2-tg-slow-start-range', TG, 'Protocol', 'Protocol-less'],
+    ['pf-opensearch-cognito-requires-ids', 'pf-opensearch-cognito-requires-ids', 'AWS::OpenSearchService::Domain', 'CognitoOptions.IdentityPoolId', 'IdentityPoolId needs to be specified'],
+    ['pf-ssm-maintenance-window-task', 'pf-ssm-maintenance-window-task', 'AWS::SSM::MaintenanceWindowTask', 'MaxConcurrency', 'Max Concurrency must be a number greater than 0'],
+    ['pf-agentcore-oauth2-provider-vendor-config', 'pf-agentcore-oauth2-provider-vendor-config', 'AWS::BedrockAgentCore::OAuth2CredentialProvider', 'Oauth2ProviderConfigInput.GoogleOauth2ProviderConfig', 'Exactly one credential provider config must be provided'],
+    ['pf-batch-jd-resource-requirements-vcpu-min', 'pf-batch-jd-runtime-platform-cpu-arch-value', 'AWS::Batch::JobDefinition', 'PlatformCapabilities', 'for type VCPU in resourceRequirement is not valid'],
+    ['pf-elbv2-tg-protocol-required-non-lambda', 'pf-elbv2-tg-protocol-required-non-lambda', TG, 'Port', 'A port must be specified'],
+  ])('%s names the omission (from %s without %s.%s)', (rule, src, type, keyPath, expected) => {
+    const ds = diagnoseTemplate(drop(fixture(src), type, keyPath)).filter((d) => d.source === 'CUSTOM' && d.ruleId === rule);
+    expect(ds.length).toBeGreaterThan(0);
+    expect(ds.map((d) => d.message).join(' | ')).toContain(expected);
+    expect(ds.map((d) => d.message).join(' | ')).not.toContain('GENEVE listener');
+  });
+});
+
 describe('kms / secretsmanager / ssm rules', () => {
   const ids = (ds: Diagnostic[]) => ds.filter((d) => d.source === 'CUSTOM').map((d) => d.ruleId);
   const key = (props: Record<string, unknown>, extra: Record<string, unknown> = {}) => ({ Resources: { Key: { Type: 'AWS::KMS::Key', Properties: props }, ...extra } });

@@ -8,7 +8,7 @@ _pf_elblaah_url := "https://docs.aws.amazon.com/elasticloadbalancing/latest/APIR
 
 violation contains make_diag_full("pf-elbv2-listener-auth-action-https-only", "ERROR", name,
 	sprintf("Properties.DefaultActions.%d.Type", [a.index]),
-	sprintf("An '%s' action is on a %s listener; the OIDC and Cognito flows need TLS, so they are only accepted on an HTTPS listener", [t, proto]),
+	sprintf("An '%s' action is on a %s; the OIDC and Cognito flows need TLS, so they are only accepted on an HTTPS listener", [t, _pf_elb_listener_label(name)]),
 	_pf_elblaah_fix, _pf_elblaah_url) if {
 	some name in _pf_elb_listeners
 	some a in _pf_elb_actions(name, "DefaultActions")

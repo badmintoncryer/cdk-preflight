@@ -8,7 +8,7 @@ _pf_elblci_url := "https://docs.aws.amazon.com/elasticloadbalancing/latest/APIRe
 
 violation contains make_diag_full("pf-elbv2-listener-cert-insecure-protocol", "ERROR", name,
 	"Properties.Certificates",
-	sprintf("A certificate is attached to a %s listener; only HTTPS and TLS listeners terminate TLS", [proto]),
+	sprintf("A certificate is attached to a %s; only HTTPS and TLS listeners terminate TLS", [_pf_elb_listener_label(name)]),
 	_pf_elblci_fix, _pf_elblci_url) if {
 	some name in _pf_elb_listeners
 	_pf_unconditional_list(name, "Properties.Certificates")

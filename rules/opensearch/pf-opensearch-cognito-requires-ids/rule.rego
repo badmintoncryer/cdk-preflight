@@ -9,7 +9,7 @@ _pf_oscid_gaps(name) := {k |
 
 violation contains make_diag_full("pf-opensearch-cognito-requires-ids", "ERROR", name,
 	"Properties.CognitoOptions",
-	sprintf("CognitoOptions is enabled but %v missing; CreateDomain stops at the first gap (\"RoleArn needs to be specified\")", [concat(", ", sort(gaps))]),
+	sprintf("CognitoOptions is enabled but %v missing; CreateDomain stops at the first gap it checks with \"<name> needs to be specified\" (measured: \"RoleArn needs to be specified\", \"IdentityPoolId needs to be specified\")", [concat(", ", sort(gaps))]),
 	"Set RoleArn, UserPoolId and IdentityPoolId, or turn CognitoOptions off",
 	"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-opensearchservice-domain-cognitooptions.html") if {
 	some name in _pf_os_domains
