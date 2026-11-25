@@ -2187,6 +2187,72 @@ describe('ecs service and cloudwatch dashboard rules', () => {
  * ネストしたスコープ（Parallel / Map）、L1 の Definition オブジェクト、
  * Activity、深さ 3 のネスト上限、リージョン束縛。
  */
+/**
+ * issue #394: サービスが拒否するのは Base が 0 より大きいエントリーが 2 つ以上ある戦略で、
+ * meta.yaml#repro.expect の実測メッセージもそう言っている。`Base: 0` を数えてはいけない。
+ */
+describe('ECS capacity provider strategies count only Base > 0 (#394)', () => {
+  const customIds = (tpl: unknown) => diagnoseTemplate(tpl).filter((d) => d.source === 'CUSTOM').map((d) => d.ruleId);
+  const svc = (strategy: unknown[]) => ({
+    Resources: {
+      Cluster: { Type: 'AWS::ECS::Cluster', Properties: {} },
+      TD: {
+        Type: 'AWS::ECS::TaskDefinition',
+        Properties: {
+          RequiresCompatibilities: ['FARGATE'],
+          NetworkMode: 'awsvpc',
+          Cpu: '256',
+          Memory: '512',
+          ContainerDefinitions: [{ Name: 'app', Image: 'public.ecr.aws/nginx/nginx:latest', Essential: true }],
+        },
+      },
+      Svc: {
+        Type: 'AWS::ECS::Service',
+        Properties: {
+          Cluster: { Ref: 'Cluster' },
+          TaskDefinition: { Ref: 'TD' },
+          DesiredCount: 0,
+          NetworkConfiguration: { AwsvpcConfiguration: { Subnets: ['subnet-12345678'] } },
+          CapacityProviderStrategy: strategy,
+        },
+      },
+    },
+  });
+
+  test('stays silent when the second provider writes Base: 0', () => {
+    const tpl = svc([
+      { CapacityProvider: 'FARGATE_SPOT', Base: 2, Weight: 2 },
+      { CapacityProvider: 'FARGATE', Base: 0, Weight: 1 },
+    ]);
+    expect(customIds(tpl)).not.toContain('pf-ecs-svc-capacity-provider-multiple-base');
+  });
+
+  test('still fires when two providers set Base above zero', () => {
+    const tpl = svc([
+      { CapacityProvider: 'FARGATE_SPOT', Base: 1, Weight: 2 },
+      { CapacityProvider: 'FARGATE', Base: '1', Weight: 1 },
+    ]);
+    expect(customIds(tpl)).toContain('pf-ecs-svc-capacity-provider-multiple-base');
+  });
+
+  // CreateCluster の文言は "a base value defined" だが、Base: 0 は受け付けた（bench 2026-11-25）
+  test('pf-ecs-cluster-default-strategy-multiple-base also counts only Base above zero', () => {
+    const cluster = (strategy: unknown[]) => ({
+      Resources: {
+        Cluster: { Type: 'AWS::ECS::Cluster', Properties: { CapacityProviders: ['FARGATE', 'FARGATE_SPOT'], DefaultCapacityProviderStrategy: strategy } },
+      },
+    });
+    expect(customIds(cluster([
+      { CapacityProvider: 'FARGATE', Base: 1, Weight: 1 },
+      { CapacityProvider: 'FARGATE_SPOT', Base: 0, Weight: 1 },
+    ]))).not.toContain('pf-ecs-cluster-default-strategy-multiple-base');
+    expect(customIds(cluster([
+      { CapacityProvider: 'FARGATE', Base: 1, Weight: 1 },
+      { CapacityProvider: 'FARGATE_SPOT', Base: 2, Weight: 1 },
+    ]))).toContain('pf-ecs-cluster-default-strategy-multiple-base');
+  });
+});
+
 describe('stepfunctions rules', () => {
   const ids = (ds: Diagnostic[]) => ds.filter((d) => d.source === 'CUSTOM').map((d) => d.ruleId);
   const pass = { Type: 'Pass', End: true };
