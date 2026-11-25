@@ -2,7 +2,7 @@ id: pf-ses-event-destination-matching-event-types-enum
 service: ses
 benchRegion: us-east-1
 resourceTypes: [AWS::SES::ConfigurationSetEventDestination]
-severity: ERROR
+severity: WARN
 title: "MatchingEventTypes takes only the ten SES event types"
 constraintSource: https://docs.aws.amazon.com/ses/latest/APIReference-V2/API_EventDestinationDefinition.html
 upstream: none

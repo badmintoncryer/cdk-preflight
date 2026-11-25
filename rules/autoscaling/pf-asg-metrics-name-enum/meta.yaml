@@ -1,7 +1,7 @@
 id: pf-asg-metrics-name-enum
 service: autoscaling
 resourceTypes: [AWS::AutoScaling::AutoScalingGroup]
-severity: ERROR
+severity: WARN
 title: Collected group metrics come from the published list
 constraintSource: https://docs.aws.amazon.com/autoscaling/ec2/APIReference/API_CreateAutoScalingGroup.html
 upstream: none

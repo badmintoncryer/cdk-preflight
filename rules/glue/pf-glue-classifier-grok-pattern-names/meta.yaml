@@ -2,7 +2,7 @@ id: pf-glue-classifier-grok-pattern-names
 service: glue
 resourceTypes: [AWS::Glue::Classifier]
 benchRegion: us-east-1
-severity: ERROR
+severity: WARN
 title: A grok pattern only names built-in or custom patterns
 constraintSource: https://docs.aws.amazon.com/glue/latest/dg/custom-classifier.html
 upstream: none

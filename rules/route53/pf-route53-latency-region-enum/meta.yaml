@@ -2,7 +2,7 @@ id: pf-route53-latency-region-enum
 service: route53
 benchRegion: us-east-1
 resourceTypes: [AWS::Route53::RecordSet, AWS::Route53::RecordSetGroup]
-severity: ERROR
+severity: WARN
 title: "The latency Region must be an existing AWS Region"
 constraintSource: https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/routing-policy.html
 upstream: none

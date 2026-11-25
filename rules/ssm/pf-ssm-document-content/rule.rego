@@ -148,7 +148,7 @@ violation contains make_diag_full("pf-ssm-document-content", "ERROR", name,
 	object.get(o, "name", null) == n
 }
 
-violation contains make_diag_full("pf-ssm-document-content", "ERROR", name,
+violation contains make_diag_full("pf-ssm-document-content", "WARN", name,
 	sprintf("Properties.Content.mainSteps.%d.action", [i]),
 	sprintf("'%s' is not a known %s step action; CreateDocument fails with \"Unknown plugin name: %s\" / \"Unknown action: %s\"", [a, _pf_ssmdc_type(name), a, a]),
 	_pf_ssmdc_fix, _pf_ssmdc_url) if {
@@ -161,7 +161,7 @@ violation contains make_diag_full("pf-ssm-document-content", "ERROR", name,
 	not a in known
 }
 
-violation contains make_diag_full("pf-ssm-document-content", "ERROR", name,
+violation contains make_diag_full("pf-ssm-document-content", "WARN", name,
 	sprintf("Properties.Content.runtimeConfig.%s", [k]),
 	sprintf("'%s' is not a known Command plugin; CreateDocument fails with \"Unknown plugin name: %s\"", [k, k]),
 	_pf_ssmdc_fix, _pf_ssmdc_url) if {

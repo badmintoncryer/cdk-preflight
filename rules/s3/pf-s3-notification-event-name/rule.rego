@@ -36,7 +36,7 @@ _pf_s3nev_events := {
 	"s3:IntelligentTiering",
 }
 
-violation contains make_diag_full("pf-s3-notification-event-name", "ERROR", name,
+violation contains make_diag_full("pf-s3-notification-event-name", "WARN", name,
 	sprintf("Properties.NotificationConfiguration.%v.%d.Event", [c.k, c.i]),
 	sprintf("'%v' is not an S3 event type", [ev]),
 	_pf_s3nev_fix, _pf_s3nev_url) if {

@@ -2,7 +2,7 @@ package cdk_preflight
 
 import rego.v1
 
-violation contains make_diag_full("pf-route53resolver-firewallrule-qtype-values", "ERROR", name,
+violation contains make_diag_full("pf-route53resolver-firewallrule-qtype-values", "WARN", name,
 	sprintf("Properties.FirewallRules[%d]", [i]),
 	sprintf("Qtype is '%s', which is neither a supported record type nor a TYPENUMBER value", [q]),
 	"Use a record type such as A, AAAA or TXT, or the TYPENUMBER form (for example TYPE65535)",

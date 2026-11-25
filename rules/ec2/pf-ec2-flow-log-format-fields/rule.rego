@@ -12,7 +12,7 @@ _pf_ec2flf_unknown(name) := f if {
 	not f in _pf_ec2flf_fields
 }
 
-violation contains make_diag_full("pf-ec2-flow-log-format-fields", "ERROR", name,
+violation contains make_diag_full("pf-ec2-flow-log-format-fields", "WARN", name,
 	"Properties.LogFormat",
 	sprintf("LogFormat names the field '%s', which flow logs do not provide (\"Unknown fields provided\")", [f]),
 	"Use only the documented ${field} names; check the log record fields table",

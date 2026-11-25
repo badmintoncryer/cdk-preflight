@@ -2,7 +2,7 @@ id: pf-glue-schema-compatibility
 service: glue
 resourceTypes: [AWS::Glue::Schema]
 benchRegion: us-east-1
-severity: ERROR
+severity: WARN
 title: Schema Compatibility must be one of the seven documented modes
 constraintSource: https://docs.aws.amazon.com/glue/latest/dg/schema-registry.html
 upstream: cfn-schema

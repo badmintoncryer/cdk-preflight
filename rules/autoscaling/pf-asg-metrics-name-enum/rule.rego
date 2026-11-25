@@ -13,7 +13,7 @@ _pf_asgmne_ok := {
 	"GroupAndWarmPoolTotalCapacity",
 }
 
-violation contains make_diag_full("pf-asg-metrics-name-enum", "ERROR", name,
+violation contains make_diag_full("pf-asg-metrics-name-enum", "WARN", name,
 	sprintf("Properties.MetricsCollection.%d.Metrics.%d", [i, j]),
 	sprintf("'%s' is not a group metric; the group create fails with \"Valid metrics collection types are: [GroupMinSize, GroupMaxSize, ...]\"", [v]),
 	"Use a metric name from the Auto Scaling group metrics list", _pf_asgmne_url) if {

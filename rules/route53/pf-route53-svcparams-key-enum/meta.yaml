@@ -2,7 +2,7 @@ id: pf-route53-svcparams-key-enum
 service: route53
 benchRegion: us-east-1
 resourceTypes: [AWS::Route53::RecordSet, AWS::Route53::RecordSetGroup]
-severity: ERROR
+severity: WARN
 title: "SvcParams keys are limited to the eight defined names"
 constraintSource: https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/ResourceRecordTypes.html
 upstream: none

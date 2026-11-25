@@ -1,7 +1,7 @@
 id: pf-mediaconvert-sj-enum-value
 service: mediaconvert
 resourceTypes: [AWS::MediaConvert::Preset]
-severity: ERROR
+severity: WARN
 title: "The video codec and the container must be values the service lists"
 constraintSource: https://docs.aws.amazon.com/mediaconvert/latest/apireference/presets.html
 upstream: none

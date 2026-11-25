@@ -6,7 +6,7 @@ _pf_elblalt_fix := "Move the attribute to a listener of the load balancer type t
 
 _pf_elblalt_url := "https://docs.aws.amazon.com/elasticloadbalancing/latest/APIReference/API_ListenerAttribute.html"
 
-violation contains make_diag_full("pf-elbv2-listener-attr-key-lb-type", "ERROR", name,
+violation contains make_diag_full("pf-elbv2-listener-attr-key-lb-type", "WARN", name,
 	sprintf("Properties.ListenerAttributes.%d.Key", [p.index]),
 	sprintf("'%s' is not supported on a listener of a %s load balancer", [p.key, lbt]),
 	_pf_elblalt_fix, _pf_elblalt_url) if {

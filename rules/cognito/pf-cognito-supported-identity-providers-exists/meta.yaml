@@ -2,6 +2,7 @@ id: pf-cognito-supported-identity-providers-exists
 service: cognito
 resourceTypes: [AWS::Cognito::UserPoolClient, AWS::Cognito::UserPoolIdentityProvider]
 severity: WARN
+assumes: [outside-template]
 title: "Supported identity providers must exist on the pool"
 constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-cognito-userpoolclient.html
 upstream: none

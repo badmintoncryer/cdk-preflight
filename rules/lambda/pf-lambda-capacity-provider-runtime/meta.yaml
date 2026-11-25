@@ -1,7 +1,7 @@
 id: pf-lambda-capacity-provider-runtime
 service: lambda
 resourceTypes: [AWS::Lambda::Function]
-severity: ERROR
+severity: WARN
 title: "Managed instances support only the newer runtimes"
 constraintSource: https://docs.aws.amazon.com/lambda/latest/dg/lambda-managed-instances-runtimes.html
 benchRegion: us-east-1

@@ -2,7 +2,7 @@ id: pf-route53resolver-firewallrule-qtype-values
 service: route53resolver
 benchRegion: us-east-1
 resourceTypes: [AWS::Route53Resolver::FirewallRuleGroup]
-severity: ERROR
+severity: WARN
 title: "A DNS Firewall rule Qtype must be a known record type or TYPENUMBER"
 constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-route53resolver-firewallrulegroup-firewallrule.html
 upstream: none

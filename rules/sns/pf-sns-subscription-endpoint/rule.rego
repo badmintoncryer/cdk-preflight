@@ -29,7 +29,7 @@ _pf_snsep_proto(name, path) := p if {
 
 _pf_snsep_protocols := {"http", "https", "email", "email-json", "sms", "sqs", "application", "lambda", "firehose"}
 
-violation contains make_diag_full("pf-sns-subscription-endpoint", "ERROR", name,
+violation contains make_diag_full("pf-sns-subscription-endpoint", "WARN", name,
 	sprintf("%s.Protocol", [path]),
 	sprintf("Protocol '%s' is not an SNS protocol; Subscribe fails with \"Invalid parameter: Amazon SNS does not support this protocol string: %s\"", [proto, proto]),
 	_pf_snsep_fix, _pf_snsep_url) if {

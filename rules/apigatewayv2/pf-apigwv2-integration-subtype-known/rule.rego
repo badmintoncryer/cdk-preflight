@@ -15,7 +15,7 @@ _pf_agvisk_known := {
 	"StepFunctions-StopExecution",
 }
 
-violation contains make_diag_full("pf-apigwv2-integration-subtype-known", "ERROR", name,
+violation contains make_diag_full("pf-apigwv2-integration-subtype-known", "WARN", name,
 	"Properties.IntegrationSubtype",
 	sprintf("IntegrationSubtype '%s' is not an AWS service integration subtype; the integration create fails with \"Operation: %s is not supported.\"", [sub, sub]),
 	"Use one of EventBridge-PutEvents, SQS-SendMessage/ReceiveMessage/DeleteMessage/PurgeQueue, AppConfig-GetConfiguration, Kinesis-PutRecord, StepFunctions-StartExecution/StartSyncExecution/StopExecution",

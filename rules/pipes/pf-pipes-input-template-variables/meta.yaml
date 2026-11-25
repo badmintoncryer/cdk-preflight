@@ -1,7 +1,7 @@
 id: pf-pipes-input-template-variables
 service: pipes
 resourceTypes: [AWS::Pipes::Pipe]
-severity: ERROR
+severity: WARN
 title: InputTemplate may only use the aws.pipes.* reserved variables
 constraintSource: https://docs.aws.amazon.com/eventbridge/latest/userguide/pipes-input-transformation.html
 upstream: none

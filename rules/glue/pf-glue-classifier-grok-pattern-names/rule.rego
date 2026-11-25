@@ -22,7 +22,7 @@ _pf_gluegrok_defined(grok) := set() if {
 	object.get(grok, "CustomPatterns", "__pf_absent") == "__pf_absent"
 }
 
-violation contains make_diag_full("pf-glue-classifier-grok-pattern-names", "ERROR", name,
+violation contains make_diag_full("pf-glue-classifier-grok-pattern-names", "WARN", name,
 	"Properties.GrokClassifier.GrokPattern",
 	sprintf("GrokPattern references %%{%s}, which is neither an AWS Glue built-in pattern nor defined in CustomPatterns; CreateClassifier fails with \"Grok pattern cannot be compiled.\"", [ref]),
 	sprintf("Use a built-in pattern name or define %s in CustomPatterns", [ref]),

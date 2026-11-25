@@ -1,7 +1,7 @@
 id: pf-cloudfront-realtime-log-field-names
 service: cloudfront
 resourceTypes: [AWS::CloudFront::RealtimeLogConfig]
-severity: ERROR
+severity: WARN
 title: 'Real-time log Fields must name fields CloudFront defines'
 constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-cloudfront-realtimelogconfig.html
 upstream: none

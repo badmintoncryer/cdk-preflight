@@ -2,7 +2,7 @@ id: pf-route53-healthcheck-regions-enum
 service: route53
 benchRegion: us-east-1
 resourceTypes: [AWS::Route53::HealthCheck]
-severity: ERROR
+severity: WARN
 title: "Health checkers can only be placed in the eight regions Route 53 offers"
 constraintSource: https://docs.aws.amazon.com/Route53/latest/APIReference/API_HealthCheckConfig.html
 upstream: none

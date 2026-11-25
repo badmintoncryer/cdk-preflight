@@ -2,7 +2,7 @@ id: pf-apigwv2-integration-subtype-known
 service: apigatewayv2
 benchRegion: us-east-1
 resourceTypes: [AWS::ApiGatewayV2::Integration]
-severity: ERROR
+severity: WARN
 title: "IntegrationSubtype is one of the ten AWS service subtypes"
 constraintSource: https://docs.aws.amazon.com/apigateway/latest/developerguide/http-api-develop-integrations-aws-services-reference.html
 upstream: none

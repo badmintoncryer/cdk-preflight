@@ -14,7 +14,7 @@ _pf_pipeitv_known := {
 	"aws.pipes.event.ingestion-time", "aws.pipes.event", "aws.pipes.event.json",
 }
 
-violation contains make_diag_full("pf-pipes-input-template-variables", "ERROR", name,
+violation contains make_diag_full("pf-pipes-input-template-variables", "WARN", name,
 	sprintf("Properties.%s.InputTemplate", [block]),
 	sprintf("<%s> is not a pipe reserved variable; CreatePipe fails with \"Invalid json path reference or predefined variable for placeholder\"", [v]),
 	"Use one of the aws.pipes.* reserved variables, or a $. JSON path",

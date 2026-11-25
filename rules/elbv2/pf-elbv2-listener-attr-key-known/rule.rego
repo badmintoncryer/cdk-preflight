@@ -6,7 +6,7 @@ _pf_elblak_fix := "Fix the attribute key (the service drops nothing silently, it
 
 _pf_elblak_url := "https://docs.aws.amazon.com/elasticloadbalancing/latest/APIReference/API_ListenerAttribute.html"
 
-violation contains make_diag_full("pf-elbv2-listener-attr-key-known", "ERROR", name,
+violation contains make_diag_full("pf-elbv2-listener-attr-key-known", "WARN", name,
 	sprintf("Properties.ListenerAttributes.%d.Key", [p.index]),
 	sprintf("'%s' is not a listener attribute key", [p.key]),
 	_pf_elblak_fix, _pf_elblak_url) if {

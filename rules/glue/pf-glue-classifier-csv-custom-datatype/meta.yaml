@@ -2,7 +2,7 @@ id: pf-glue-classifier-csv-custom-datatype
 service: glue
 resourceTypes: [AWS::Glue::Classifier]
 benchRegion: us-east-1
-severity: ERROR
+severity: WARN
 title: Custom CSV datatypes come from the supported set
 constraintSource: https://docs.aws.amazon.com/glue/latest/dg/custom-classifier.html
 upstream: pending-engine

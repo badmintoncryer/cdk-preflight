@@ -1,7 +1,7 @@
 id: pf-ec2-flow-log-format-fields
 service: ec2
 resourceTypes: [AWS::EC2::FlowLog]
-severity: ERROR
+severity: WARN
 title: Flow log LogFormat accepts only documented field names
 constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-ec2-flowlog.html
 upstream: none

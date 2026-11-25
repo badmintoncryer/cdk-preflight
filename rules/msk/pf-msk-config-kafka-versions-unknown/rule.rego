@@ -46,7 +46,7 @@ _pf_mskkvu_known := {
 	"4.2.x.kraft",
 }
 
-violation contains make_diag_full("pf-msk-config-kafka-versions-unknown", "ERROR", name,
+violation contains make_diag_full("pf-msk-config-kafka-versions-unknown", "WARN", name,
 	"Properties.KafkaVersionsList",
 	sprintf("KafkaVersionsList contains '%s', which is not an Amazon MSK Kafka version; the create fails with \"Unsupported KafkaVersion [%s]\"", [v, v]),
 	"Use a version reported by `aws kafka list-kafka-versions` (for example 3.9.x or 3.9.x.kraft)",

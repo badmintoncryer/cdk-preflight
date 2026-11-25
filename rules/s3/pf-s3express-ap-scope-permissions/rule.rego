@@ -17,7 +17,7 @@ _pf_s3xaps_allowed := {
 	"*",
 }
 
-violation contains make_diag_full("pf-s3express-ap-scope-permissions", "ERROR", name,
+violation contains make_diag_full("pf-s3express-ap-scope-permissions", "WARN", name,
 	sprintf("Properties.Scope.Permissions.%d", [p.index]),
 	sprintf("'%v' is not an access point scope permission; the scope takes bare API names such as GetObject, not s3: actions", [p.value]),
 	_pf_s3xaps_fix, _pf_s3xaps_url) if {

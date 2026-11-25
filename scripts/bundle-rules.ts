@@ -148,6 +148,10 @@ export function expectProblem(
  * 実行時の severity は rego の `make_diag_full` 第 2 引数が持っており、`meta.yaml#severity`
  * はドキュメントにしか出ない。両者がずれると「表では WARN なのに synth が落ちる」に
  * なるので、ここで一致を強制する。複数の violation ブロックを持つルールは全部を見る。
+ *
+ * ブロックごとに重大度が違ってよい（scripts/confidence.ts: 手書きの許可リストに頼る検査だけを
+ * WARN にし、同じルールの残りは ERROR で止める）。meta.severity はそのルールが synth を
+ * 止めうるかを表すので、出しうる最も重いもの（ERROR が 1 つでもあれば ERROR）と一致させる。
  */
 export function severityProblem(id: string, severity: string, rego: string): string | undefined {
   const emitted = new Set(
@@ -156,9 +160,10 @@ export function severityProblem(id: string, severity: string, rego: string): str
       .map((m) => m[2]),
   );
   if (emitted.size === 0) return 'rule.rego must emit its own rule id through make_diag_full';
+  const top = emitted.has('ERROR') ? 'ERROR' : emitted.size === 1 ? [...emitted][0] : undefined;
+  if (top === severity) return undefined;
   const wrong = [...emitted].filter((s) => s !== severity);
-  if (wrong.length === 0) return undefined;
-  return `rule.rego emits ${wrong.sort().join('/')} but meta.severity is ${severity}; the runtime severity is the one in make_diag_full, so the two must agree`;
+  return `rule.rego emits ${(wrong.length ? wrong : [...emitted]).sort().join('/')} but meta.severity is ${severity}; meta.severity must be the heaviest severity make_diag_full emits, since that one decides whether the rule can fail synth`;
 }
 
 /**

@@ -4,7 +4,7 @@ import rego.v1
 
 # 実在する AWS リージョン（aws-cdk-lib の region-info、2026-09-10 時点）。
 # 新設リージョンが aws-cdk-lib に入るまでの間だけ取りこぼす。
-violation contains make_diag_full("pf-route53-latency-region-enum", "ERROR", name,
+violation contains make_diag_full("pf-route53-latency-region-enum", "WARN", name,
 	"Properties.Region",
 	sprintf("'%s' is not an AWS Region; Route 53 rejects the record with \"Cannot find region\"", [r]),
 	"Use the Region name the resource actually runs in (for example us-east-1)",
@@ -15,7 +15,7 @@ violation contains make_diag_full("pf-route53-latency-region-enum", "ERROR", nam
 	not r in _pf_r53_regions
 }
 
-violation contains make_diag_full("pf-route53-latency-region-enum", "ERROR", name,
+violation contains make_diag_full("pf-route53-latency-region-enum", "WARN", name,
 	sprintf("Properties.RecordSets[%d].Region", [_pf_it.index]),
 	sprintf("'%s' is not an AWS Region; Route 53 rejects the record with \"Cannot find region\"", [r]),
 	"Use the Region name the resource actually runs in (for example us-east-1)",

@@ -34,7 +34,7 @@ violation contains make_diag_full("pf-elasticache-user-access-string", "ERROR", 
 	tok in _pf_ecas_rejected
 }
 
-violation contains make_diag_full("pf-elasticache-user-access-string", "ERROR", name,
+violation contains make_diag_full("pf-elasticache-user-access-string", "WARN", name,
 	"Properties.AccessString",
 	sprintf("'%s' is not an access-string rule; the create call fails with \"The access-string is invalid.\"", [tok]),
 	_pf_ecas_fix, _pf_ecas_url) if {
@@ -49,7 +49,7 @@ violation contains make_diag_full("pf-elasticache-user-access-string", "ERROR", 
 	not startswith(tok, "%")
 }
 
-violation contains make_diag_full("pf-elasticache-user-access-string", "ERROR", name,
+violation contains make_diag_full("pf-elasticache-user-access-string", "WARN", name,
 	"Properties.AccessString",
 	sprintf("'%s' is not a Redis ACL category; the create call fails with \"Access string contains invalid category(s)\"", [tok]),
 	_pf_ecas_fix, _pf_ecas_url) if {

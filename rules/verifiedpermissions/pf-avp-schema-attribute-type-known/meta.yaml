@@ -2,7 +2,7 @@ id: pf-avp-schema-attribute-type-known
 service: verifiedpermissions
 benchRegion: us-east-1
 resourceTypes: [AWS::VerifiedPermissions::PolicyStore]
-severity: ERROR
+severity: WARN
 title: "A type name is a Cedar built-in or something the schema declares"
 constraintSource: https://docs.cedarpolicy.com/schema/json-schema.html
 upstream: none

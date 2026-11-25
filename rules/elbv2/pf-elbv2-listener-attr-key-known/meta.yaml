@@ -1,7 +1,7 @@
 id: pf-elbv2-listener-attr-key-known
 service: elbv2
 resourceTypes: [AWS::ElasticLoadBalancingV2::Listener]
-severity: ERROR
+severity: WARN
 title: "A listener attribute key is one the service knows"
 constraintSource: https://docs.aws.amazon.com/elasticloadbalancing/latest/APIReference/API_ListenerAttribute.html
 benchRegion: us-east-1

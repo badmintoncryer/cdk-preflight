@@ -8,7 +8,9 @@
  */
 import * as fs from 'fs';
 import * as path from 'path';
+import * as YAML from 'yaml';
 import { boundaryProblem, crossFieldProblem, collectLibs, collectRules, docOnlyProblem, evidenceProblem, EXPECT_REQUIRED_FROM, expectProblem, headerProblem, nameCollisions, renderDocs, renderGenerated, renderSupported, severityProblem, supersededProblem, topLevelNames, uncoveredFindings } from '../scripts/bundle-rules';
+import { confidenceProblems, listRegistryProblems, literalLists, readLists, violationBlocks } from '../scripts/confidence';
 import { baselineProblems, lintRego, lintRules, readBaseline } from '../scripts/lint-rules';
 import { BUNDLED_LIBS, BUNDLED_RULES } from '../src/rules.generated';
 
@@ -213,8 +215,10 @@ test('meta.severity has to match the severity the rego actually emits', () => {
   expect(severityProblem('pf-x', 'WARN', rego('WARN'))).toBeUndefined();
   // 実行時の severity は rego 側にあるので、meta だけ書き換えても効かない
   expect(severityProblem('pf-x', 'WARN', rego('ERROR'))).toMatch(/emits ERROR but meta.severity is WARN/);
-  // 同じルールの複数の violation ブロックが食い違うのも弾く
+  // ブロックごとに違ってよいが、meta は最も重いもの（synth を止めうるか）を名乗る
   expect(severityProblem('pf-x', 'WARN', `${rego('WARN')}\n${rego('ERROR')}`)).toMatch(/emits ERROR/);
+  expect(severityProblem('pf-x', 'ERROR', `${rego('WARN')}\n${rego('ERROR')}`)).toBeUndefined();
+  expect(severityProblem('pf-x', 'ERROR', rego('WARN'))).toMatch(/emits WARN but meta.severity is ERROR/);
   // 別ルールの id を持つ呼び出しは見ない（_lib のヘルパー等を巻き込まないため）
   expect(severityProblem('pf-x', 'WARN', `${rego('WARN')}\n${rego('ERROR').replace('pf-x', 'pf-y')}`)).toBeUndefined();
   expect(severityProblem('pf-x', 'ERROR', 'violation contains 1 if { true }')).toMatch(/must emit its own rule id/);
@@ -584,5 +588,50 @@ describe('rule lint (scripts/lint-rules.ts)', () => {
     expect(baselineProblems(f(2), base)).toEqual([]);
     expect(baselineProblems(f(3), base)[0]).toMatch(/baseline allows 2/);
     expect(baselineProblems(f(1), base)[0]).toMatch(/lower the line/);
+  });
+});
+
+/**
+ * ②④: 重大度は根拠の性質から決まる。手書きのリストは台帳（rules/_lists.yaml）に載せ、
+ * AWS が値を足していく集合を許可リストで閉じた検査は、突き合わせテストが無いかぎり WARN。
+ */
+describe('severity follows the evidence (scripts/confidence.ts)', () => {
+  const rulesDir = path.join(root, 'rules');
+  const entries = readLists(path.join(rulesDir, '_lists.yaml'));
+
+  test('every hand-written list is in rules/_lists.yaml, and every entry still exists', () => {
+    expect(listRegistryProblems(rulesDir, entries)).toEqual([]);
+  });
+
+  test('no ERROR finding rests on a growing allow-list or on state outside the template', () => {
+    const blocks = violationBlocks(rulesDir, entries);
+    const problems: string[] = [];
+    for (const service of fs.readdirSync(rulesDir)) {
+      const sdir = path.join(rulesDir, service);
+      if (service.startsWith('_') || !fs.statSync(sdir).isDirectory()) continue;
+      for (const id of fs.readdirSync(sdir)) {
+        const meta = YAML.parse(fs.readFileSync(path.join(sdir, id, 'meta.yaml'), 'utf8'));
+        problems.push(...confidenceProblems({ id, assumes: meta.assumes }, blocks));
+      }
+    }
+    expect(problems).toEqual([]);
+  });
+
+  test('literalLists finds big string sets and region / account tables, not small enums', () => {
+    const big = `_pf_x_big := {${Array.from({ length: 8 }, (_, i) => `"v${i}"`).join(', ')}}\n`;
+    const small = '_pf_x_small := {"a", "b", "c"}\n';
+    const regions = '_pf_x_map := {"a": {"us-east-1", "eu-west-1"}, "b": {"ap-northeast-1"}}\n';
+    expect(literalLists(`package cdk_preflight\n\n${big}${small}${regions}`).sort()).toEqual(['_pf_x_big', '_pf_x_map']);
+  });
+
+  test('a block that reads a weak list through a helper must be WARN; the other blocks of the rule are not touched', () => {
+    const blocks = [
+      { id: 'pf-x', severity: 'ERROR', line: 3, weakLists: ['_pf_x_known'] },
+      { id: 'pf-x', severity: 'ERROR', line: 9, weakLists: [] },
+    ];
+    expect(confidenceProblems({ id: 'pf-x' }, blocks)).toEqual([expect.stringMatching(/rule.rego:3\) must emit WARN/)]);
+    expect(confidenceProblems({ id: 'pf-x' }, [{ ...blocks[0], severity: 'WARN' }, blocks[1]])).toEqual([]);
+    expect(confidenceProblems({ id: 'pf-x', assumes: ['outside-template'] }, [blocks[1]])).toEqual([expect.stringMatching(/outside the template/)]);
+    expect(confidenceProblems({ id: 'pf-x', assumes: ['typo'] }, [])).toEqual([expect.stringMatching(/unknown meta.assumes/)]);
   });
 });

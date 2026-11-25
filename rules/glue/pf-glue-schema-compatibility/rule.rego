@@ -7,7 +7,7 @@ _pf_glueschcompat_valid := {
 	"FORWARD", "FORWARD_ALL", "FULL", "FULL_ALL",
 }
 
-violation contains make_diag_full("pf-glue-schema-compatibility", "ERROR", name,
+violation contains make_diag_full("pf-glue-schema-compatibility", "WARN", name,
 	"Properties.Compatibility",
 	sprintf("Compatibility \"%s\" is not a compatibility mode; CreateSchema fails with \"Compatibility is not valid.\"", [c]),
 	"Use NONE, DISABLED, BACKWARD, BACKWARD_ALL, FORWARD, FORWARD_ALL, FULL or FULL_ALL",
