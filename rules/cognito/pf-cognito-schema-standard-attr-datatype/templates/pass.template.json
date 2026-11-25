@@ -8,6 +8,11 @@
           {
             "Name": "email",
             "AttributeDataType": "String"
+          },
+          {
+            "Name": "given_name",
+            "Required": false,
+            "Mutable": true
           }
         ]
       }

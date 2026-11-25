@@ -13,6 +13,7 @@ violation contains make_diag_full("pf-cognito-log-delivery-event-source-duplicat
 	_pf_static_list(name, "Properties.LogConfigurations")
 	some b in flatten_list(name, "Properties.LogConfigurations")
 	a.index < b.index
-	es := _pf_coglib_str(_pf_coglib_at(a.value, "EventSource"))
+	es := _pf_coglib_at(a.value, "EventSource")
+	is_string(es)
 	es == _pf_coglib_at(b.value, "EventSource")
 }

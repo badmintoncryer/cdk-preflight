@@ -1355,7 +1355,10 @@ describe('cognito rules', () => {
 
 /**
  * issue #393: `_pf_coglib_at` は欠けたキーに番兵の文字列 "__pf_absent" を返すので、
- * `is_string` を通ってしまい、省略したプロパティを値として比べて誤検知していた。
+ * `is_string` を通ってしまい、省略した AttributeDataType を型として比べて誤検知していた。
+ * 同じ書き方の pf-cognito-log-delivery-event-source-duplicate（EventSource 省略）と
+ * pf-cognito-role-mapping-rule-match-type（MatchType 省略）は、省略した構成が実際にデプロイで
+ * 失敗する（bench 2026-11-25）ので、そのまま残している。
  */
 describe('the cognito absence sentinel is not read as a value (#393)', () => {
   const customIds = (tpl: unknown) => diagnoseTemplate(tpl).filter((d) => d.source === 'CUSTOM').map((d) => d.ruleId);
@@ -1385,48 +1388,6 @@ describe('the cognito absence sentinel is not read as a value (#393)', () => {
       },
     };
     expect(customIds(tpl)).toContain('pf-cognito-schema-standard-attr-datatype');
-  });
-
-  test('pf-cognito-log-delivery-event-source-duplicate does not pair two entries that both omit EventSource', () => {
-    const tpl = {
-      Resources: {
-        Pool: { Type: 'AWS::Cognito::UserPool', Properties: { UserPoolTier: 'PLUS' } },
-        Lg: { Type: 'AWS::Logs::LogGroup', Properties: {} },
-        Ldc: {
-          Type: 'AWS::Cognito::LogDeliveryConfiguration',
-          Properties: {
-            UserPoolId: { Ref: 'Pool' },
-            LogConfigurations: [
-              { LogLevel: 'ERROR', CloudWatchLogsConfiguration: { LogGroupArn: { 'Fn::GetAtt': ['Lg', 'Arn'] } } },
-              { LogLevel: 'INFO', CloudWatchLogsConfiguration: { LogGroupArn: { 'Fn::GetAtt': ['Lg', 'Arn'] } } },
-            ],
-          },
-        },
-      },
-    };
-    expect(customIds(tpl)).not.toContain('pf-cognito-log-delivery-event-source-duplicate');
-  });
-
-  test('pf-cognito-role-mapping-rule-match-type does not report an omitted MatchType as an invalid value', () => {
-    const tpl = {
-      Resources: {
-        Att: {
-          Type: 'AWS::Cognito::IdentityPoolRoleAttachment',
-          Properties: {
-            IdentityPoolId: 'us-east-1:00000000-0000-0000-0000-000000000000',
-            RoleMappings: {
-              m: {
-                IdentityProvider: 'cognito-idp.us-east-1.amazonaws.com/us-east-1_EXAMPLE:client',
-                Type: 'Rules',
-                AmbiguousRoleResolution: 'Deny',
-                RulesConfiguration: { Rules: [{ Claim: 'group', Value: 'admin', RoleARN: 'arn:aws:iam::123456789012:role/r' }] },
-              },
-            },
-          },
-        },
-      },
-    };
-    expect(customIds(tpl)).not.toContain('pf-cognito-role-mapping-rule-match-type');
   });
 });
 

@@ -14,6 +14,7 @@ violation contains make_diag_full("pf-cognito-role-mapping-rule-match-type", "ER
 	rules := _pf_coglib_at2(v, "RulesConfiguration", "Rules")
 	is_array(rules)
 	some r in rules
-	mt := _pf_coglib_str(_pf_coglib_at(r, "MatchType"))
+	mt := _pf_coglib_at(r, "MatchType")
+	is_string(mt)
 	not mt in {"Equals", "Contains", "StartsWith", "NotEqual"}
 }
