@@ -21,10 +21,11 @@ _pf_ipv_docs contains [name, "Properties.PolicyDocument", d] if {
 	d := _pf_ipv_doc(name)
 }
 
+# A missing PolicyDocument is the schema's required-property check, not this rule's.
 _pf_ipv_doc(name) := d if {
 	props := input.resources[name].properties
 	is_object(props)
-	d := object.get(props, "PolicyDocument", {})
+	d := props.PolicyDocument
 	is_object(d)
 }
 

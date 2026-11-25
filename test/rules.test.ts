@@ -1744,6 +1744,8 @@ describe('pf-iam-policy-version follows the resource type', () => {
     expect(missing[0].message).toContain('it is missing');
     expect(fired(managed('2008-10-17'))).toHaveLength(1);
     expect(fired(managed({ Ref: 'AWS::NoValue' }))).toHaveLength(0);
+    // PolicyDocument そのものの欠落は、スキーマの必須チェックが扱う
+    expect(fired({ Resources: { M: { Type: 'AWS::IAM::ManagedPolicy', Properties: {} } } })).toHaveLength(0);
   });
 });
 
