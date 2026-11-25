@@ -8,6 +8,6 @@ constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateR
 upstream: none
 repro:
   method: real-deploy
-  evidence: "bench 2026-11-24 us-east-1: PENDING placeholder awaiting gate -> ROLLBACK_COMPLETE"
-  expect: "PENDING placeholder awaiting gate"
-addedOn: 2026-11-24
+  evidence: "bench 2026-11-25 us-east-1: SubnetIds with 1 subnet and with 3 subnets (two directories in one stack) -> both CREATE_FAILED \"Invalid subnet ID(s). They must correspond to two subnets in different Availability Zones.\" (ROLLBACK_COMPLETE). Pass (2 subnets) not deployed; same shape as the verified pf-ds-msad-password-no-admin pass."
+  expect: "They must correspond to two subnets in different Availability Zones"
+addedOn: 2026-11-25

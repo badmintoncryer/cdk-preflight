@@ -8,6 +8,6 @@ constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateR
 upstream: none
 repro:
   method: real-deploy
-  evidence: "bench 2026-11-24 us-east-1: PENDING placeholder awaiting gate -> ROLLBACK_COMPLETE"
-  expect: "PENDING placeholder awaiting gate"
-addedOn: 2026-11-24
+  evidence: "bench 2026-11-25 us-east-1: DomainDnsIps with 1 IP and with 3 IPs (two instances in one stack) -> both CREATE_FAILED \"The domain must have exactly two DNS endpoints\" (ROLLBACK_COMPLETE). Pass (2 IPs) not deployed (needs a reachable domain)."
+  expect: "The domain must have exactly two DNS endpoints"
+addedOn: 2026-11-25

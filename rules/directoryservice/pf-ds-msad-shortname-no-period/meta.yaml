@@ -8,6 +8,6 @@ constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateR
 upstream: none
 repro:
   method: real-deploy
-  evidence: "bench 2026-11-24 us-east-1: PENDING placeholder awaiting gate -> ROLLBACK_COMPLETE"
-  expect: "PENDING placeholder awaiting gate"
-addedOn: 2026-11-24
+  evidence: "bench 2026-11-25 us-east-1: ShortName CORP.X -> \"Invalid directory short name. ... The following special characters are not allowed: ^ / : * ? < > . and |. The name cannot begin with a period.\" (ROLLBACK_COMPLETE). Pass (CORPX) not deployed (30-min billed directory)."
+  expect: "Invalid directory short name"
+addedOn: 2026-11-25

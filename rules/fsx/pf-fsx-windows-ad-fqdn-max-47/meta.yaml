@@ -8,6 +8,6 @@ constraintSource: https://docs.aws.amazon.com/fsx/latest/WindowsGuide/fsx-aws-ma
 upstream: none
 repro:
   method: real-deploy
-  evidence: "bench 2026-11-24 us-east-1: PENDING placeholder awaiting gate -> ROLLBACK_COMPLETE"
-  expect: "PENDING placeholder awaiting gate"
-addedOn: 2026-11-24
+  evidence: "bench 2026-11-25 us-east-1: SINGLE_AZ_2 with a 48-char self-managed DomainName -> \"Amazon FSx does not support Microsoft Active Directory domain names longer than 47 characters on the Single-AZ 2 and Multi-AZ deployment types.\" (BadRequest, ROLLBACK_COMPLETE). Pass (47 chars) not deployed (needs a reachable domain)."
+  expect: "does not support Microsoft Active Directory domain names longer than 47 characters"
+addedOn: 2026-11-25

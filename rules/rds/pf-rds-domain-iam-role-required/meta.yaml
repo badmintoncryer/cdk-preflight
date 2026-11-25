@@ -8,6 +8,6 @@ constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateR
 upstream: none
 repro:
   method: real-deploy
-  evidence: "bench 2026-11-24 us-east-1: PENDING placeholder awaiting gate -> ROLLBACK_COMPLETE"
-  expect: "PENDING placeholder awaiting gate"
-addedOn: 2026-11-24
+  evidence: "bench 2026-11-25 us-east-1: sqlserver-ex with Domain d-9066000000 and no DomainIAMRoleName -> \"IAM role provided is not valid, please check that the role exists and has the correct policies\" (ROLLBACK_COMPLETE). RDS words a missing role the same as an invalid one, so the text does not tell the two apart; no role is present in the fixture. Pass not deployed (needs a real directory)."
+  expect: "IAM role provided is not valid"
+addedOn: 2026-11-25

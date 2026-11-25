@@ -8,6 +8,6 @@ constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateR
 upstream: none
 repro:
   method: real-deploy
-  evidence: "bench 2026-11-24 us-east-1: PENDING placeholder awaiting gate -> ROLLBACK_COMPLETE"
-  expect: "PENDING placeholder awaiting gate"
-addedOn: 2026-11-24
+  evidence: "bench 2026-11-25 us-east-1: 16-char ShortName ABCDEFGHIJKLMNOP -> \"Invalid directory short name. The short name must be between 1 and 15 characters ...\" (ROLLBACK_COMPLETE). Pass (15 chars) not deployed (30-min billed directory)."
+  expect: "The short name must be between 1 and 15 characters"
+addedOn: 2026-11-25

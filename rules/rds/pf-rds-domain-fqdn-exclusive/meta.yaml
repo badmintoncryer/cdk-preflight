@@ -8,6 +8,6 @@ constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateR
 upstream: none
 repro:
   method: real-deploy
-  evidence: "bench 2026-11-24 us-east-1: PENDING placeholder awaiting gate -> ROLLBACK_COMPLETE"
-  expect: "PENDING placeholder awaiting gate"
-addedOn: 2026-11-24
+  evidence: "bench 2026-11-25 us-east-1: Domain d-9066000000 + DomainFqdn/DomainOu/DomainAuthSecretArn/DomainDnsIps on sqlserver-ex -> \"Specify the parameters for either AWS Managed Active Directory or self-managed Active Directory.\" (ROLLBACK_COMPLETE). Pass not deployed (needs a reachable domain)."
+  expect: "Specify the parameters for either AWS Managed Active Directory or self-managed Active Directory"
+addedOn: 2026-11-25

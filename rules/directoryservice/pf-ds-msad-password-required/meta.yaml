@@ -8,6 +8,6 @@ constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateR
 upstream: none
 repro:
   method: real-deploy
-  evidence: "bench 2026-11-24 us-east-1: PENDING placeholder awaiting gate -> ROLLBACK_COMPLETE"
-  expect: "PENDING placeholder awaiting gate"
-addedOn: 2026-11-24
+  evidence: "bench 2026-11-25 us-east-1: MicrosoftAD without Password -> Directory CREATE_FAILED \"Password is a required proerty\" (InvalidRequest, AWS spelling kept; ROLLBACK_COMPLETE). Pass not deployed (30-min billed directory); same shape as the verified pf-ds-msad-password-no-admin pass."
+  expect: "Password is a required proerty"
+addedOn: 2026-11-25

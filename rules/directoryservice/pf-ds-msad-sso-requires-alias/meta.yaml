@@ -8,6 +8,6 @@ constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateR
 upstream: none
 repro:
   method: real-deploy
-  evidence: "bench 2026-11-24 us-east-1: PENDING placeholder awaiting gate -> ROLLBACK_COMPLETE"
-  expect: "PENDING placeholder awaiting gate"
-addedOn: 2026-11-24
+  evidence: "bench 2026-11-25 us-east-1: EnableSso true without CreateAlias -> the directory was created, then after 1888 s \"An alias is required before enabling SSO.\" (ROLLBACK_COMPLETE, directory deleted on rollback). Pass not deployed (needs a globally unique alias)."
+  expect: "An alias is required before enabling SSO"
+addedOn: 2026-11-25
