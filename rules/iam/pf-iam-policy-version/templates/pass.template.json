@@ -28,6 +28,18 @@
                 }
               ]
             }
+          },
+          {
+            "PolicyName": "no-version",
+            "PolicyDocument": {
+              "Statement": [
+                {
+                  "Effect": "Allow",
+                  "Action": "s3:ListAllMyBuckets",
+                  "Resource": "*"
+                }
+              ]
+            }
           }
         ]
       }
