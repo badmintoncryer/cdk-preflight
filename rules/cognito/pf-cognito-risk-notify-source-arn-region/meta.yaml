@@ -8,6 +8,6 @@ upstream: none
 benchRegion: us-east-1
 repro:
   method: real-deploy
-  evidence: "bench 2026-09-08 us-east-1: fail template -> ROLLBACK_COMPLETE with \"Invalid NotifyConfiguration.SourceArn. Provided SourceArn must be in one of the following SES regions: eu-west-1, us-east-1, us-west-2.\"; pass template -> CREATE_COMPLETE"
+  evidence: "bench 2026-11-25 (probe stacks, issue #395): ap-northeast-1 pool with an ap-northeast-1 identity passes the Region check (then \"principal is not authorized to send emails\"), with ap-southeast-2 -> \"must be in one of the following SES regions: eu-west-1, ap-northeast-1, us-east-1, us-west-2\"; us-west-1 pool with a us-east-1 identity -> \"must be in the us-west-1 SES region\", with a us-west-1 identity passes. bench 2026-09-08 us-east-1: fail template -> ROLLBACK_COMPLETE with \"Invalid NotifyConfiguration.SourceArn. Provided SourceArn must be in one of the following SES regions: eu-west-1, us-east-1, us-west-2.\"; pass template -> CREATE_COMPLETE"
   expect: "Invalid NotifyConfiguration.SourceArn. Provided SourceArn must be in one of the following SES regions"
 addedOn: 2026-09-08
