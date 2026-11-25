@@ -13,7 +13,7 @@ violation contains make_diag_full("pf-ecs-host-network-host-port-mismatch", "ERR
 	pms := _pf_ecs_cget(c, "PortMappings")
 	is_array(pms)
 	some pm in pms
-	cp := to_number(object.get(pm, "ContainerPort", null))
-	hp := to_number(object.get(pm, "HostPort", null))
+	cp := to_number(pm["ContainerPort"])
+	hp := to_number(pm["HostPort"])
 	cp != hp
 }

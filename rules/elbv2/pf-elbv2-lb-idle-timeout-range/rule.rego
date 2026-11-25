@@ -22,6 +22,6 @@ violation contains make_diag_full("pf-elbv2-lb-idle-timeout-range", "ERROR", nam
 	attr := item.value
 	is_object(attr)
 	object.get(attr, "Key", "") == "idle_timeout.timeout_seconds"
-	num := to_number(object.get(attr, "Value", null))
+	num := to_number(attr["Value"])
 	_pf_idle_timeout_out(num)
 }

@@ -593,6 +593,87 @@ describe('ecs task definition rules', () => {
   });
 });
 
+/**
+ * issue #392: `to_number(null)` は 0 になる。省略できる数値を `object.get(x, k, null)` で読むと、
+ * 省略したプロパティが 0 として比較されて誤検知していた。省略時は AWS 側の既定値が使われる。
+ */
+describe('an omitted optional number is not read as 0 (#392)', () => {
+  const customIds = (tpl: unknown) => diagnoseTemplate(tpl).filter((d) => d.source === 'CUSTOM').map((d) => d.ruleId);
+  const APP = { Name: 'app', Image: 'public.ecr.aws/nginx/nginx:latest', Essential: true };
+  const vpn = (tunnel: Record<string, unknown>) => ({
+    Resources: {
+      Cgw: { Type: 'AWS::EC2::CustomerGateway', Properties: { BgpAsn: 65000, IpAddress: '203.0.113.9', Type: 'ipsec.1' } },
+      Vgw: { Type: 'AWS::EC2::VPNGateway', Properties: { Type: 'ipsec.1' } },
+      Vpn: {
+        Type: 'AWS::EC2::VPNConnection',
+        Properties: {
+          Type: 'ipsec.1',
+          CustomerGatewayId: { Ref: 'Cgw' },
+          VpnGatewayId: { Ref: 'Vgw' },
+          StaticRoutesOnly: true,
+          VpnTunnelOptionsSpecifications: [tunnel],
+        },
+      },
+    },
+  });
+
+  test.each([
+    ['pf-ecs-container-memory-reservation', 'MemoryReservation without container Memory (FargateTaskDefinition + memoryReservationMiB)', {
+      Resources: {
+        TD: {
+          Type: 'AWS::ECS::TaskDefinition',
+          Properties: {
+            RequiresCompatibilities: ['FARGATE'],
+            NetworkMode: 'awsvpc',
+            Cpu: '1024',
+            Memory: '2048',
+            ContainerDefinitions: [{ ...APP, MemoryReservation: 512 }],
+          },
+        },
+      },
+    }],
+    ['pf-ecs-host-network-host-port-mismatch', 'host network mode with HostPort omitted', {
+      Resources: {
+        TD: {
+          Type: 'AWS::ECS::TaskDefinition',
+          Properties: { NetworkMode: 'host', ContainerDefinitions: [{ ...APP, Memory: 512, PortMappings: [{ ContainerPort: 80 }] }] },
+        },
+      },
+    }],
+    ['pf-cloudfront-ttl-order', 'MinTTL set, DefaultTTL and MaxTTL omitted', {
+      Resources: {
+        Dist: {
+          Type: 'AWS::CloudFront::Distribution',
+          Properties: {
+            DistributionConfig: {
+              Enabled: true,
+              Origins: [{ Id: 'o', DomainName: 'example.com', CustomOriginConfig: { OriginProtocolPolicy: 'https-only' } }],
+              DefaultCacheBehavior: {
+                TargetOriginId: 'o',
+                ViewerProtocolPolicy: 'allow-all',
+                ForwardedValues: { QueryString: false },
+                MinTTL: 60,
+              },
+            },
+          },
+        },
+      },
+    }],
+    ['pf-elbv2-lb-idle-timeout-range', 'idle_timeout.timeout_seconds with Value omitted', {
+      Resources: {
+        LB: {
+          Type: 'AWS::ElasticLoadBalancingV2::LoadBalancer',
+          Properties: { Subnets: ['subnet-1', 'subnet-2'], LoadBalancerAttributes: [{ Key: 'idle_timeout.timeout_seconds' }] },
+        },
+      },
+    }],
+    ['pf-ec2-vpn-phase-lifetime-order', 'Phase2LifetimeSeconds set, Phase1LifetimeSeconds omitted', vpn({ Phase2LifetimeSeconds: 1800 })],
+    ['pf-ec2-vpn-rekey-margin', 'RekeyMarginTimeSeconds set, Phase2LifetimeSeconds omitted', vpn({ RekeyMarginTimeSeconds: 540 })],
+  ])('%s stays silent: %s', (ruleId, _case, tpl) => {
+    expect(customIds(tpl)).not.toContain(ruleId);
+  });
+});
+
 describe('s3 bucket rules', () => {
   const ids = (ds: Diagnostic[]) => ds.filter((d) => d.source === 'CUSTOM').map((d) => d.ruleId);
 

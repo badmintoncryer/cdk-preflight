@@ -23,8 +23,8 @@ violation contains make_diag_full("pf-cloudfront-ttl-order", "ERROR", name, b.pa
 	some name in resources_of_type("AWS::CloudFront::Distribution")
 	some b in _pf_cf_behaviors(name)
 	is_object(b.value)
-	mn := to_number(object.get(b.value, "MinTTL", null))
-	mx := to_number(object.get(b.value, "MaxTTL", null))
+	mn := to_number(b.value["MinTTL"])
+	mx := to_number(b.value["MaxTTL"])
 	mn > mx
 }
 
@@ -34,8 +34,8 @@ violation contains make_diag_full("pf-cloudfront-ttl-order", "ERROR", name, b.pa
 	some name in resources_of_type("AWS::CloudFront::Distribution")
 	some b in _pf_cf_behaviors(name)
 	is_object(b.value)
-	mn := to_number(object.get(b.value, "MinTTL", null))
-	df := to_number(object.get(b.value, "DefaultTTL", null))
+	mn := to_number(b.value["MinTTL"])
+	df := to_number(b.value["DefaultTTL"])
 	mn > df
 }
 
@@ -45,7 +45,7 @@ violation contains make_diag_full("pf-cloudfront-ttl-order", "ERROR", name, b.pa
 	some name in resources_of_type("AWS::CloudFront::Distribution")
 	some b in _pf_cf_behaviors(name)
 	is_object(b.value)
-	df := to_number(object.get(b.value, "DefaultTTL", null))
-	mx := to_number(object.get(b.value, "MaxTTL", null))
+	df := to_number(b.value["DefaultTTL"])
+	mx := to_number(b.value["MaxTTL"])
 	df > mx
 }
