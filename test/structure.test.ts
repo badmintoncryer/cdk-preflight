@@ -9,6 +9,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import { boundaryProblem, crossFieldProblem, collectLibs, collectRules, docOnlyProblem, evidenceProblem, EXPECT_REQUIRED_FROM, expectProblem, headerProblem, nameCollisions, renderDocs, renderGenerated, renderSupported, severityProblem, supersededProblem, topLevelNames, uncoveredFindings } from '../scripts/bundle-rules';
+import { baselineProblems, lintRego, lintRules, readBaseline } from '../scripts/lint-rules';
 import { BUNDLED_LIBS, BUNDLED_RULES } from '../src/rules.generated';
 
 const root = path.join(__dirname, '..');
@@ -549,4 +550,39 @@ test('every fixture pair sits on the boundary, or is listed as an exception', ()
   expect([...flagged].filter(([id]) => !exceptions.has(id)).map(([id, p]) => `${id}: ${p}`)).toEqual([]);
   // 直ったルールの行は残さない（#178 の残作業カウントを嘘にしないため）
   expect([...exceptions.keys()].filter((id) => !flagged.has(id))).toEqual([]);
+});
+
+/**
+ * 「省略を値として読む」書き方を機械で止める（scripts/lint-rules.ts）。to_number の直呼びは
+ * 例外なしで禁止、object.get のインライン既定値は rules/_lint-baseline.txt の件数から増やせない。
+ */
+describe('rule lint (scripts/lint-rules.ts)', () => {
+  test('the rule pack has no lint problems beyond the baseline', () => {
+    const rulesDir = path.join(root, 'rules');
+    expect(baselineProblems(lintRules(rulesDir), readBaseline(path.join(rulesDir, '_lint-baseline.txt')))).toEqual([]);
+  });
+
+  test('to_number is flagged everywhere but in the value lib, comments aside', () => {
+    const rego = 'x := to_number(v) # to_number(null) is 0\ny := _pf_tonum(v)\nz := "to_number(1)"\n';
+    expect(lintRego('a/pf-a/rule.rego', rego).map((f) => [f.check, f.line])).toEqual([['raw-to-number', 1]]);
+    expect(lintRego(path.join('_lib', 'value.rego'), rego)).toEqual([]);
+  });
+
+  test('object.get defaults that read an omitted value as a service value are flagged', () => {
+    const flagged = ['"V1"', '0', '-1', 'false', 'true', '""', '"GENEVE"'];
+    const safe = ['null', '"__pf_absent"', '"__pf_other"', '[]', '{}', '"<unnamed>"', '"(unset)"', 'v.index'];
+    for (const d of flagged) expect(lintRego('f', `x := object.get(o, "K", ${d})`)).toHaveLength(1);
+    for (const d of safe) expect(lintRego('f', `x := object.get(o, "K", ${d})`)).toEqual([]);
+    // 入れ子の呼び出しでも最外の 3 引数目だけを見る
+    expect(lintRego('f', 'x := object.get(object.get(o, "A", {}), "B", null)')).toEqual([]);
+    expect(lintRego('f', 'x := object.get(object.get(o, "A", {}), "B", "x,y")')).toHaveLength(1);
+  });
+
+  test('the baseline is a ratchet: more fails, fewer fails until the line is lowered', () => {
+    const f = (n: number) => Array.from({ length: n }, (_, i) => ({ check: 'inline-default' as const, file: 'a.rego', line: i + 1, text: 't' }));
+    const base = new Map([['inline-default a.rego', 2]]);
+    expect(baselineProblems(f(2), base)).toEqual([]);
+    expect(baselineProblems(f(3), base)[0]).toMatch(/baseline allows 2/);
+    expect(baselineProblems(f(1), base)[0]).toMatch(/lower the line/);
+  });
 });

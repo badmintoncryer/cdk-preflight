@@ -11,7 +11,7 @@ violation contains make_diag_full("pf-agentcore-capacity-provider-lifecycle-orde
 	"Lower IdleInstanceTimeout to at most MaxLifetime, or raise MaxLifetime",
 	"https://docs.aws.amazon.com/bedrock-agentcore-control/latest/APIReference/API_CreateCapacityProvider.html") if {
 	some name in resources_of_type("AWS::BedrockAgentCore::CapacityProvider")
-	idle := to_number(resolve(name, "Properties.ComputeConfiguration.Ec2Configuration.LifecycleConfiguration.IdleInstanceTimeout"))
-	mx := to_number(resolve(name, "Properties.ComputeConfiguration.Ec2Configuration.LifecycleConfiguration.MaxLifetime"))
+	idle := _pf_tonum(resolve(name, "Properties.ComputeConfiguration.Ec2Configuration.LifecycleConfiguration.IdleInstanceTimeout"))
+	mx := _pf_tonum(resolve(name, "Properties.ComputeConfiguration.Ec2Configuration.LifecycleConfiguration.MaxLifetime"))
 	idle > mx
 }

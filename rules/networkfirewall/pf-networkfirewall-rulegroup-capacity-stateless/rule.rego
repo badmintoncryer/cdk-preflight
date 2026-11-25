@@ -16,6 +16,6 @@ violation contains make_diag_full("pf-networkfirewall-rulegroup-capacity-statele
 	n := _pf_nfwlib_stateless_cost(name)
 	raw := resolve(name, "Properties.Capacity")
 	raw != null
-	c := to_number(raw)
+	c := _pf_tonum(raw)
 	c < n
 }

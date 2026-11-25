@@ -12,7 +12,7 @@ violation contains make_diag_full("pf-codepipeline-cat-artifact-min-le-max", "ER
 	some kind in ["InputArtifactDetails", "OutputArtifactDetails"]
 	d := object.get(_pf_cplib_props(name), kind, {})
 	_pf_cplib_plain(d)
-	mn := to_number(_pf_cplib_get(d, "MinimumCount"))
-	mx := to_number(_pf_cplib_get(d, "MaximumCount"))
+	mn := _pf_tonum(_pf_cplib_get(d, "MinimumCount"))
+	mx := _pf_tonum(_pf_cplib_get(d, "MaximumCount"))
 	mn > mx
 }

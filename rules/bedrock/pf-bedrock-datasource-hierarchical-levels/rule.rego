@@ -17,8 +17,8 @@ _pf_dshl_levels(name) := [parent, child] if {
 	ls := object.get(_pf_dshl_cfg(name), "LevelConfigurations", [])
 	_pf_countable_items(ls)
 	count(ls) == 2
-	parent := to_number(ls[0].MaxTokens)
-	child := to_number(ls[1].MaxTokens)
+	parent := _pf_tonum(ls[0].MaxTokens)
+	child := _pf_tonum(ls[1].MaxTokens)
 }
 
 violation contains make_diag_full("pf-bedrock-datasource-hierarchical-levels", "ERROR", name,
@@ -38,6 +38,6 @@ violation contains make_diag_full("pf-bedrock-datasource-hierarchical-levels", "
 	_pf_dshl_url) if {
 	some name in resources_of_type("AWS::Bedrock::DataSource")
 	l := _pf_dshl_levels(name)
-	o := to_number(object.get(_pf_dshl_cfg(name), "OverlapTokens", null))
+	o := _pf_onum(_pf_dshl_cfg(name), "OverlapTokens")
 	o >= l[1]
 }

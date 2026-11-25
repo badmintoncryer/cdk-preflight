@@ -6,13 +6,13 @@ _pf_ec2scv_url := "https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_Au
 
 _pf_ec2scv_malformed(c) if {
 	regex.match(`^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+/[0-9]+$`, c)
-	to_number(split(c, "/")[1]) > 32
+	_pf_tonum(split(c, "/")[1]) > 32
 }
 
 _pf_ec2scv_malformed(c) if {
 	regex.match(`^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+/[0-9]+$`, c)
 	some o in split(split(c, "/")[0], ".")
-	to_number(o) > 255
+	_pf_tonum(o) > 255
 }
 
 violation contains make_diag_full("pf-ec2-sg-cidr-valid", "ERROR", name,

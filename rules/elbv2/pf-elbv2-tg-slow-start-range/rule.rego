@@ -21,6 +21,6 @@ violation contains make_diag_full("pf-elbv2-tg-slow-start-range", "ERROR", name,
 	attr := item.value
 	is_object(attr)
 	object.get(attr, "Key", "") == "slow_start.duration_seconds"
-	num := to_number(object.get(attr, "Value", null))
+	num := _pf_onum(attr, "Value")
 	_pf_slow_start_out(num)
 }

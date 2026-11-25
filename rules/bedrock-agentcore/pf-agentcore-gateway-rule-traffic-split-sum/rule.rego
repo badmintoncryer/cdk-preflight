@@ -29,7 +29,7 @@ violation contains make_diag_full("pf-agentcore-gateway-rule-traffic-split-sum",
 	"https://docs.aws.amazon.com/bedrock-agentcore-control/latest/APIReference/API_CreateGatewayRule.html") if {
 	some name in resources_of_type("AWS::BedrockAgentCore::GatewayRule")
 	some entry in _pf_acsplit_lists(name)
-	weights := [w | some e in entry[1]; is_object(e); w := to_number(object.get(e, "Weight", null))]
+	weights := [w | some e in entry[1]; is_object(e); w := _pf_onum(e, "Weight")]
 	count(weights) == count(entry[1])
 	total := sum(weights)
 	total != 100

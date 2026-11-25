@@ -40,7 +40,7 @@ _pf_snsfo_archive(name) := pol if {
 
 _pf_snsfo_num(v) := v if is_number(v)
 
-_pf_snsfo_num(v) := to_number(v) if {
+_pf_snsfo_num(v) := _pf_tonum(v) if {
 	is_string(v)
 	regex.match("^[0-9]+$", v)
 }

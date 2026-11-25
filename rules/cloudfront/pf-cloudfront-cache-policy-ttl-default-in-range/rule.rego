@@ -11,8 +11,8 @@ violation contains make_diag_full("pf-cloudfront-cache-policy-ttl-default-in-ran
 	_pf_cf_cache_policy_ttl_default_in_range_fix, _pf_cf_cache_policy_ttl_default_in_range_url) if {
 	some name in resources_of_type("AWS::CloudFront::CachePolicy")
 	cfgv := _pf_cflib_props(name, "CachePolicyConfig")
-	mn := to_number(object.get(cfgv, "MinTTL", null))
-	df := to_number(object.get(cfgv, "DefaultTTL", null))
+	mn := _pf_onum(cfgv, "MinTTL")
+	df := _pf_onum(cfgv, "DefaultTTL")
 	df < mn
 }
 
@@ -21,7 +21,7 @@ violation contains make_diag_full("pf-cloudfront-cache-policy-ttl-default-in-ran
 	_pf_cf_cache_policy_ttl_default_in_range_fix, _pf_cf_cache_policy_ttl_default_in_range_url) if {
 	some name in resources_of_type("AWS::CloudFront::CachePolicy")
 	cfgv := _pf_cflib_props(name, "CachePolicyConfig")
-	mx := to_number(object.get(cfgv, "MaxTTL", null))
-	df := to_number(object.get(cfgv, "DefaultTTL", null))
+	mx := _pf_onum(cfgv, "MaxTTL")
+	df := _pf_onum(cfgv, "DefaultTTL")
 	df > mx
 }

@@ -6,7 +6,7 @@ _pf_eknpo_num(o, k) := n if {
 	v := _pf_ekslib_oget(o, k)
 	not is_boolean(v)
 	v != null
-	n := to_number(v)
+	n := _pf_tonum(v)
 }
 
 violation contains make_diag_full("pf-eks-cluster-node-port-min-le-max", "ERROR", name,

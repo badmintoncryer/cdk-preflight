@@ -18,7 +18,7 @@ violation contains make_diag_full("pf-cloudfront-vpc-origin-port-range", "ERROR"
 	some k in ["HTTPPort", "HTTPSPort"]
 	raw := object.get(cfgv, k, "__pf_absent")
 	raw != "__pf_absent"
-	p := to_number(raw)
+	p := _pf_tonum(raw)
 	p != 80
 	p != 443
 	p < 1024
@@ -32,6 +32,6 @@ violation contains make_diag_full("pf-cloudfront-vpc-origin-port-range", "ERROR"
 	some k in ["HTTPPort", "HTTPSPort"]
 	raw := object.get(cfgv, k, "__pf_absent")
 	raw != "__pf_absent"
-	p := to_number(raw)
+	p := _pf_tonum(raw)
 	p > 65535
 }

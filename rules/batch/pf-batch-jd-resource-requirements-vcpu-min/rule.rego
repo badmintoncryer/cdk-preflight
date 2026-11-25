@@ -14,6 +14,6 @@ violation contains make_diag_full("pf-batch-jd-resource-requirements-vcpu-min", 
 	not "FARGATE" in caps
 	v := _pf_batch_rr(_pf_batch_cp(name), "VCPU")
 	_pf_batch_lit(v)
-	n := to_number(v)
+	n := _pf_tonum(v)
 	n < 1
 }

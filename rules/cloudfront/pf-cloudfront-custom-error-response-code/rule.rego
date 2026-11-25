@@ -14,6 +14,6 @@ violation contains make_diag_full("pf-cloudfront-custom-error-response-code", "E
 	e := it.value
 	raw := object.get(e, "ErrorCode", "__pf_absent")
 	raw != "__pf_absent"
-	c := to_number(raw)
+	c := _pf_tonum(raw)
 	not c in {400, 403, 404, 405, 414, 416, 500, 501, 502, 503, 504}
 }

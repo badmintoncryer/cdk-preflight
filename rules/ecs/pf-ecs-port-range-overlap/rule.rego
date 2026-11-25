@@ -8,8 +8,8 @@ _pf_ecs_range(pm) := [lo, hi] if {
 	_pf_ecs_lit(r)
 	parts := split(r, "-")
 	count(parts) == 2
-	lo := to_number(parts[0])
-	hi := to_number(parts[1])
+	lo := _pf_tonum(parts[0])
+	hi := _pf_tonum(parts[1])
 }
 
 violation contains make_diag_full("pf-ecs-port-range-overlap", "ERROR", name,

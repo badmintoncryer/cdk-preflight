@@ -18,6 +18,6 @@ violation contains make_diag_full("pf-cloudwatch-extended-statistic", "ERROR", n
 	s := resolve(name, "Properties.ExtendedStatistic")
 	is_string(s)
 	startswith(s, "p")
-	n := to_number(substring(s, 1, count(s) - 1))
+	n := _pf_tonum(substring(s, 1, count(s) - 1))
 	floor(n) > 100
 }

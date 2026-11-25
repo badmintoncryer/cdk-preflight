@@ -15,5 +15,5 @@ violation contains make_diag_full("pf-vpclattice-rc-ip-format", "ERROR", name,
 	is_string(ip)
 	regex.match(`^[0-9]{1,3}(\.[0-9]{1,3}){3}$`, ip)
 	some o in split(ip, ".")
-	to_number(o) > 255
+	_pf_tonum(o) > 255
 }

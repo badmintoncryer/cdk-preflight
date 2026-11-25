@@ -40,7 +40,7 @@ _pf_codedeploylib_num(v) := v if is_number(v)
 _pf_codedeploylib_num(v) := n if {
 	is_string(v)
 	regex.match(`^-?[0-9]+$`, v)
-	n := to_number(v)
+	n := _pf_tonum(v)
 }
 
 # ComputePlatform of a resource that carries its own - AWS::CodeDeploy::Application

@@ -12,6 +12,6 @@ violation contains make_diag_full("pf-route53-weight-range", "ERROR", name,
 	"https://docs.aws.amazon.com/Route53/latest/APIReference/API_ChangeResourceRecordSets.html") if {
 	some name in resources_of_type("AWS::Route53::RecordSet")
 	w := resolve(name, "Properties.Weight")
-	n := to_number(w)
+	n := _pf_tonum(w)
 	n > 255
 }

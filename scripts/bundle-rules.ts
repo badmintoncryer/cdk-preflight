@@ -233,7 +233,7 @@ function keyFor(v: string, block: string): string | undefined {
   const m = new RegExp(`(?:^|\\n)\\s*${v}(?:_raw)?\\s*:=\\s*(.*)`).exec(block);
   if (!m) return undefined;
   let expr = m[1];
-  const via = /to_number\(\s*([A-Za-z_][A-Za-z0-9_]*)\s*\)/.exec(expr);
+  const via = /(?:to_number|_pf_tonum)\(\s*([A-Za-z_][A-Za-z0-9_]*)\s*\)/.exec(expr);
   if (via) expr = new RegExp(`(?:^|\\n)\\s*${via[1]}\\s*:=\\s*(.*)`).exec(block)?.[1] ?? expr;
   const quoted = [...expr.matchAll(/"([^"]*)"/g)].map((q) => q[1]).filter((q) => !q.startsWith('__pf'));
   // 足し合わせた値は 1 つのプロパティではない。`total := a + b + c` を最後の名前で代表させると

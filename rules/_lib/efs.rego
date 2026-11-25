@@ -51,10 +51,10 @@ _pf_efslib_ip(s) := n if {
 	is_string(s)
 	parts := split(s, ".")
 	count(parts) == 4
-	a := to_number(parts[0])
-	b := to_number(parts[1])
-	c := to_number(parts[2])
-	d := to_number(parts[3])
+	a := _pf_tonum(parts[0])
+	b := _pf_tonum(parts[1])
+	c := _pf_tonum(parts[2])
+	d := _pf_tonum(parts[3])
 	n := (((a * 16777216) + (b * 65536)) + (c * 256)) + d
 }
 
@@ -64,7 +64,7 @@ _pf_efslib_cidr(s) := [base, size] if {
 	parts := split(s, "/")
 	count(parts) == 2
 	base := _pf_efslib_ip(parts[0])
-	prefix := to_number(parts[1])
+	prefix := _pf_tonum(parts[1])
 	prefix >= 0
 	prefix <= 32
 	size := bits.lsh(1, 32 - prefix)

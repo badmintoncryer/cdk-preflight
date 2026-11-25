@@ -26,6 +26,6 @@ violation contains make_diag_full("pf-eks-cluster-version-unsupported", "ERROR",
 	v := resolve(name, "Properties.Version")
 	_pf_ekslib_lit(v)
 	regex.match(`^1\.[0-9]+$`, v)
-	minor := to_number(split(v, ".")[1])
+	minor := _pf_tonum(split(v, ".")[1])
 	minor < 30
 }

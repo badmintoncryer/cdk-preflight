@@ -15,6 +15,6 @@ violation contains make_diag_full("pf-asg-step-exactcapacity-nonnegative", "ERRO
 	v := object.get(s, "ScalingAdjustment", null)
 	v != null
 	not is_object(v)
-	n := to_number(v)
+	n := _pf_tonum(v)
 	n < 0
 }

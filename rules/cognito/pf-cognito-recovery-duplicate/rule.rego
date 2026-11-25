@@ -5,8 +5,8 @@ import rego.v1
 # Pairwise duplicate check on the mechanism list; the service error names
 # both duplicate priorities and duplicate mechanism names.
 _pf_cogrdp_dup(a, b) if {
-	pa := to_number(object.get(a, "Priority", -1))
-	pb := to_number(object.get(b, "Priority", -2))
+	pa := _pf_tonum(object.get(a, "Priority", -1))
+	pb := _pf_tonum(object.get(b, "Priority", -2))
 	pa == pb
 }
 

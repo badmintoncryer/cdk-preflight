@@ -13,7 +13,7 @@ violation contains make_diag_full("pf-route53-tlsa-matching-type-enum", "ERROR",
 	some v in _pf_r53lib_vals(rs)
 	f := _pf_r53lib_fields(v)
 	count(f) == 4
-	n := to_number(f[2])
+	n := _pf_tonum(f[2])
 	not n in {0, 1, 2}
 }
 
@@ -30,6 +30,6 @@ violation contains make_diag_full("pf-route53-tlsa-matching-type-enum", "ERROR",
 	some v in _pf_r53lib_vals(rs)
 	f := _pf_r53lib_fields(v)
 	count(f) == 4
-	n := to_number(f[2])
+	n := _pf_tonum(f[2])
 	not n in {0, 1, 2}
 }

@@ -116,7 +116,7 @@ _pf_batch_rr(c, t) := v if {
 _pf_batch_num(v) := n if {
 	v != null
 	not is_boolean(v)
-	n := to_number(v)
+	n := _pf_tonum(v)
 }
 
 # Outside an inclusive range; two clauses so a single rule body can express it.
@@ -255,7 +255,7 @@ _pf_batch_eks_vals(c, k) := vs if {
 _pf_batch_eks_numval(c, side, k) := n if {
 	v := _pf_batch_eks_resval(c, side, k)
 	regex.match(`^[0-9]+(\.[0-9]+)?$`, v)
-	n := to_number(v)
+	n := _pf_tonum(v)
 }
 
 _pf_batch_keyset(o) := {k | some k, _ in o}
@@ -273,7 +273,7 @@ _pf_batch_eks_cpu_bad(v) if {
 
 _pf_batch_eks_cpu_bad(v) if {
 	regex.match(`^[0-9]+(\.[0-9]+)?$`, v)
-	q := to_number(v) * 4
+	q := _pf_tonum(v) * 4
 	q != round(q)
 }
 
@@ -285,7 +285,7 @@ _pf_batch_eks_mem_bad(v) if {
 
 _pf_batch_eks_mib(v) := n if {
 	regex.match(`^[0-9]+(Mi)?$`, v)
-	n := to_number(trim_suffix(v, "Mi"))
+	n := _pf_tonum(trim_suffix(v, "Mi"))
 }
 
 # Kubernetes reserved prefixes, plus the service's own.
@@ -327,14 +327,14 @@ _pf_batch_bound(s, d) := d if {
 
 _pf_batch_bound(s, _) := n if {
 	s != ""
-	n := to_number(s)
+	n := _pf_tonum(s)
 }
 
 # The node indexes one TargetNodes expression covers: "n", "n:", ":m", "n:m".
 _pf_batch_target(s, _) := ns if {
 	parts := split(s, ":")
 	count(parts) == 1
-	ns := {to_number(parts[0])}
+	ns := {_pf_tonum(parts[0])}
 }
 
 _pf_batch_target(s, num) := ns if {

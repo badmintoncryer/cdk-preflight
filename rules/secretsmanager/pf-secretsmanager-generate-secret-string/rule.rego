@@ -29,7 +29,7 @@ _pf_smgss_len(g) := n if {
 	is_number(n)
 }
 
-_pf_smgss_len(g) := to_number(v) if {
+_pf_smgss_len(g) := _pf_tonum(v) if {
 	v := object.get(g, "PasswordLength", 32)
 	is_string(v)
 	regex.match("^[0-9]+$", v)

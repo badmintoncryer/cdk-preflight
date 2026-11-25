@@ -8,7 +8,7 @@ _pf_ecsesmh_num(o, k) := n if {
 	v := _pf_ecs_oget(o, k)
 	not is_boolean(v)
 	v != null
-	n := to_number(v)
+	n := _pf_tonum(v)
 }
 
 violation contains make_diag_full("pf-ecs-svc-early-success-below-min-healthy", "ERROR", name,

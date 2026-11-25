@@ -12,7 +12,7 @@ _pf_ec2fl_absent(name, key) if {
 
 _pf_ec2fla_bad(name) := v if {
 	v := resolve(name, "Properties.MaxAggregationInterval")
-	n := to_number(v)
+	n := _pf_tonum(v)
 	not n in {60, 600}
 }
 

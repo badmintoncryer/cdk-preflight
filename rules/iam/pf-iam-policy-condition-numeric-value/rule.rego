@@ -4,7 +4,7 @@ import rego.v1
 
 _pf_iamcnv_bad(v) if {
 	is_string(v)
-	not to_number(v)
+	not _pf_tonum(v)
 }
 
 violation contains make_diag_full("pf-iam-policy-condition-numeric-value", "ERROR", name,

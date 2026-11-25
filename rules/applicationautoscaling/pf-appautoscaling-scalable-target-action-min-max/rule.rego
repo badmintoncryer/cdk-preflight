@@ -17,7 +17,7 @@ violation contains make_diag_full("pf-appautoscaling-scalable-target-action-min-
 	is_object(sched)
 	act := object.get(sched, "ScalableTargetAction", "__pf_absent")
 	is_object(act)
-	mn := to_number(object.get(act, "MinCapacity", "__pf_absent"))
-	mx := to_number(object.get(act, "MaxCapacity", "__pf_absent"))
+	mn := _pf_tonum(object.get(act, "MinCapacity", "__pf_absent"))
+	mx := _pf_tonum(object.get(act, "MaxCapacity", "__pf_absent"))
 	mn > mx
 }

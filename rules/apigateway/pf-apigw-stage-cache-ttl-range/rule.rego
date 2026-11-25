@@ -11,6 +11,6 @@ violation contains make_diag_full("pf-apigw-stage-cache-ttl-range", "ERROR", nam
 	some item in flatten_list(name, "Properties.MethodSettings")
 	m := item.value
 	is_object(m)
-	ttl := to_number(m.CacheTtlInSeconds)
+	ttl := _pf_tonum(m.CacheTtlInSeconds)
 	ttl > 3600
 }

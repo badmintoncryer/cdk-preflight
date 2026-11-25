@@ -13,7 +13,7 @@ violation contains make_diag_full("pf-route53-tlsa-certificate-usage-enum", "ERR
 	some v in _pf_r53lib_vals(rs)
 	f := _pf_r53lib_fields(v)
 	count(f) == 4
-	n := to_number(f[0])
+	n := _pf_tonum(f[0])
 	not n in {0, 1, 2, 3}
 }
 
@@ -30,6 +30,6 @@ violation contains make_diag_full("pf-route53-tlsa-certificate-usage-enum", "ERR
 	some v in _pf_r53lib_vals(rs)
 	f := _pf_r53lib_fields(v)
 	count(f) == 4
-	n := to_number(f[0])
+	n := _pf_tonum(f[0])
 	not n in {0, 1, 2, 3}
 }

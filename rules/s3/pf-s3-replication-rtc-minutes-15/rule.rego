@@ -23,6 +23,6 @@ violation contains make_diag_full("pf-s3-replication-rtc-minutes-15", "ERROR", n
 	is_object(inner)
 	raw := object.get(inner, "Minutes", null)
 	raw != null
-	m := to_number(raw)
+	m := _pf_tonum(raw)
 	m != 15
 }

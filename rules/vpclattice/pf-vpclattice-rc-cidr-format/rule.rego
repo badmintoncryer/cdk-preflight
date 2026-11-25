@@ -15,5 +15,5 @@ violation contains make_diag_full("pf-vpclattice-rc-cidr-format", "ERROR", name,
 	s := it.value
 	is_string(s)
 	regex.match(`^[0-9]{1,3}(\.[0-9]{1,3}){3}/[0-9]+$`, s)
-	to_number(split(s, "/")[1]) > 32
+	_pf_tonum(split(s, "/")[1]) > 32
 }

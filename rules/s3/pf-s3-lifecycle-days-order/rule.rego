@@ -22,14 +22,14 @@ violation contains make_diag_full("pf-s3-lifecycle-days-order", "ERROR", name,
 	sc1 in {"STANDARD_IA", "ONEZONE_IA"}
 	raw1 := object.get(t1, "TransitionInDays", null)
 	raw1 != null # to_number(null) は 0 になる
-	d1 := to_number(raw1)
+	d1 := _pf_tonum(raw1)
 	some t2 in trans
 	is_object(t2)
 	sc2 := object.get(t2, "StorageClass", "")
 	sc2 in {"GLACIER", "DEEP_ARCHIVE"}
 	raw2 := object.get(t2, "TransitionInDays", null)
 	raw2 != null
-	d2 := to_number(raw2)
+	d2 := _pf_tonum(raw2)
 	d2 < d1 + 30
 }
 
@@ -43,13 +43,13 @@ violation contains make_diag_full("pf-s3-lifecycle-days-order", "ERROR", name,
 	is_object(r.value)
 	rawe := object.get(r.value, "ExpirationInDays", null)
 	rawe != null # to_number(null) は 0 になる
-	e := to_number(rawe)
+	e := _pf_tonum(rawe)
 	trans := object.get(r.value, "Transitions", [])
 	is_array(trans)
 	some t in trans
 	is_object(t)
 	rawd := object.get(t, "TransitionInDays", null)
 	rawd != null
-	d := to_number(rawd)
+	d := _pf_tonum(rawd)
 	e <= d
 }

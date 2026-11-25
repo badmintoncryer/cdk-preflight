@@ -15,5 +15,5 @@ violation contains make_diag_full("pf-vpclattice-rc-port-range-order", "ERROR", 
 	is_string(s)
 	regex.match(`^[0-9]+-[0-9]+$`, s)
 	p := split(s, "-")
-	to_number(p[0]) > to_number(p[1])
+	_pf_tonum(p[0]) > _pf_tonum(p[1])
 }

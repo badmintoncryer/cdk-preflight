@@ -15,6 +15,6 @@ violation contains make_diag_full("pf-firehose-http-buffer-size", "ERROR", name,
 	path == "Properties.HttpEndpointDestinationConfiguration"
 	raw := object.get(object.get(c, "BufferingHints", {}), "SizeInMBs", null)
 	raw != null
-	v := to_number(raw)
+	v := _pf_tonum(raw)
 	v > 64
 }

@@ -52,7 +52,7 @@ _pf_codebuildlib_num(v) := v if is_number(v)
 
 _pf_codebuildlib_num(v) := n if {
 	is_string(v)
-	n := to_number(v)
+	n := _pf_tonum(v)
 }
 
 # ---- the four blocks every CodeBuild rule reads -----------------------------

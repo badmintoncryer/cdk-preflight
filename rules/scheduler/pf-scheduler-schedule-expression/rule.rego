@@ -97,7 +97,7 @@ violation contains make_diag_full("pf-scheduler-schedule-expression", "ERROR", n
 	f := _pf_schexpr_cron_fields(e)
 	count(f) in {5, 6}
 	some i, r in _pf_schexpr_ranges
-	v := to_number(f[i])
+	v := _pf_tonum(f[i])
 	not _pf_schexpr_in_range(v, r)
 }
 
@@ -116,7 +116,7 @@ violation contains make_diag_full("pf-scheduler-schedule-expression", "ERROR", n
 	f := _pf_schexpr_cron_fields(e)
 	count(f) in {5, 6}
 	some n in regex.find_all_string_submatch_n(`#([0-9]+)`, f[4], -1)
-	not _pf_schexpr_in_range(to_number(n[1]), [1, 5])
+	not _pf_schexpr_in_range(_pf_tonum(n[1]), [1, 5])
 }
 
 # --- at() ---------------------------------------------------------------

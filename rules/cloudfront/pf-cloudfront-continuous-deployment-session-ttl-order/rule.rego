@@ -16,7 +16,7 @@ violation contains make_diag_full("pf-cloudfront-continuous-deployment-session-t
 	is_object(sw)
 	ss := object.get(sw, "SessionStickinessConfig", null)
 	is_object(ss)
-	i := to_number(object.get(ss, "IdleTTL", null))
-	m := to_number(object.get(ss, "MaximumTTL", null))
+	i := _pf_onum(ss, "IdleTTL")
+	m := _pf_onum(ss, "MaximumTTL")
 	i > m
 }

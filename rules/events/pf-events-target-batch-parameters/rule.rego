@@ -28,7 +28,7 @@ violation contains make_diag_full("pf-events-target-batch-parameters", "ERROR", 
 	some t in _pf_evbp_targets(name)
 	ap := object.get(t.value.BatchParameters, "ArrayProperties", null)
 	is_object(ap)
-	v := to_number(object.get(ap, "Size", "__pf_absent"))
+	v := _pf_tonum(object.get(ap, "Size", "__pf_absent"))
 	_pf_evbp_out_of_range(v, 2, 10000)
 }
 
@@ -41,6 +41,6 @@ violation contains make_diag_full("pf-events-target-batch-parameters", "ERROR", 
 	some t in _pf_evbp_targets(name)
 	rs := object.get(t.value.BatchParameters, "RetryStrategy", null)
 	is_object(rs)
-	v := to_number(object.get(rs, "Attempts", "__pf_absent"))
+	v := _pf_tonum(object.get(rs, "Attempts", "__pf_absent"))
 	_pf_evbp_out_of_range(v, 1, 10)
 }

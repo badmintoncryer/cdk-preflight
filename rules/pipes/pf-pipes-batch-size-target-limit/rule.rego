@@ -27,6 +27,6 @@ violation contains make_diag_full("pf-pipes-batch-size-target-limit", "ERROR", n
 	is_object(sp)
 	some block, cfg in sp
 	is_object(cfg)
-	bs := to_number(object.get(cfg, "BatchSize", "__pf_absent"))
+	bs := _pf_tonum(object.get(cfg, "BatchSize", "__pf_absent"))
 	bs > max
 }

@@ -12,6 +12,6 @@ violation contains make_diag_full("pf-batch-jd-runtime-platform-windows-vcpu-min
 	startswith(f, "WINDOWS_")
 	v := _pf_batch_rr(_pf_batch_cp(name), "VCPU")
 	_pf_batch_lit(v)
-	n := to_number(v)
+	n := _pf_tonum(v)
 	n < 1
 }

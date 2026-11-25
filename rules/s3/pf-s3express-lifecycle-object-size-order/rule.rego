@@ -18,7 +18,7 @@ violation contains make_diag_full("pf-s3express-lifecycle-object-size-order", "E
 	rawg != null # to_number(null) is 0
 	rawl := object.get(r.value, "ObjectSizeLessThan", null)
 	rawl != null
-	gt := to_number(rawg)
-	lt := to_number(rawl)
+	gt := _pf_tonum(rawg)
+	lt := _pf_tonum(rawl)
 	gt >= lt
 }

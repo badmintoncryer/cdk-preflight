@@ -10,7 +10,7 @@ violation contains make_diag_full("pf-firehose-processor-buffer-interval-range",
 	some [name, path, i, t, pr] in _pf_fhlib_procs
 	t == "Lambda"
 	some raw in _pf_fhlib_params(pr, "BufferIntervalInSeconds")
-	v := to_number(raw)
+	v := _pf_tonum(raw)
 	_pf_pf_firehose_processor_buffer_interval_range_out(v)
 }
 

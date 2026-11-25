@@ -12,8 +12,8 @@ violation contains make_diag_full("pf-ecs-ulimit-soft-over-hard", "ERROR", name,
 	uls := _pf_ecs_cget(c, "Ulimits")
 	is_array(uls)
 	some u in uls
-	s := to_number(object.get(u, "SoftLimit", null))
-	h := to_number(object.get(u, "HardLimit", null))
+	s := _pf_onum(u, "SoftLimit")
+	h := _pf_onum(u, "HardLimit")
 	s > h
 	un := object.get(u, "Name", "<unnamed>")
 }

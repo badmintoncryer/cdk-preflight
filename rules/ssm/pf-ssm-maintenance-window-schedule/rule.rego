@@ -26,7 +26,7 @@ violation contains make_diag_full("pf-ssm-maintenance-window-schedule", "ERROR",
 	not _pf_ssmms_kind(s)
 }
 
-_pf_ssmms_rate(s) := to_number(m[0][1]) if {
+_pf_ssmms_rate(s) := _pf_tonum(m[0][1]) if {
 	m := regex.find_all_string_submatch_n("^[Rr]ate\\(([0-9]+) ?(minutes?|hours?|days?)\\)$", s, 1)
 	count(m) == 1
 }
@@ -82,7 +82,7 @@ violation contains make_diag_full("pf-ssm-maintenance-window-schedule", "ERROR",
 }
 
 # numbers inside a field (before any '/' step) must stay in range; '#n' must be 1..5
-_pf_ssmms_nums(field) := [to_number(n) | some item in split(field, ","); base := split(item, "/")[0]; some n in regex.find_n("[0-9]+", base, -1)]
+_pf_ssmms_nums(field) := [_pf_tonum(n) | some item in split(field, ","); base := split(item, "/")[0]; some n in regex.find_n("[0-9]+", base, -1)]
 
 _pf_ssmms_ranges := {0: [0, 59, "minutes/seconds"], 1: [0, 23, "hours"], 2: [1, 31, "day-of-month"], 3: [1, 12, "month"], 4: [1, 7, "day-of-week"]}
 
@@ -111,7 +111,7 @@ violation contains make_diag_full("pf-ssm-maintenance-window-schedule", "ERROR",
 	s := _pf_ssmms_sched(name)
 	f := _pf_ssmms_six(_pf_ssmms_fields(s))
 	some m in regex.find_all_string_submatch_n("#([0-9]+)", f[4], -1)
-	_pf_ssmms_outside(to_number(m[1]), 1, 5)
+	_pf_ssmms_outside(_pf_tonum(m[1]), 1, 5)
 }
 
 violation contains make_diag_full("pf-ssm-maintenance-window-schedule", "ERROR", name,

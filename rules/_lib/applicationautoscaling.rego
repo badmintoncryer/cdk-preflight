@@ -72,12 +72,12 @@ _pf_aaslib_steps(name) := a if {
 # undefined for it and every comparison below is written so that an undefined
 # bound reads as unbounded on that side. `v != null` keeps an explicit JSON null
 # out, since to_number(null) is 0 and would read as a real bound at zero.
-_pf_aaslib_step_lo(adj) := to_number(v) if {
+_pf_aaslib_step_lo(adj) := _pf_tonum(v) if {
 	v := object.get(adj, "MetricIntervalLowerBound", "__pf_absent")
 	v != null
 }
 
-_pf_aaslib_step_hi(adj) := to_number(v) if {
+_pf_aaslib_step_hi(adj) := _pf_tonum(v) if {
 	v := object.get(adj, "MetricIntervalUpperBound", "__pf_absent")
 	v != null
 }

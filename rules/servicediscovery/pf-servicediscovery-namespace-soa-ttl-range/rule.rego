@@ -9,6 +9,6 @@ violation contains make_diag_full("pf-servicediscovery-namespace-soa-ttl-range",
 	"https://docs.aws.amazon.com/cloud-map/latest/api/API_SOA.html") if {
 	some name in _pf_sd_dns_namespaces
 	soa := object.get(object.get(object.get(_pf_sd_props(name), "Properties", {}), "DnsProperties", {}), "SOA", {})
-	ttl := to_number(object.get(soa, "TTL", "__pf_absent"))
+	ttl := _pf_tonum(object.get(soa, "TTL", "__pf_absent"))
 	ttl > 2147483647
 }

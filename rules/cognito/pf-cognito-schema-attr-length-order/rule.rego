@@ -19,7 +19,7 @@ violation contains make_diag_full("pf-cognito-schema-attr-length-order", "ERROR"
 	mn_raw != "__pf_absent"
 	mx_raw := object.get(sac, "MaxLength", "__pf_absent")
 	mx_raw != "__pf_absent"
-	mn := to_number(mn_raw)
-	mx := to_number(mx_raw)
+	mn := _pf_tonum(mn_raw)
+	mx := _pf_tonum(mx_raw)
 	mn > mx
 }

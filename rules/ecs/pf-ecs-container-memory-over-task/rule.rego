@@ -14,7 +14,7 @@ violation contains make_diag_full("pf-ecs-container-memory-over-task", "ERROR", 
 	tm := _pf_num(name, "Properties.Memory")
 	some c in flatten_list(name, "Properties.ContainerDefinitions")
 	is_object(c.value)
-	cm := to_number(object.get(c.value, "Memory", null))
+	cm := _pf_onum(c.value, "Memory")
 	cm > tm
 	cname := object.get(c.value, "Name", "<unnamed>")
 }

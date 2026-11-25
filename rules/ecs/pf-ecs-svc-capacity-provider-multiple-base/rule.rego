@@ -14,5 +14,5 @@ violation contains make_diag_full("pf-ecs-svc-capacity-provider-multiple-base", 
 	some name in resources_of_type("AWS::ECS::Service")
 	cps := _pf_ecs_get(name, "CapacityProviderStrategy")
 	is_array(cps)
-	count([x | some x in cps; to_number(_pf_ecs_oget(x, "Base")) > 0]) > 1
+	count([x | some x in cps; _pf_tonum(_pf_ecs_oget(x, "Base")) > 0]) > 1
 }

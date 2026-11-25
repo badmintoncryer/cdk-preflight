@@ -29,7 +29,7 @@ _pf_r53lib_str(rs, k) := v if {
 	is_string(v)
 }
 
-_pf_r53lib_num(rs, k) := to_number(_pf_r53lib_get(rs, k))
+_pf_r53lib_num(rs, k) := _pf_tonum(_pf_r53lib_get(rs, k))
 
 # 末尾ドットを落として小文字化した DNS 名。Route 53 は両者を同じ名前として扱う。
 _pf_r53lib_norm(n) := trim_suffix(lower(n), ".")

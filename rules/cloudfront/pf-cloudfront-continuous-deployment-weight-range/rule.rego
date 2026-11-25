@@ -16,6 +16,6 @@ violation contains make_diag_full("pf-cloudfront-continuous-deployment-weight-ra
 	is_object(sw)
 	raw := object.get(sw, "Weight", "__pf_absent")
 	raw != "__pf_absent"
-	w := to_number(raw)
+	w := _pf_tonum(raw)
 	w > 0.15
 }
