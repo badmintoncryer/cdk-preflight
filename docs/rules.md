@@ -2308,7 +2308,6 @@
 | `pf-lambda-layer-name-pattern` | AWS::Lambda::LayerVersion | A layer name is letters, digits, dashes and underscores | ERROR | retired: engine F3031 covers it from aws-cdk-lib 2.278.0 |
 | `pf-lambda-layer-reference-glacier-storage-class` | AWS::Lambda::LayerVersion | REFERENCE content cannot be archived | WARN | none |
 | `pf-lambda-layer-reference-needs-bucket-policy` | AWS::Lambda::LayerVersion | REFERENCE content needs a bucket policy for Lambda | WARN | none |
-| `pf-lambda-layer-reference-needs-object-version` | AWS::Lambda::LayerVersion | REFERENCE content needs an object version | ERROR | none |
 | `pf-lambda-layer-reference-needs-versioning` | AWS::Lambda::LayerVersion | REFERENCE content needs a versioned bucket | WARN | none |
 | `pf-lambda-layerperm-arn-length` | AWS::Lambda::LayerVersionPermission | A layer version ARN is at most 140 characters | ERROR | none |
 | `pf-lambda-layerperm-arn-version-suffix` | AWS::Lambda::LayerVersionPermission | A layer permission names a layer version | ERROR | none |
