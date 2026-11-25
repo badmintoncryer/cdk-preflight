@@ -9,7 +9,7 @@ violation contains make_diag_full("pf-ec2-vpn-rekey-margin", "ERROR", name,
 	"https://docs.aws.amazon.com/vpn/latest/s2svpn/VPNTunnels.html") if {
 	some name in resources_of_type("AWS::EC2::VPNConnection")
 	some item in flatten_list(name, "Properties.VpnTunnelOptionsSpecifications")
-	m := to_number(object.get(item.value, "RekeyMarginTimeSeconds", null))
-	p2 := to_number(object.get(item.value, "Phase2LifetimeSeconds", null))
+	m := to_number(item.value["RekeyMarginTimeSeconds"])
+	p2 := to_number(item.value["Phase2LifetimeSeconds"])
 	m * 2 > p2
 }
