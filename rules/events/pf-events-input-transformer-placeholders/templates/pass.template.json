@@ -27,6 +27,18 @@
               },
               "InputTemplate": "\"got <detailType> via <aws.events.rule-arn>\""
             }
+          },
+          {
+            "Id": "t2",
+            "Arn": {
+              "Fn::GetAtt": [
+                "Q",
+                "Arn"
+              ]
+            },
+            "InputTransformer": {
+              "InputTemplate": "\"got <detailType>\""
+            }
           }
         ]
       }
