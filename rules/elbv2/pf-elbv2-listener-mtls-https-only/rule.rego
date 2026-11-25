@@ -8,7 +8,7 @@ _pf_elblmh_url := "https://docs.aws.amazon.com/elasticloadbalancing/latest/APIRe
 
 violation contains make_diag_full("pf-elbv2-listener-mtls-https-only", "ERROR", name,
 	"Properties.MutualAuthentication",
-	sprintf("MutualAuthentication is set on a %s listener; mutual TLS is only configured on an HTTPS listener of an Application Load Balancer", [proto]),
+	sprintf("MutualAuthentication is set on a %s; mutual TLS is only configured on an HTTPS listener of an Application Load Balancer", [_pf_elb_listener_label(name)]),
 	_pf_elblmh_fix, _pf_elblmh_url) if {	some name in _pf_elb_listeners
 	ma := resolve(name, "Properties.MutualAuthentication")
 	is_object(ma)

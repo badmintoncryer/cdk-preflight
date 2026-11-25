@@ -8,7 +8,7 @@ _pf_elblat_url := "https://docs.aws.amazon.com/elasticloadbalancing/latest/APIRe
 
 violation contains make_diag_full("pf-elbv2-listener-alpn-tls-only", "ERROR", name,
 	"Properties.AlpnPolicy",
-	sprintf("AlpnPolicy is set on a %s listener; CreateListener answers \"You cannot set ALPN policy on load balancers of type '%s'\"", [proto, t]),
+	sprintf("AlpnPolicy is set on a %s; CreateListener answers \"You cannot set ALPN policy on load balancers of type '%s'\"", [_pf_elb_listener_label(name), t]),
 	_pf_elblat_fix, _pf_elblat_url) if {
 	some name in _pf_elb_listeners
 	_pf_elb_has(name, "AlpnPolicy")

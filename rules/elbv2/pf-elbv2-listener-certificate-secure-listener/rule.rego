@@ -8,7 +8,7 @@ _pf_elblcsl_url := "https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGui
 
 violation contains make_diag_full("pf-elbv2-listener-certificate-secure-listener", "ERROR", name,
 	"Properties.ListenerArn",
-	sprintf("The certificate is attached to a %s listener; only HTTPS and TLS listeners terminate TLS", [proto]),
+	sprintf("The certificate is attached to a %s; only HTTPS and TLS listeners terminate TLS", [_pf_elb_listener_label(l)]),
 	_pf_elblcsl_fix, _pf_elblcsl_url) if {
 	some name in resources_of_type("AWS::ElasticLoadBalancingV2::ListenerCertificate")
 	l := resolve(name, "Properties.ListenerArn")

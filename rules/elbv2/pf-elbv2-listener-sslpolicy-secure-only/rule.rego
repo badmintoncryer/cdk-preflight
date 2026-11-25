@@ -8,7 +8,7 @@ _pf_elblss_url := "https://docs.aws.amazon.com/elasticloadbalancing/latest/APIRe
 
 violation contains make_diag_full("pf-elbv2-listener-sslpolicy-secure-only", "ERROR", name,
 	"Properties.SslPolicy",
-	sprintf("SslPolicy is set on a %s listener; a security policy only applies where the listener terminates TLS", [proto]),
+	sprintf("SslPolicy is set on a %s; a security policy only applies where the listener terminates TLS", [_pf_elb_listener_label(name)]),
 	_pf_elblss_fix, _pf_elblss_url) if {
 	some name in _pf_elb_listeners
 	_pf_elb_has(name, "SslPolicy")

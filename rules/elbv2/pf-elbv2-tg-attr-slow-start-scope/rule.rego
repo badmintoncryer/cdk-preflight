@@ -8,7 +8,7 @@ _pf_elbgss_url := "https://docs.aws.amazon.com/elasticloadbalancing/latest/APIRe
 
 violation contains make_diag_full("pf-elbv2-tg-attr-slow-start-scope", "ERROR", name,
 	sprintf("Properties.TargetGroupAttributes.%d.Key", [p.index]),
-	sprintf("slow_start.duration_seconds is set on a %s target group with target type '%s'; slow start only applies to an Application Load Balancer target group of instance or ip targets", [f, t]),
+	sprintf("slow_start.duration_seconds is set on a %s target group with target type '%s'; slow start only applies to an Application Load Balancer target group of instance or ip targets", [_pf_elbgss_label(name, f), t]),
 	_pf_elbgss_fix, _pf_elbgss_url) if {
 	some name in _pf_elb_tgs
 	some p in _pf_elb_pairs(name, "TargetGroupAttributes")
@@ -21,4 +21,13 @@ violation contains make_diag_full("pf-elbv2-tg-attr-slow-start-scope", "ERROR", 
 _pf_elbgss_ok(f, t) if {
 	f == "application"
 	t in {"instance", "ip"}
+}
+
+# A target group without Protocol is a lambda target group; with any other target
+# type the omission itself fails ("A protocol must be specified", bench
+# 2026-11-25), so the message names it as Protocol-less rather than lambda.
+_pf_elbgss_label(name, f) := f if "Protocol" in object.keys(_pf_elb_props(name))
+
+_pf_elbgss_label(name, _) := "Protocol-less (only a lambda target group may omit Protocol)" if {
+	not "Protocol" in object.keys(_pf_elb_props(name))
 }
