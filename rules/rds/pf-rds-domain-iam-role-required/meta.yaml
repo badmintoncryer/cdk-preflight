@@ -1,0 +1,13 @@
+id: pf-rds-domain-iam-role-required
+service: rds
+benchRegion: us-east-1
+resourceTypes: [AWS::RDS::DBInstance]
+severity: ERROR
+title: RDS Domain (AWS Managed AD) needs DomainIAMRoleName
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-rds-dbinstance.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-11-25 us-east-1: sqlserver-ex with Domain d-9066000000 and no DomainIAMRoleName -> \"IAM role provided is not valid, please check that the role exists and has the correct policies\" (ROLLBACK_COMPLETE). RDS words a missing role the same as an invalid one, so the text does not tell the two apart; no role is present in the fixture. Pass not deployed (needs a real directory)."
+  expect: "IAM role provided is not valid"
+addedOn: 2026-11-25

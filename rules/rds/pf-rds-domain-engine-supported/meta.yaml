@@ -1,0 +1,13 @@
+id: pf-rds-domain-engine-supported
+service: rds
+benchRegion: us-east-1
+resourceTypes: [AWS::RDS::DBInstance]
+severity: ERROR
+title: MariaDB DB instances cannot join an Active Directory domain
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-rds-dbinstance.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-11-25 us-east-1: mariadb with Domain d-9066000000 and DomainIAMRoleName -> \"Domain is not supported for the requested engine mariadb\" (ROLLBACK_COMPLETE). Pass (mysql) not deployed (needs a real directory)."
+  expect: "Domain is not supported for the requested engine"
+addedOn: 2026-11-25

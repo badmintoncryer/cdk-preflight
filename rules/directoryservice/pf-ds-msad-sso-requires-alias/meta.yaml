@@ -1,0 +1,13 @@
+id: pf-ds-msad-sso-requires-alias
+service: directoryservice
+benchRegion: us-east-1
+resourceTypes: [AWS::DirectoryService::MicrosoftAD]
+severity: ERROR
+title: EnableSso on AWS Managed Microsoft AD needs CreateAlias
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-directoryservice-microsoftad.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-11-25 us-east-1: EnableSso true without CreateAlias -> the directory was created, then after 1888 s \"An alias is required before enabling SSO.\" (ROLLBACK_COMPLETE, directory deleted on rollback). Pass not deployed (needs a globally unique alias)."
+  expect: "An alias is required before enabling SSO"
+addedOn: 2026-11-25

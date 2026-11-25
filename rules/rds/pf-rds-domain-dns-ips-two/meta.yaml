@@ -1,0 +1,13 @@
+id: pf-rds-domain-dns-ips-two
+service: rds
+benchRegion: us-east-1
+resourceTypes: [AWS::RDS::DBInstance]
+severity: ERROR
+title: RDS DomainDnsIps takes exactly two IP addresses
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-rds-dbinstance.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-11-25 us-east-1: DomainDnsIps with 1 IP and with 3 IPs (two instances in one stack) -> both CREATE_FAILED \"The domain must have exactly two DNS endpoints\" (ROLLBACK_COMPLETE). Pass (2 IPs) not deployed (needs a reachable domain)."
+  expect: "The domain must have exactly two DNS endpoints"
+addedOn: 2026-11-25

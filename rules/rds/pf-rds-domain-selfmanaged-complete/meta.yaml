@@ -1,0 +1,13 @@
+id: pf-rds-domain-selfmanaged-complete
+service: rds
+benchRegion: us-east-1
+resourceTypes: [AWS::RDS::DBInstance]
+severity: ERROR
+title: RDS self-managed AD (DomainFqdn) needs DomainOu, DomainAuthSecretArn and DomainDnsIps
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-rds-dbinstance.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-11-25 us-east-1: sqlserver-ex with DomainFqdn and DomainDnsIps but no DomainOu/DomainAuthSecretArn -> \"Ensure all of the self-managed Active Directory parameters have been passed in.\" (ROLLBACK_COMPLETE). Pass not deployed (needs a reachable domain)."
+  expect: "Ensure all of the self-managed Active Directory parameters have been passed in"
+addedOn: 2026-11-25

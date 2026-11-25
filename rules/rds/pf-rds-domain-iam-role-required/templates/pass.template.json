@@ -1,0 +1,21 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Resources": {
+    "Db": {
+      "Type": "AWS::RDS::DBInstance",
+      "DeletionPolicy": "Delete",
+      "Properties": {
+        "Engine": "sqlserver-ex",
+        "DBInstanceClass": "db.t3.small",
+        "AllocatedStorage": "20",
+        "MasterUsername": "cdkpfmaster",
+        "MasterUserPassword": "Passw0rd#2026",
+        "BackupRetentionPeriod": 0,
+        "DeletionProtection": false,
+        "LicenseModel": "license-included",
+        "Domain": "d-9066000000",
+        "DomainIAMRoleName": "rds-directoryservice-access-role"
+      }
+    }
+  }
+}

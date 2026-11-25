@@ -1,0 +1,13 @@
+id: pf-ds-msad-password-required
+service: directoryservice
+benchRegion: us-east-1
+resourceTypes: [AWS::DirectoryService::MicrosoftAD]
+severity: ERROR
+title: AWS Managed Microsoft AD needs a Password even though CloudFormation marks it optional
+constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-directoryservice-microsoftad.html
+upstream: none
+repro:
+  method: real-deploy
+  evidence: "bench 2026-11-25 us-east-1: MicrosoftAD without Password -> Directory CREATE_FAILED \"Password is a required proerty\" (InvalidRequest, AWS spelling kept; ROLLBACK_COMPLETE). Pass not deployed (30-min billed directory); same shape as the verified pf-ds-msad-password-no-admin pass."
+  expect: "Password is a required proerty"
+addedOn: 2026-11-25
