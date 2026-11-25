@@ -27,7 +27,9 @@ violation contains make_diag_full("pf-events-input-transformer-placeholders", "E
 	is_object(it)
 	tmpl := object.get(it, "InputTemplate", null)
 	is_string(tmpl)
-	pm := object.get(it, "InputPathsMap", {})
+	# Without InputPathsMap the service does not check placeholders: a target with
+	# <detailType> and no InputPathsMap deploys (bench 2026-11-25 us-east-1).
+	pm := it.InputPathsMap
 	_pf_evitp_plain_map(pm)
 	some p in _pf_evitp_placeholders(tmpl)
 	not startswith(p, "aws.events.")

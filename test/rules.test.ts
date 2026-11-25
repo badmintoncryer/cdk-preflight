@@ -1233,6 +1233,25 @@ describe('eventbridge rules', () => {
   });
 });
 
+// InputPathsMap がなければ、EventBridge はプレースホルダーを検査しない（bench 2026-11-25 us-east-1）
+describe('pf-events-input-transformer-placeholders needs InputPathsMap', () => {
+  const rule = (it: unknown) => ({
+    Resources: {
+      R: {
+        Type: 'AWS::Events::Rule',
+        Properties: { EventPattern: { source: ['x'] }, Targets: [{ Id: 't1', Arn: 'arn:aws:sqs:us-east-1:123456789012:q', InputTransformer: it }] },
+      },
+    },
+  });
+  const fired = (tpl: unknown) => diagnoseTemplate(tpl).filter((d) => d.source === 'CUSTOM' && d.ruleId === 'pf-events-input-transformer-placeholders');
+  test('a placeholder without InputPathsMap is left alone', () => {
+    expect(fired(rule({ InputTemplate: '"got <detailType>"' }))).toHaveLength(0);
+  });
+  test('a placeholder missing from InputPathsMap still fires', () => {
+    expect(fired(rule({ InputPathsMap: { other: '$.detail' }, InputTemplate: '"got <detailType>"' }))).toHaveLength(1);
+  });
+});
+
 describe('cloudwatch alarm rules', () => {
   const ids = (ds: Diagnostic[]) => ds.filter((d) => d.source === 'CUSTOM').map((d) => d.ruleId);
   const alarm = (props: Record<string, unknown>, parameters?: Record<string, unknown>) => ({
