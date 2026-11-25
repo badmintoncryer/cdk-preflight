@@ -659,6 +659,14 @@ describe('an omitted optional number is not read as 0 (#392)', () => {
         },
       },
     }],
+    ['pf-elbv2-lb-idle-timeout-range', 'idle_timeout.timeout_seconds with Value omitted', {
+      Resources: {
+        LB: {
+          Type: 'AWS::ElasticLoadBalancingV2::LoadBalancer',
+          Properties: { Subnets: ['subnet-1', 'subnet-2'], LoadBalancerAttributes: [{ Key: 'idle_timeout.timeout_seconds' }] },
+        },
+      },
+    }],
     ['pf-ec2-vpn-phase-lifetime-order', 'Phase2LifetimeSeconds set, Phase1LifetimeSeconds omitted', vpn({ Phase2LifetimeSeconds: 1800 })],
     ['pf-ec2-vpn-rekey-margin', 'RekeyMarginTimeSeconds set, Phase2LifetimeSeconds omitted', vpn({ RekeyMarginTimeSeconds: 540 })],
   ])('%s stays silent: %s', (ruleId, _case, tpl) => {
