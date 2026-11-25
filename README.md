@@ -12,7 +12,7 @@
   <a href="https://github.com/badmintoncryer/cdk-preflight/actions/workflows/monthly-verify.yml"><img src="https://github.com/badmintoncryer/cdk-preflight/actions/workflows/monthly-verify.yml/badge.svg" alt="monthly real-deploy verification"></a>
   <a href="https://www.npmjs.com/package/cdk-preflight"><img src="https://img.shields.io/npm/v/cdk-preflight.svg" alt="npm version"></a>
   <a href="https://www.npmjs.com/package/cdk-preflight"><img src="https://img.shields.io/npm/dt/cdk-preflight.svg" alt="npm total downloads"></a>
-  <a href="docs/rules.md"><img src="https://img.shields.io/badge/rules-3388-blue" alt="3388 bundled rules"></a>
+  <a href="docs/rules.md"><img src="https://img.shields.io/badge/rules-3399-blue" alt="3399 bundled rules"></a>
 </p>
 
 Some CloudFormation constraints are not expressed in resource provider schemas — they live only in documentation, in service API validation, or across multiple properties. Templates that violate them pass `cdk synth`, pass CloudFormation pre-deployment validation, and then fail minutes into a deployment, burning a rollback cycle.
@@ -256,7 +256,7 @@ See [docs/rules.md](docs/rules.md) for the generated rule table.
 
 <!-- supported-resources:start -->
 <details>
-<summary><b>434 resource types across 80 services</b> — click to expand</summary>
+<summary><b>435 resource types across 81 services</b> — click to expand</summary>
 
 Resource names are relative to `AWS::<Service>::`; the number in parentheses is how many rules target that type.
 
@@ -286,7 +286,7 @@ Resource names are relative to `AWS::<Service>::`; the number in parentheses is 
 | **CodePipeline** | `CustomActionType` (3), `Pipeline` (25), `Webhook` (2) |
 | **Cognito** | `IdentityPool` (3), `IdentityPoolRoleAttachment` (7), `LogDeliveryConfiguration` (3), `ManagedLoginBranding` (2), `UserPool` (52), `UserPoolClient` (21), `UserPoolDomain` (7), `UserPoolGroup` (1), `UserPoolIdentityProvider` (11), `UserPoolResourceServer` (4), `UserPoolRiskConfigurationAttachment` (6), `UserPoolUICustomizationAttachment` (2) |
 | **Config** | `ConfigRule` (6), `ConfigurationAggregator` (2), `ConfigurationRecorder` (7), `ConformancePack` (1), `RemediationConfiguration` (2) |
-| **DirectoryService** | `MicrosoftAD` (5) |
+| **DirectoryService** | `MicrosoftAD` (10) |
 | **DocDB** | `DBCluster` (14), `DBInstance` (1), `DBSubnetGroup` (2), `EventSubscription` (1) |
 | **DocDBElastic** | `Cluster` (7) |
 | **DynamoDB** | `GlobalTable` (25), `Table` (28) |
@@ -300,6 +300,7 @@ Resource names are relative to `AWS::<Service>::`; the number in parentheses is 
 | **ElasticLoadBalancingV2** | `Listener` (57), `ListenerCertificate` (2), `ListenerRule` (38), `LoadBalancer` (37), `TargetGroup` (58), `TrustStore` (1), `TrustStoreRevocation` (1) |
 | **Events** | `ApiDestination` (1), `Archive` (5), `Connection` (1), `Endpoint` (2), `EventBus` (2), `Rule` (27) |
 | **EventSchemas** | `Discoverer` (1), `Registry` (1), `RegistryPolicy` (1), `Schema` (1) |
+| **FSx** | `FileSystem` (1) |
 | **GlobalAccelerator** | `Accelerator` (1), `EndpointGroup` (5), `Listener` (2) |
 | **Glue** | `Classifier` (6), `Connection` (5), `Crawler` (11), `CustomEntityType` (1), `Database` (1), `DataQualityRuleset` (1), `Job` (15), `MLTransform` (4), `Partition` (1), `Schema` (3), `SecurityConfiguration` (1), `Table` (1), `Trigger` (10), `UserDefinedFunction` (2), `Workflow` (1) |
 | **Grafana** | `Workspace` (7) |
@@ -320,7 +321,7 @@ Resource names are relative to `AWS::<Service>::`; the number in parentheses is 
 | **OpenSearchServerless** | `AccessPolicy` (7), `Collection` (2), `CollectionGroup` (3), `LifecyclePolicy` (4), `SecurityConfig` (5), `SecurityPolicy` (14) |
 | **OpenSearchService** | `Domain` (65) |
 | **Pipes** | `Pipe` (9) |
-| **RDS** | `DBCluster` (21), `DBInstance` (33), `DBParameterGroup` (2), `DBProxy` (4), `DBProxyTargetGroup` (2), `DBShardGroup` (1), `DBSubnetGroup` (3), `EventSubscription` (3), `OptionGroup` (1) |
+| **RDS** | `DBCluster` (21), `DBInstance` (38), `DBParameterGroup` (2), `DBProxy` (4), `DBProxyTargetGroup` (2), `DBShardGroup` (1), `DBSubnetGroup` (3), `EventSubscription` (3), `OptionGroup` (1) |
 | **Redshift** | `Cluster` (20), `EventSubscription` (1), `ScheduledAction` (2) |
 | **RedshiftServerless** | `Namespace` (5), `Workgroup` (6) |
 | **Route53** | `CidrCollection` (11), `DNSSEC` (3), `HealthCheck` (30), `HostedZone` (14), `KeySigningKey` (9), `RecordSet` (74), `RecordSetGroup` (76) |

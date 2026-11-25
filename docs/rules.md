@@ -1309,8 +1309,13 @@
 | `pf-config-rule-scope-tag-value-requires-tag-key` | AWS::Config::ConfigRule | Scope.TagValue is only read together with Scope.TagKey | ERROR | none |
 | `pf-config-rule-source-detail-frequency-requires-scheduled` | AWS::Config::ConfigRule | A SourceDetail's MaximumExecutionFrequency only applies to ScheduledNotification | ERROR | none |
 | `pf-ds-msad-password-no-admin` | AWS::DirectoryService::MicrosoftAD | AWS Managed Microsoft AD Admin password cannot include the word admin | ERROR | none |
+| `pf-ds-msad-password-required` | AWS::DirectoryService::MicrosoftAD | AWS Managed Microsoft AD needs a Password even though CloudFormation marks it optional | ERROR | none |
+| `pf-ds-msad-shortname-max-15` | AWS::DirectoryService::MicrosoftAD | AWS Managed Microsoft AD ShortName (NetBIOS name) is at most 15 characters | ERROR | none |
+| `pf-ds-msad-shortname-no-period` | AWS::DirectoryService::MicrosoftAD | AWS Managed Microsoft AD ShortName (NetBIOS name) cannot contain a period | ERROR | none |
+| `pf-ds-msad-sso-requires-alias` | AWS::DirectoryService::MicrosoftAD | EnableSso on AWS Managed Microsoft AD needs CreateAlias | ERROR | none |
 | `pf-ds-msad-subnet-in-vpc` | AWS::DirectoryService::MicrosoftAD | AWS Managed Microsoft AD subnets must belong to VpcSettings.VpcId | ERROR | none |
 | `pf-ds-msad-subnets-distinct-az` | AWS::DirectoryService::MicrosoftAD | AWS Managed Microsoft AD needs its two subnets in different Availability Zones | ERROR | none |
+| `pf-ds-msad-subnets-exactly-two` | AWS::DirectoryService::MicrosoftAD | AWS Managed Microsoft AD takes exactly two subnets | ERROR | none |
 | `pf-ds-msad-vpc-default-tenancy` | AWS::DirectoryService::MicrosoftAD | AWS Managed Microsoft AD needs a VPC with default instance tenancy | ERROR | none |
 | `pf-ds-msad-vpc-reserved-cidr` | AWS::DirectoryService::MicrosoftAD | AWS Managed Microsoft AD cannot be created in a VPC that uses 198.18.0.0/15 | ERROR | none |
 | `pf-docdb-backup-maintenance-overlap` | AWS::DocDB::DBCluster | The backup window and the maintenance window must not overlap | ERROR | none |
@@ -2004,6 +2009,7 @@
 | `pf-firehose-snowflake-user` | AWS::KinesisFirehose::DeliveryStream | A Snowflake destination needs a user or a secret | ERROR | none |
 | `pf-firehose-snowflake-variant-columns` | AWS::KinesisFirehose::DeliveryStream | Variant content and metadata mapping needs both column names | ERROR | none |
 | `pf-firehose-splunk-hec-endpoint-https` | AWS::KinesisFirehose::DeliveryStream | A Splunk HEC endpoint must be an HTTPS URL | ERROR | none |
+| `pf-fsx-windows-ad-fqdn-max-47` | AWS::FSx::FileSystem | FSx for Windows Single-AZ 2 and Multi-AZ need an AD FQDN of at most 47 characters | ERROR | none |
 | `pf-ga-endpoint-group-region-supported` | AWS::GlobalAccelerator::EndpointGroup | EndpointGroupRegion must be a real AWS Region | ERROR | none |
 | `pf-ga-endpoint-group-unique-per-listener-region` | AWS::GlobalAccelerator::EndpointGroup | A listener holds at most one endpoint group per Region | ERROR | none |
 | `pf-ga-flow-logs-require-bucket-and-prefix` | AWS::GlobalAccelerator::Accelerator | Flow logs need both FlowLogsS3Bucket and FlowLogsS3Prefix | ERROR | none |
@@ -2653,6 +2659,11 @@
 | `pf-rds-database-insights-advanced` | AWS::RDS::DBCluster | DatabaseInsightsMode: advanced requires Performance Insights with at least 31 days retention | ERROR | none |
 | `pf-rds-dbname-format` | AWS::RDS::DBInstance | postgres DBName must begin with a letter | ERROR | none |
 | `pf-rds-description-printable` | AWS::RDS::DBSubnetGroup<br>AWS::RDS::DBParameterGroup | RDS group descriptions must be printable ASCII | ERROR | none |
+| `pf-rds-domain-dns-ips-two` | AWS::RDS::DBInstance | RDS DomainDnsIps takes exactly two IP addresses | ERROR | none |
+| `pf-rds-domain-engine-supported` | AWS::RDS::DBInstance | MariaDB DB instances cannot join an Active Directory domain | ERROR | none |
+| `pf-rds-domain-fqdn-exclusive` | AWS::RDS::DBInstance | RDS Domain (AWS Managed AD) and DomainFqdn (self-managed AD) cannot be combined | ERROR | none |
+| `pf-rds-domain-iam-role-required` | AWS::RDS::DBInstance | RDS Domain (AWS Managed AD) needs DomainIAMRoleName | ERROR | none |
+| `pf-rds-domain-selfmanaged-complete` | AWS::RDS::DBInstance | RDS self-managed AD (DomainFqdn) needs DomainOu, DomainAuthSecretArn and DomainDnsIps | ERROR | none |
 | `pf-rds-engine-mode-serverless-retired` | AWS::RDS::DBCluster | EngineMode: serverless (Aurora Serverless v1) can no longer be created | ERROR | none |
 | `pf-rds-event-subscription-categories` | AWS::RDS::EventSubscription | EventCategories must exist for the SourceType | ERROR | none |
 | `pf-rds-event-subscription-source-ids-require-type` | AWS::RDS::EventSubscription | SourceIds requires SourceType | ERROR | none |
