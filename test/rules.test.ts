@@ -1685,6 +1685,39 @@ describe('lambda function and esm rules', () => {
   });
 });
 
+/**
+ * pf-bedrock-flow-node-configuration: Configuration の中身が空の構造体になるノード型は、
+ * Configuration なしでもデプロイできた（bench 2026-11-25 us-east-1: Input / Output / Iterator /
+ * Collector がそれぞれ CREATE_COMPLETE で、Prepare も通った）。Prompt ノードは今までどおり要る。
+ */
+describe('pf-bedrock-flow-node-configuration skips node types with an empty configuration', () => {
+  const RULE = 'pf-bedrock-flow-node-configuration';
+  const flow = (nodes: unknown[]) => ({
+    Resources: {
+      F: {
+        Type: 'AWS::Bedrock::Flow',
+        Properties: { Name: 'f', ExecutionRoleArn: 'arn:aws:iam::123456789012:role/r', Definition: { Nodes: nodes } },
+      },
+    },
+  });
+  const fired = (tpl: unknown) => diagnoseTemplate(tpl).filter((d) => d.source === 'CUSTOM' && d.ruleId === RULE);
+
+  test('Input, Output, Iterator and Collector nodes may omit Configuration', () => {
+    expect(fired(flow([
+      { Name: 'FlowInputNode', Type: 'Input', Outputs: [{ Name: 'document', Type: 'Array' }] },
+      { Name: 'Iter', Type: 'Iterator', Inputs: [{ Name: 'array', Type: 'Array', Expression: '$.data' }] },
+      { Name: 'Coll', Type: 'Collector', Inputs: [{ Name: 'arrayItem', Type: 'String', Expression: '$.data' }] },
+      { Name: 'FlowOutputNode', Type: 'Output', Inputs: [{ Name: 'document', Type: 'Array', Expression: '$.data' }] },
+    ]))).toHaveLength(0);
+  });
+
+  test('a Prompt node without Configuration still fires', () => {
+    expect(fired(flow([
+      { Name: 'Prompt1', Type: 'Prompt', Inputs: [{ Name: 'document', Type: 'String', Expression: '$.data' }] },
+    ]))).toHaveLength(1);
+  });
+});
+
 describe('firehose rules', () => {
   const ids = (ds: Diagnostic[]) => ds.filter((d) => d.source === 'CUSTOM').map((d) => d.ruleId);
   const stream = (props: Record<string, unknown>) => ({

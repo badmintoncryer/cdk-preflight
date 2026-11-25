@@ -50,9 +50,6 @@
             {
               "Name": "FlowInputNode",
               "Type": "Input",
-              "Configuration": {
-                "Input": {}
-              },
               "Outputs": [
                 {
                   "Name": "document",
@@ -95,9 +92,6 @@
             {
               "Name": "FlowOutputNode",
               "Type": "Output",
-              "Configuration": {
-                "Output": {}
-              },
               "Inputs": [
                 {
                   "Name": "document",
