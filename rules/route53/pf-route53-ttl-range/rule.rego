@@ -12,6 +12,6 @@ violation contains make_diag_full("pf-route53-ttl-range", "ERROR", name,
 	"https://docs.aws.amazon.com/Route53/latest/APIReference/API_ChangeResourceRecordSets.html") if {
 	some name in resources_of_type("AWS::Route53::RecordSet")
 	t := resolve(name, "Properties.TTL")
-	n := to_number(t)
+	n := _pf_tonum(t)
 	n > 2147483647
 }

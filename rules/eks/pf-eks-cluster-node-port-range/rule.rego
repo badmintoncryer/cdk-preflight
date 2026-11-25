@@ -6,7 +6,7 @@ _pf_eknpr_num(o, k) := n if {
 	v := _pf_ekslib_oget(o, k)
 	not is_boolean(v)
 	v != null
-	n := to_number(v)
+	n := _pf_tonum(v)
 }
 
 _pf_eknpr_out(n) if n < 10260

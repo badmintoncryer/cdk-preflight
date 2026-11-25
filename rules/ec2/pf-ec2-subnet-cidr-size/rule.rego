@@ -2,7 +2,7 @@ package cdk_preflight
 
 import rego.v1
 
-_pf_subnetcidr_len(c) := to_number(parts[1]) if {
+_pf_subnetcidr_len(c) := _pf_tonum(parts[1]) if {
 	parts := split(c, "/")
 	count(parts) == 2
 }

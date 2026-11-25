@@ -54,7 +54,7 @@ _pf_os_false(v) if {
 _pf_os_num(v) := n if {
 	v != null
 	not is_boolean(v)
-	n := to_number(v)
+	n := _pf_tonum(v)
 }
 
 # Absence proof. resolve() is undefined for both "missing" and "present but
@@ -115,7 +115,7 @@ _pf_os_engine_num(v, engine) := n if {
 	startswith(v, sprintf("%v_", [engine]))
 	parts := split(substring(v, count(engine) + 1, -1), ".")
 	count(parts) == 2
-	n := (to_number(parts[0]) * 100) + to_number(parts[1])
+	n := (_pf_tonum(parts[0]) * 100) + _pf_tonum(parts[1])
 }
 
 # ARN pieces. Intrinsics reach Rego as marker objects, so is_string() already

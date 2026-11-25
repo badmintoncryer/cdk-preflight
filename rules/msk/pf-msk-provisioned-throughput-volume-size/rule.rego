@@ -17,6 +17,6 @@ violation contains make_diag_full("pf-msk-provisioned-throughput-volume-size", "
 	object.get(ebs, ["ProvisionedThroughput", "Enabled"], false) == true
 	v := object.get(ebs, "VolumeSize", null)
 	v != null
-	s := to_number(v)
+	s := _pf_tonum(v)
 	s < 10
 }

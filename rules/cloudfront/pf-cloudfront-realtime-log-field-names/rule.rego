@@ -80,7 +80,7 @@ _pf_cf_realtime_log_field_names_known := {
 	"x-host-header",
 }
 
-violation contains make_diag_full("pf-cloudfront-realtime-log-field-names", "ERROR", name, "Properties.Fields",
+violation contains make_diag_full("pf-cloudfront-realtime-log-field-names", "WARN", name, "Properties.Fields",
 	sprintf("%v is not a CloudFront real-time log field", [f]),
 	_pf_cf_realtime_log_field_names_fix, _pf_cf_realtime_log_field_names_url) if {
 	some name in resources_of_type("AWS::CloudFront::RealtimeLogConfig")

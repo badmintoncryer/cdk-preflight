@@ -2,7 +2,7 @@ id: pf-ga-endpoint-group-region-supported
 service: globalaccelerator
 benchRegion: us-west-2
 resourceTypes: [AWS::GlobalAccelerator::EndpointGroup]
-severity: ERROR
+severity: WARN
 title: "EndpointGroupRegion must be a real AWS Region"
 constraintSource: https://docs.aws.amazon.com/global-accelerator/latest/api/API_CreateEndpointGroup.html
 upstream: none

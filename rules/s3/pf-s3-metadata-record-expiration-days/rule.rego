@@ -16,6 +16,6 @@ violation contains make_diag_full("pf-s3-metadata-record-expiration-days", "ERRO
 	object.get(re, "Expiration", "") == "ENABLED"
 	raw := object.get(re, "Days", null)
 	raw != null
-	d := to_number(raw)
+	d := _pf_tonum(raw)
 	d < 7
 }

@@ -53,7 +53,7 @@ _pf_elb_num(v) := v if is_number(v)
 _pf_elb_num(v) := n if {
 	is_string(v)
 	regex.match(`^-?[0-9]+$`, v)
-	n := to_number(v)
+	n := _pf_tonum(v)
 }
 
 # A Ref that survives inside a list is {"__ref": "<logical id>"} (flatten_list
@@ -168,7 +168,7 @@ _pf_elb_codes(s) := [n |
 	some b in split(part, "-")
 	t := trim_space(b)
 	regex.match(`^[0-9]+$`, t)
-	n := to_number(t)
+	n := _pf_tonum(t)
 ]
 
 _pf_elb_hc_protocols := {"HTTP", "HTTPS", "TCP"}

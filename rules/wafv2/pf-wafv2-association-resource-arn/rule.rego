@@ -26,7 +26,7 @@ _pf_wafara_msg := "AssociateWebACL fails with \"The ARN isn't valid. A valid ARN
 
 _pf_wafara_lit(name) := _pf_waflib_lit(name, "Properties.ResourceArn")
 
-violation contains make_diag_full("pf-wafv2-association-resource-arn", "ERROR", name, "Properties.ResourceArn",
+violation contains make_diag_full("pf-wafv2-association-resource-arn", "WARN", name, "Properties.ResourceArn",
 	sprintf("'%s' is not an ARN of a resource type that AssociateWebACL accepts (ALB, REST API stage, AppSync, Cognito, App Runner, Verified Access, Amplify, AgentCore gateway); %s", [s, _pf_wafara_msg]),
 	_pf_wafara_fix, _pf_wafara_url) if {
 	some name in resources_of_type("AWS::WAFv2::WebACLAssociation")
@@ -35,7 +35,7 @@ violation contains make_diag_full("pf-wafv2-association-resource-arn", "ERROR", 
 }
 
 # Needs the deploy environment (enforce mode only).
-violation contains make_diag_full("pf-wafv2-association-resource-arn", "ERROR", name, "Properties.ResourceArn",
+violation contains make_diag_full("pf-wafv2-association-resource-arn", "WARN", name, "Properties.ResourceArn",
 	sprintf("resource is in region '%s' but the association deploys to '%s'; %s", [parts[3], region, _pf_wafara_msg]),
 	_pf_wafara_fix, _pf_wafara_url) if {
 	region := data.cdk_preflight.deploy_region
@@ -57,7 +57,7 @@ violation contains make_diag_full("pf-wafv2-association-resource-arn", "ERROR", 
 	regex.match("^arn:[^:]+:amplify:", s)
 }
 
-violation contains make_diag_full("pf-wafv2-association-resource-arn", "ERROR", name, "Properties.ResourceArn",
+violation contains make_diag_full("pf-wafv2-association-resource-arn", "WARN", name, "Properties.ResourceArn",
 	sprintf("resource belongs to account %s but the association deploys to account %s; AssociateWebACL fails with AccessDenied", [parts[4], account]),
 	_pf_wafara_fix, _pf_wafara_url) if {
 	account := data.cdk_preflight.deploy_account

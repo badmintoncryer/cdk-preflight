@@ -6,7 +6,7 @@ import rego.v1
 # ("65536 is not a valid port range"). Both ends of a range are checked.
 _pf_vpclrcmax_nums(s) := ns if {
 	regex.match(`^[0-9]+(-[0-9]+)?$`, s)
-	ns := [n | some x in split(s, "-"); n := to_number(x)]
+	ns := [n | some x in split(s, "-"); n := _pf_tonum(x)]
 }
 
 violation contains make_diag_full("pf-vpclattice-rc-port-range-max", "ERROR", name,

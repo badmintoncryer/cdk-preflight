@@ -10,7 +10,7 @@ _pf_ec2lib_pow2 := {0: 1, 1: 2, 2: 4, 3: 8, 4: 16, 5: 32, 6: 64, 7: 128, 8: 256,
 _pf_ec2lib_ip_int(s) := n if {
 	parts := split(s, ".")
 	count(parts) == 4
-	nums := [to_number(p) | some p in parts]
+	nums := [_pf_tonum(p) | some p in parts]
 	every x in nums {
 		x >= 0
 		x <= 255
@@ -24,7 +24,7 @@ _pf_ec2lib_cidr(s) := [start, size] if {
 	parts := split(s, "/")
 	count(parts) == 2
 	base := _pf_ec2lib_ip_int(parts[0])
-	p := to_number(parts[1])
+	p := _pf_tonum(parts[1])
 	size := _pf_ec2lib_pow2[32 - p]
 	start := floor(base / size) * size
 }

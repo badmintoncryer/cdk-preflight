@@ -1,7 +1,7 @@
 id: pf-logs-transformer-grok-pattern
 service: logs
 resourceTypes: [AWS::Logs::Transformer]
-severity: ERROR
+severity: WARN
 title: "A grok match may only use supported pattern names"
 constraintSource: https://docs.aws.amazon.com/AmazonCloudWatch/latest/logs/CloudWatch-Logs-Transformation-Configurable.html
 upstream: none

@@ -1,7 +1,7 @@
 id: pf-elasticbeanstalk-opt-namespace-known
 service: elasticbeanstalk
 resourceTypes: [AWS::ElasticBeanstalk::ConfigurationTemplate, AWS::ElasticBeanstalk::Environment]
-severity: ERROR
+severity: WARN
 title: "OptionSettings namespaces must exist"
 constraintSource: https://docs.aws.amazon.com/elasticbeanstalk/latest/dg/command-options-general.html
 upstream: none

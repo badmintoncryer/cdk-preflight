@@ -19,6 +19,6 @@ violation contains make_diag_full("pf-glue-crawler-dynamodb-scan-rate", "ERROR",
 	is_object(t)
 	raw := object.get(t, "ScanRate", null)
 	raw != null
-	r := to_number(raw)
+	r := _pf_tonum(raw)
 	_pf_gluecsr_bad(r)
 }

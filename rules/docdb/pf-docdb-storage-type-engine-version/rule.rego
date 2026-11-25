@@ -15,6 +15,6 @@ violation contains make_diag_full("pf-docdb-storage-type-engine-version", "ERROR
 	ver := _pf_docdb_lit(name, "Properties.EngineVersion")
 	regex.match(`^[1-9][0-9]*(\.[0-9]+)*$`, ver)
 	parts := split(ver, ".")
-	major := to_number(parts[0])
+	major := _pf_tonum(parts[0])
 	major < 5
 }

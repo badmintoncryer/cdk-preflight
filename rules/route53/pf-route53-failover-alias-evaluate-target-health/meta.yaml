@@ -8,6 +8,8 @@ constraintSource: https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/rout
 upstream: none
 repro:
   method: real-deploy
-  evidence: "bench 2026-09-10 us-east-1: fail template -> [type='A', set-identifier='s1'] but it was not found, RRSet with DNS name www.cdkpf-example.com., type A, SetIdentifier s1 cannot be a primary without EvaluateTargetHealth set to true or an associated health check as a secondary would never be returned.] (ROLLBACK_COMPLETE)"
+  evidence: "bench 2026-09-10 us-east-1: fail template -> [type='A', set-identifier='s1'] but it was not found, RRSet with DNS name www.cdkpf-example.com., type A, SetIdentifier s1 cannot be a primary without EvaluateTargetHealth set to true or an associated health check as a secondary would never be returned.] (ROLLBACK_COMPLETE); omission bench 2026-11-25 us-east-1: pass template without AWS::Route53::RecordSet.AliasTarget.EvaluateTargetHealth -> ROLLBACK_COMPLETE with \"RRSet with DNS name www.cdkpf-example.com., type A, SetIdentifier s1 cannot be a primary without EvaluateTargetHealth set to true or an associated health check as a secondary would never be returned.\""
   expect: "type A, SetIdentifier s1 cannot be a primary without EvaluateTargetHealth set to true or an associated health check as a secondary would never be returned"
 addedOn: 2026-09-10
+omissionFails:
+  - "AWS::Route53::RecordSet.AliasTarget.EvaluateTargetHealth"

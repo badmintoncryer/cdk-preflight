@@ -1,7 +1,7 @@
 id: pf-elbv2-lb-attr-alb-only-on-gwlb
 service: elbv2
 resourceTypes: [AWS::ElasticLoadBalancingV2::LoadBalancer]
-severity: ERROR
+severity: WARN
 title: "A gateway load balancer takes only the two common attributes"
 constraintSource: https://docs.aws.amazon.com/elasticloadbalancing/latest/APIReference/API_LoadBalancerAttribute.html
 benchRegion: us-east-1

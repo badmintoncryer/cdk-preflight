@@ -1,0 +1,428 @@
+# 手書きのリスト（8 件以上の文字列リテラル集合）の台帳。scripts/lint-rules.ts が rules/ の中の
+# リストとこの台帳を突き合わせ、載っていないリストも、もう無いリストの行も落とす。
+#
+#   kind    allow = リストに無い値でルールが鳴る（閉じた世界の主張）。deny = リストにある値で鳴る。
+#   growth  grows = AWS が値を足していく（リージョン、ランタイム、メトリクス名、属性キー…）。
+#           stable = AWS の外で決まる、ほぼ増えない集合（ISO 国コード、IANA タイムゾーン、HTTP メソッド…）。
+#   refresh 権威ある出どころとリストを突き合わせるテスト。grows の allow リストは、これが無いと
+#           「今日の一覧に無い = 誤り」と言い切れないので、使うルールは WARN にしかできない（②）。
+#   source  stable の根拠（任意）。
+
+lists:
+  - file: ec2/pf-ec2-route-target-exactly-one/rule.rego
+    name: _pf_ec2rte_targets
+    kind: deny
+    growth: grows
+  - file: ec2/pf-ec2-flow-log-format-fields/rule.rego
+    name: _pf_ec2flf_fields
+    kind: allow
+    growth: grows
+  - file: sns/pf-sns-subscription-endpoint/rule.rego
+    name: _pf_snsep_protocols
+    kind: allow
+    growth: grows
+  - file: glue/pf-glue-schema-compatibility/rule.rego
+    name: _pf_glueschcompat_valid
+    kind: allow
+    growth: grows
+  - file: glue/pf-glue-classifier-grok-pattern-names/rule.rego
+    name: _pf_gluegrok_builtin
+    kind: allow
+    growth: grows
+  - file: glue/pf-glue-classifier-csv-custom-datatype/rule.rego
+    name: _pf_gluecdt_types
+    kind: allow
+    growth: grows
+  - file: apigatewayv2/pf-apigwv2-integration-subtype-known/rule.rego
+    name: _pf_agvisk_known
+    kind: allow
+    growth: grows
+  - file: apigatewayv2/pf-apigwv2-http-route-key/rule.rego
+    name: _pf_agv2rk_methods
+    kind: deny
+    growth: grows
+  - file: bedrock-agentcore/pf-agentcore-gateway-target-openapi-schema/rule.rego
+    name: _pf_gwtoapi_methods
+    kind: deny
+    growth: grows
+  - file: mediaconvert/pf-mediaconvert-job-props-enum-values/rule.rego
+    name: _pf_mcjpe_intervals
+    kind: allow
+    growth: grows
+  - file: mediaconvert/pf-mediaconvert-sj-enum-value/rule.rego
+    name: _pf_mcsje_codecs
+    kind: allow
+    growth: grows
+  - file: mediaconvert/pf-mediaconvert-sj-enum-value/rule.rego
+    name: _pf_mcsje_containers
+    kind: allow
+    growth: grows
+  - file: lambda/pf-lambda-layer-compatible-runtimes-enum/rule.rego
+    name: _pf_llcr_known
+    kind: allow
+    growth: grows
+  - file: lambda/pf-lambda-layer-cross-account-needs-permission/rule.rego
+    name: _pf_llcp_aws_publishers
+    kind: allow
+    growth: grows
+    refresh: test/lambda-layer-publishers.test.ts
+  - file: lambda/pf-lambda-capacity-provider-runtime/rule.rego
+    name: _pf_lcprt_ok
+    kind: allow
+    growth: grows
+  - file: stepfunctions/pf-sfn-asl-jsonpath-syntax/rule.rego
+    name: _pf_sfnjp_pathfields
+    kind: deny
+    growth: grows
+  - file: stepfunctions/pf-sfn-asl-resource-arn/rule.rego
+    name: _pf_sfnres_nosync
+    kind: deny
+    growth: grows
+  - file: stepfunctions/pf-sfn-asl-resource-arn/rule.rego
+    name: _pf_sfnres_notoken
+    kind: deny
+    growth: grows
+  - file: stepfunctions/pf-sfn-asl-query-language/rule.rego
+    name: _pf_sfnql_pathonly
+    kind: deny
+    growth: grows
+  - file: stepfunctions/pf-sfn-asl-choice-rules/rule.rego
+    name: _pf_sfnch_cmp
+    kind: deny
+    growth: grows
+  - file: apigateway/pf-apigw-method-http-verb/rule.rego
+    name: _pf_apgmhv_verbs
+    kind: allow
+    growth: stable
+    source: HTTP methods
+  - file: apigateway/pf-apigw-stage-method-setting-http-method/rule.rego
+    name: _pf_apgmshm_verbs
+    kind: allow
+    growth: stable
+    source: HTTP methods
+  - file: networkfirewall/pf-networkfirewall-suricata-reject-tcp-only/rule.rego
+    name: _pf_nfwrej_unsupported
+    kind: deny
+    growth: grows
+  - file: networkfirewall/pf-networkfirewall-suricata-geoip-country-code/rule.rego
+    name: _pf_nfwgeo_countries
+    kind: allow
+    growth: stable
+    source: ISO 3166-1
+  - file: elasticache/pf-elasticache-user-access-string/rule.rego
+    name: _pf_ecas_categories
+    kind: allow
+    growth: grows
+  - file: elasticache/pf-elasticache-user-access-string/rule.rego
+    name: _pf_ecas_keywords
+    kind: allow
+    growth: grows
+  - file: pipes/pf-pipes-input-template-variables/rule.rego
+    name: _pf_pipeitv_known
+    kind: allow
+    growth: grows
+  - file: events/pf-events-pattern-operator/rule.rego
+    name: _pf_evpop_operators
+    kind: allow
+    growth: grows
+  - file: events/pf-events-target-role-required/rule.rego
+    name: _pf_evtrole_services
+    kind: deny
+    growth: grows
+  - file: secretsmanager/pf-secretsmanager-hosted-rotation/rule.rego
+    name: _pf_smhr_types
+    kind: allow
+    growth: grows
+  - file: logs/pf-logs-transformer-parser-first/rule.rego
+    name: _pf_lgtp_mutators
+    kind: deny
+    growth: grows
+  - file: logs/pf-logs-transformer-grok-pattern/rule.rego
+    name: _pf_lggp_patterns
+    kind: allow
+    growth: grows
+  - file: cloudtrail/pf-cloudtrail-trail-aes-field-unknown/rule.rego
+    name: _pf_ctfld_known
+    kind: allow
+    growth: grows
+  - file: firehose/pf-firehose-custom-time-zone/rule.rego
+    name: _pf_fhctz_zones
+    kind: allow
+    growth: stable
+    source: IANA tz database
+  - file: firehose/pf-firehose-one-destination/rule.rego
+    name: _pf_fhod_dests
+    kind: deny
+    growth: grows
+  - file: msk/pf-msk-kafka-version-deprecated/rule.rego
+    name: _pf_mskkvd_deprecated
+    kind: deny
+    growth: grows
+  - file: msk/pf-msk-config-kafka-versions-unknown/rule.rego
+    name: _pf_mskkvu_known
+    kind: allow
+    growth: grows
+  - file: msk/pf-msk-config-server-properties-allowed-keys/rule.rego
+    name: _pf_mskspk_allowed
+    kind: allow
+    growth: grows
+  - file: autoscaling/pf-asg-instance-requirements-vcpu-min-max/rule.rego
+    name: _pf_asgirvm_ranges
+    kind: deny
+    growth: grows
+  - file: autoscaling/pf-asg-metrics-name-enum/rule.rego
+    name: _pf_asgmne_ok
+    kind: allow
+    growth: grows
+  - file: autoscaling/pf-asg-termination-policy-lambda-arn-format/rule.rego
+    name: _pf_asgtpl_ok
+    kind: allow
+    growth: grows
+  - file: autoscaling/pf-asg-sched-timezone-iana-only/rule.rego
+    name: _pf_asgsctz_area
+    kind: deny
+    growth: stable
+    source: IANA tz database
+  - file: iam/pf-iam-policy-condition-operator/rule.rego
+    name: _pf_ico_base
+    kind: allow
+    growth: stable
+    source: IAM JSON policy grammar (condition operators)
+  - file: iam/pf-iam-policy-statement-unknown-field/rule.rego
+    name: _pf_iamsuf_known
+    kind: allow
+    growth: stable
+    source: IAM policy grammar
+  - file: opensearch/pf-opensearch-or1-master-graviton/rule.rego
+    name: _pf_osog_x86_master
+    kind: deny
+    growth: grows
+  - file: opensearch/pf-opensearch-ebs-volume-type-supported/rule.rego
+    name: _pf_osvt_no_gp2
+    kind: deny
+    growth: grows
+  - file: opensearch/pf-opensearch-ebs-required-for-ebs-only-type/rule.rego
+    name: _pf_osebr_ebs_only
+    kind: deny
+    growth: grows
+  - file: opensearch/pf-opensearch-warm-type-family/rule.rego
+    name: _pf_oswt_known
+    kind: allow
+    growth: grows
+  - file: opensearch/pf-opensearch-master-type-master-capable/rule.rego
+    name: _pf_osmc_never_master
+    kind: deny
+    growth: grows
+  - file: wafv2/pf-wafv2-token-domains/rule.rego
+    name: _pf_waftd_psl
+    kind: deny
+    growth: grows
+  - file: wafv2/pf-wafv2-label-syntax/rule.rego
+    name: _pf_waflab_reserved
+    kind: deny
+    growth: grows
+  - file: wafv2/pf-wafv2-association-resource-arn/rule.rego
+    name: _pf_wafara_ok
+    kind: allow
+    growth: grows
+  - file: wafv2/pf-wafv2-rate-based-statement/rule.rego
+    name: _pf_wafrb_single
+    kind: deny
+    growth: grows
+  - file: cloudfront/pf-cloudfront-origin-custom-header-blocklist/rule.rego
+    name: _pf_cf_origin_custom_header_blocklist_names
+    kind: deny
+    growth: grows
+  - file: cloudfront/pf-cloudfront-rhp-remove-header-blocklist/rule.rego
+    name: _pf_cf_rhp_remove_header_blocklist_names
+    kind: deny
+    growth: grows
+  - file: cloudfront/pf-cloudfront-rhp-custom-header-blocklist/rule.rego
+    name: _pf_cf_rhp_custom_header_blocklist_names
+    kind: deny
+    growth: grows
+  - file: cloudfront/pf-cloudfront-realtime-log-field-names/rule.rego
+    name: _pf_cf_realtime_log_field_names_known
+    kind: allow
+    growth: grows
+  - file: backup/pf-backup-restore-testing-selection-protected-resource-type/rule.rego
+    name: _pf_bkrts_types
+    kind: allow
+    growth: grows
+  - file: ssm/pf-ssm-document-content/rule.rego
+    name: _pf_ssmdc_plugins
+    kind: allow
+    growth: grows
+  - file: ssm/pf-ssm-document-content/rule.rego
+    name: _pf_ssmdc_actions
+    kind: allow
+    growth: grows
+  - file: ssm/pf-ssm-maintenance-window-schedule/rule.rego
+    name: _pf_ssmms_zones
+    kind: allow
+    growth: stable
+    source: IANA tz database
+  - file: s3/pf-s3-notification-event-name/rule.rego
+    name: _pf_s3nev_events
+    kind: allow
+    growth: grows
+  - file: s3/pf-s3-lifecycle-rule-no-action/rule.rego
+    name: _pf_s3lna_actions
+    kind: deny
+    growth: grows
+  - file: s3/pf-s3express-ap-scope-permissions/rule.rego
+    name: _pf_s3xaps_allowed
+    kind: allow
+    growth: grows
+  - file: cassandra/pf-cassandra-type-name-reserved/rule.rego
+    name: _pf_casstnr_names
+    kind: deny
+    growth: grows
+  - file: appsync/pf-appsync-schema-unknown-scalar/rule.rego
+    name: _pf_schemaunknownscalar_aws
+    kind: allow
+    growth: grows
+  - file: route53/pf-route53-record-type-enum/rule.rego
+    name: _pf_r53_rtypes
+    kind: allow
+    growth: grows
+  - file: route53/pf-route53-geolocation-country-code-iso/rule.rego
+    name: _pf_r53_countries
+    kind: allow
+    growth: stable
+    source: ISO 3166-1
+  - file: route53/pf-route53-geolocation-subdivision-code-value/rule.rego
+    name: _pf_r53_ussub
+    kind: allow
+    growth: stable
+    source: US states and territories
+  - file: applicationautoscaling/pf-appautoscaling-scheduled-action-timezone-iana/rule.rego
+    name: _pf_aastz_zones
+    kind: allow
+    growth: stable
+    source: IANA tz database
+  - file: applicationautoscaling/pf-appautoscaling-predictive-metric-pair-type-dimension/rule.rego
+    name: _pf_aasppt_known
+    kind: deny
+    growth: grows
+  - file: applicationautoscaling/pf-appautoscaling-predefined-metric-dimension/rule.rego
+    name: _pf_aaspmd_known
+    kind: deny
+    growth: grows
+  - file: applicationautoscaling/pf-appautoscaling-resource-label-requires-alb-metric/rule.rego
+    name: _pf_aaspmd_known_rla
+    kind: deny
+    growth: grows
+  - file: _lib/route53zone.rego
+    name: _pf_r53z_hc_types
+    kind: allow
+    growth: grows
+  - file: _lib/route53zone.rego
+    name: _pf_r53z_checker_regions
+    kind: allow
+    growth: grows
+  - file: _lib/route53resolver.rego
+    name: _pf_r53r_qtypes
+    kind: allow
+    growth: grows
+  - file: _lib/wafv2.rego
+    name: _pf_waflib_stmt_keys
+    kind: deny
+    growth: grows
+  - file: _lib/route53.rego
+    name: _pf_r53_regions
+    kind: allow
+    growth: grows
+  - file: _lib/route53.rego
+    name: _pf_r53_svcb_keys
+    kind: allow
+    growth: grows
+  - file: _lib/firehose.rego
+    name: _pf_fhlib_dest_keys
+    kind: deny
+    growth: grows
+  - file: _lib/firehose.rego
+    name: _pf_fhlib_ts_bad
+    kind: deny
+    growth: grows
+  - file: _lib/cassandra.rego
+    name: _pf_cass_scalars
+    kind: allow
+    growth: stable
+    source: CQL native types
+  - file: _lib/avpschema.rego
+    name: _pf_avpsch_builtin
+    kind: allow
+    growth: grows
+  - file: _lib/opensearch.rego
+    name: _pf_os_instance_store_families
+    kind: deny
+    growth: grows
+  - file: _lib/applicationautoscaling.rego
+    name: _pf_aaslib_namespaces
+    kind: deny
+    growth: grows
+  - file: _lib/rds.rego
+    name: _pf_rds_fam_prefix
+    kind: deny
+    growth: grows
+  - file: _lib/ses.rego
+    name: _pf_ses_event_types
+    kind: allow
+    growth: grows
+  - file: _lib/ses.rego
+    name: _pf_sesrx_action_keys
+    kind: deny
+    growth: grows
+  - file: _lib/elasticbeanstalk.rego
+    name: _pf_eblib_bool
+    kind: deny
+    growth: grows
+  - file: _lib/elasticbeanstalk.rego
+    name: _pf_eblib_ns_known
+    kind: allow
+    growth: grows
+  - file: _lib/elasticbeanstalk.rego
+    name: _pf_eblib_ns_prefix
+    kind: allow
+    growth: grows
+  - file: _lib/cognito.rego
+    name: _pf_coglib_ses_pool_regions
+    kind: deny
+    growth: grows
+  - file: _lib/synthetics.rego
+    name: _pf_synlib_deprecated_runtimes
+    kind: deny
+    growth: grows
+  - file: _lib/synthetics.rego
+    name: _pf_synlib_reserved_env
+    kind: deny
+    growth: grows
+  - file: _lib/elbv2.rego
+    name: _pf_elb_lbattr_alb
+    kind: allow
+    growth: grows
+  - file: _lib/elbv2.rego
+    name: _pf_elb_lsattr_alb
+    kind: allow
+    growth: grows
+  - file: _lib/cognito.rego
+    name: _pf_coglib_ses_regions
+    kind: allow
+    growth: grows
+  - file: _lib/cognito.rego
+    name: _pf_coglib_ses_inregion_measured
+    kind: deny
+    growth: grows
+  - file: _lib/cognito.rego
+    name: _pf_coglib_ses_alternates
+    kind: allow
+    growth: grows
+  - file: bedrock/pf-bedrock-guardrail-profile-geo/rule.rego
+    name: _pf_gpge_sources
+    kind: allow
+    growth: grows
+  - file: route53/pf-route53-alias-beanstalk-zone-id/rule.rego
+    name: _pf_r53_ebz_table
+    kind: deny
+    growth: grows

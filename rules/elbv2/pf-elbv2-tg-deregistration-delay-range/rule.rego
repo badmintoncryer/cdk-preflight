@@ -16,6 +16,6 @@ violation contains make_diag_full("pf-elbv2-tg-deregistration-delay-range", "ERR
 	attr := item.value
 	is_object(attr)
 	object.get(attr, "Key", "") == "deregistration_delay.timeout_seconds"
-	num := to_number(object.get(attr, "Value", null))
+	num := _pf_onum(attr, "Value")
 	_pf_dereg_delay_out(num)
 }

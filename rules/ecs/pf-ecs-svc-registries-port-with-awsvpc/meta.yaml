@@ -1,7 +1,7 @@
 id: pf-ecs-svc-registries-port-with-awsvpc
 service: ecs
 benchRegion: us-east-1
-resourceTypes: [AWS::ECS::Service]
+resourceTypes: [AWS::ECS::Service, AWS::ServiceDiscovery::Service]
 severity: ERROR
 title: awsvpc services address a registry by Port, not ContainerName/ContainerPort
 constraintSource: https://docs.aws.amazon.com/AmazonECS/latest/developerguide/service_definition_parameters.html

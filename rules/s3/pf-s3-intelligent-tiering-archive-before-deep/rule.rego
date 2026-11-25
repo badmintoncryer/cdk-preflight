@@ -25,7 +25,7 @@ violation contains make_diag_full("pf-s3-intelligent-tiering-archive-before-deep
 	rawa != null
 	rawd := object.get(t2, "Days", null)
 	rawd != null
-	a := to_number(rawa)
-	d := to_number(rawd)
+	a := _pf_tonum(rawa)
+	d := _pf_tonum(rawd)
 	a >= d
 }

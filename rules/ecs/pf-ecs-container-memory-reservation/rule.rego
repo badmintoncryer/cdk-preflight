@@ -14,8 +14,8 @@ violation contains make_diag_full("pf-ecs-container-memory-reservation", "ERROR"
 	some name in resources_of_type("AWS::ECS::TaskDefinition")
 	some c in flatten_list(name, "Properties.ContainerDefinitions")
 	is_object(c.value)
-	m := to_number(c.value["Memory"])
-	mr := to_number(c.value["MemoryReservation"])
+	m := _pf_tonum(c.value["Memory"])
+	mr := _pf_tonum(c.value["MemoryReservation"])
 	mr > m
 	cname := object.get(c.value, "Name", "<unnamed>")
 }

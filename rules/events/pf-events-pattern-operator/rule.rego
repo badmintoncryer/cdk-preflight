@@ -22,7 +22,7 @@ _pf_evpop_anything_but_inner := {"prefix", "suffix", "wildcard", "equals-ignore-
 
 _pf_evpop_matchers(name) := _pf_evlib_matchers(_pf_evlib_pattern(name, "Properties.EventPattern"))
 
-violation contains make_diag_full("pf-events-pattern-operator", "ERROR", name,
+violation contains make_diag_full("pf-events-pattern-operator", "WARN", name,
 	"Properties.EventPattern",
 	sprintf("'%s' is not an event-pattern operator; PutRule fails with \"Event pattern is not valid. Reason: Unrecognized match type %s\"", [k, k]),
 	"Use one of prefix, suffix, anything-but, numeric, exists, cidr, wildcard, equals-ignore-case",

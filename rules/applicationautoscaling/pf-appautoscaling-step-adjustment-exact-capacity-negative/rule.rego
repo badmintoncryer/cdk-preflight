@@ -12,6 +12,6 @@ violation contains make_diag_full("pf-appautoscaling-step-adjustment-exact-capac
 	some name in resources_of_type("AWS::ApplicationAutoScaling::ScalingPolicy")
 	resolve(name, "Properties.StepScalingPolicyConfiguration.AdjustmentType") == "ExactCapacity"
 	some i, a in _pf_aaslib_steps(name)
-	n := to_number(object.get(a, "ScalingAdjustment", "__pf_absent"))
+	n := _pf_tonum(object.get(a, "ScalingAdjustment", "__pf_absent"))
 	n < 0
 }

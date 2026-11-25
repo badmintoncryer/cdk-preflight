@@ -9,7 +9,7 @@ _pf_ngver_minor(v) := m if {
 	parts := split(v, ".")
 	count(parts) == 2
 	parts[0] == "1"
-	m := to_number(parts[1])
+	m := _pf_tonum(parts[1])
 }
 
 _pf_ngver_cluster(name) := c if {

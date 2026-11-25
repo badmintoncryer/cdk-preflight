@@ -10,6 +10,6 @@ violation contains make_diag_full("pf-ecs-restart-policy-attempt-period-range", 
 	some name in resources_of_type("AWS::ECS::TaskDefinition")
 	some c in _pf_ecs_containers(name)
 	rp := _pf_ecs_cget(c, "RestartPolicy")
-	v := to_number(_pf_ecs_oget(rp, "RestartAttemptPeriod"))
+	v := _pf_tonum(_pf_ecs_oget(rp, "RestartAttemptPeriod"))
 	_pf_ecs_outside(v, 60, 1800)
 }

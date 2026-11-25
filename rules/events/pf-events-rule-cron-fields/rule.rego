@@ -49,6 +49,6 @@ violation contains make_diag_full("pf-events-rule-cron-fields", "ERROR", name,
 	some name in resources_of_type("AWS::Events::Rule")
 	f := _pf_evcron_fields(name)
 	some i, r in _pf_evcron_ranges
-	v := to_number(f[i])
+	v := _pf_tonum(f[i])
 	not _pf_evcron_in_range(v, r)
 }

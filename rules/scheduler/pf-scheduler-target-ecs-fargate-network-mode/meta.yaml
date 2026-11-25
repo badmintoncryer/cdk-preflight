@@ -8,6 +8,8 @@ upstream: none
 benchRegion: us-east-1
 repro:
   method: real-deploy
-  evidence: "bench 2026-10-16 us-east-1: a Scheduler schedule (rate(1 minute), RetryPolicy 0, DLQ) with an ECS FARGATE target whose task definition is NetworkMode bridge reached CREATE_COMPLETE; the invocation dead-lettered with InvalidParameterException: Task definition does not support launch_type FARGATE. -> probe FAILED, ROLLBACK_COMPLETE; pass with the same task definition in NetworkMode awsvpc -> the Fargate task ran and exited 0, CREATE_COMPLETE"
+  evidence: "bench 2026-10-16 us-east-1: a Scheduler schedule (rate(1 minute), RetryPolicy 0, DLQ) with an ECS FARGATE target whose task definition is NetworkMode bridge reached CREATE_COMPLETE; the invocation dead-lettered with InvalidParameterException: Task definition does not support launch_type FARGATE. -> probe FAILED, ROLLBACK_COMPLETE; pass with the same task definition in NetworkMode awsvpc -> the Fargate task ran and exited 0, CREATE_COMPLETE; omission bench 2026-11-25 us-east-1: pass template without AWS::ECS::TaskDefinition.NetworkMode -> ROLLBACK_COMPLETE with \"InvalidParameterException: Task definition does not support launch_type FARGATE.\""
   expect: "Task definition does not support launch_type FARGATE"
 addedOn: 2026-10-16
+omissionFails:
+  - "AWS::ECS::TaskDefinition.NetworkMode"

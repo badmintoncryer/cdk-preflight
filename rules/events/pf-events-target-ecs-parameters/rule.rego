@@ -97,7 +97,7 @@ violation contains make_diag_full("pf-events-target-ecs-parameters", "ERROR", na
 	_pf_evecs_url) if {
 	some name in resources_of_type("AWS::Events::Rule")
 	some t in _pf_evecs_targets(name)
-	n := to_number(object.get(_pf_evecs_params(t), "TaskCount", "__pf_absent"))
+	n := _pf_tonum(object.get(_pf_evecs_params(t), "TaskCount", "__pf_absent"))
 	n > 10
 	tid := object.get(t.value, "Id", "<target>")
 }

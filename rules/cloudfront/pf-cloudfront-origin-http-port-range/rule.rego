@@ -15,7 +15,7 @@ violation contains make_diag_full("pf-cloudfront-origin-http-port-range", "ERROR
 	is_object(oc)
 	praw := object.get(oc, "HTTPPort", "__pf_absent")
 	praw != "__pf_absent"
-	p := to_number(praw)
+	p := _pf_tonum(praw)
 	p != 80
 	p != 443
 	p < 1024
@@ -30,6 +30,6 @@ violation contains make_diag_full("pf-cloudfront-origin-http-port-range", "ERROR
 	is_object(oc)
 	praw := object.get(oc, "HTTPPort", "__pf_absent")
 	praw != "__pf_absent"
-	p := to_number(praw)
+	p := _pf_tonum(praw)
 	p > 65535
 }

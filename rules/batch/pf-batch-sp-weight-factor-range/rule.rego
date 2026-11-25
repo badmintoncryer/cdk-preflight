@@ -12,6 +12,6 @@ violation contains make_diag_full("pf-batch-sp-weight-factor-range", "ERROR", na
 	some name in resources_of_type("AWS::Batch::SchedulingPolicy")
 	some e in flatten_list(name, "Properties.FairsharePolicy.ShareDistribution")
 	si := _pf_batch_oget(e.value, "ShareIdentifier")
-	w := to_number(_pf_batch_oget(e.value, "WeightFactor"))
+	w := _pf_tonum(_pf_batch_oget(e.value, "WeightFactor"))
 	_pf_batch_outside(w, 0.0001, 999.9999)
 }

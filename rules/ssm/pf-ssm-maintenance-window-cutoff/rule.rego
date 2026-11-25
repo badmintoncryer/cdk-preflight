@@ -8,7 +8,7 @@ _pf_ssmmc_fix := "Set Cutoff to at most Duration - 1"
 
 _pf_ssmmc_num(v) := v if is_number(v)
 
-_pf_ssmmc_num(v) := to_number(v) if {
+_pf_ssmmc_num(v) := _pf_tonum(v) if {
 	is_string(v)
 	regex.match("^[0-9]+$", v)
 }

@@ -16,7 +16,7 @@ violation contains make_diag_full("pf-lambda-alias-version-weight-range", "ERROR
 	ws := _pf_lam_list(object.get(rc, "AdditionalVersionWeights", []))
 	some w in ws
 	is_object(w)
-	wt := to_number(object.get(w, "FunctionWeight", 0))
+	wt := _pf_onum(w, "FunctionWeight")
 	_pf_ladwr_out(wt)
 }
 

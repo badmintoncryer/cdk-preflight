@@ -10,6 +10,6 @@ violation contains make_diag_full("pf-kinesisanalytics-parallelism-per-kpu", "ER
 	"https://docs.aws.amazon.com/managed-flink/latest/apiv2/API_ParallelismConfiguration.html") if {
 	some name in resources_of_type("AWS::KinesisAnalyticsV2::Application")
 	p := resolve(name, "Properties.ApplicationConfiguration.FlinkApplicationConfiguration.ParallelismConfiguration.ParallelismPerKPU")
-	n := to_number(p)
+	n := _pf_tonum(p)
 	n > 8
 }

@@ -11,7 +11,7 @@ violation contains make_diag_full("pf-lambda-esm-record-age-effective-min", "ERR
 	sprintf("MaximumRecordAgeInSeconds is %v; the accepted values are -1 (stream retention) or 60 and above", [n]),
 	_pf_leram_fix, _pf_leram_url) if {
 	some name in _pf_lam_esm
-	n := to_number(_pf_lam_get(name, "MaximumRecordAgeInSeconds"))
+	n := _pf_tonum(_pf_lam_get(name, "MaximumRecordAgeInSeconds"))
 	n != -1
 	n < 60
 }

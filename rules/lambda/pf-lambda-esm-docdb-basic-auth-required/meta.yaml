@@ -8,6 +8,9 @@ benchRegion: us-east-1
 upstream: none
 repro:
   method: real-deploy
-  evidence: 'CreateEventSourceMapping (us-east-1, 2026-09-07): Invalid parameters: sourceAccessConfigurations, sourceAccessConfigurations'
+  evidence: "CreateEventSourceMapping (us-east-1, 2026-09-07): Invalid parameters: sourceAccessConfigurations, sourceAccessConfigurations; omission bench 2026-11-25 us-east-1: pass template without AWS::Lambda::EventSourceMapping.SourceAccessConfigurations -> ROLLBACK_COMPLETE with \"Invalid parameters: sourceAccessConfigurations, sourceAccessConfigurations\"; pass template without AWS::Lambda::EventSourceMapping.SourceAccessConfigurations.*.Type -> ROLLBACK_COMPLETE with \"Invalid parameters: BASIC_AUTH\""
   expect: "Invalid parameters: sourceAccessConfigurations, sourceAccessConfigurations"
 addedOn: 2026-09-07
+omissionFails:
+  - "AWS::Lambda::EventSourceMapping.SourceAccessConfigurations"
+  - "AWS::Lambda::EventSourceMapping.SourceAccessConfigurations.*.Type"

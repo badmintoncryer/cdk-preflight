@@ -14,7 +14,7 @@ violation contains make_diag_full("pf-eks-cluster-service-ipv4-cidr-prefix-range
 	_pf_ekslib_lit(c)
 	parts := split(c, "/")
 	count(parts) == 2
-	p := to_number(parts[1])
+	p := _pf_tonum(parts[1])
 	_pf_ekssvc_outside(p)
 }
 

@@ -2,7 +2,7 @@ id: pf-bedrock-guardrail-profile-geo
 service: bedrock
 benchRegion: us-east-1
 resourceTypes: [AWS::Bedrock::Guardrail]
-severity: ERROR
+severity: WARN
 title: A guardrail profile must belong to the deploy Region's geography
 constraintSource: https://docs.aws.amazon.com/bedrock/latest/userguide/guardrails-cross-region-support.html
 upstream: none

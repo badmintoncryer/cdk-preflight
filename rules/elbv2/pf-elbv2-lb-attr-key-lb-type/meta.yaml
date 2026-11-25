@@ -1,7 +1,7 @@
 id: pf-elbv2-lb-attr-key-lb-type
 service: elbv2
 resourceTypes: [AWS::ElasticLoadBalancingV2::LoadBalancer]
-severity: ERROR
+severity: WARN
 title: "A load balancer attribute key is bound to the load balancer type"
 constraintSource: https://docs.aws.amazon.com/elasticloadbalancing/latest/APIReference/API_LoadBalancerAttribute.html
 benchRegion: us-east-1

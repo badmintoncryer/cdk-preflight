@@ -10,6 +10,6 @@ violation contains make_diag_full("pf-ecs-healthcheck-interval-range", "ERROR", 
 	some name in resources_of_type("AWS::ECS::TaskDefinition")
 	some c in _pf_ecs_containers(name)
 	hc := _pf_ecs_cget(c, "HealthCheck")
-	v := to_number(_pf_ecs_oget(hc, "Interval"))
+	v := _pf_tonum(_pf_ecs_oget(hc, "Interval"))
 	_pf_ecs_outside(v, 5, 300)
 }

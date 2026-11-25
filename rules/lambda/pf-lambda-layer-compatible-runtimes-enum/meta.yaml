@@ -1,7 +1,7 @@
 id: pf-lambda-layer-compatible-runtimes-enum
 service: lambda
 resourceTypes: [AWS::Lambda::LayerVersion]
-severity: ERROR
+severity: WARN
 title: "CompatibleRuntimes are known runtime identifiers"
 constraintSource: https://docs.aws.amazon.com/lambda/latest/api/API_PublishLayerVersion.html
 benchRegion: us-east-1

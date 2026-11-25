@@ -31,7 +31,7 @@ violation contains make_diag_full("pf-sqs-redrive-policy", "ERROR", name,
 
 _pf_sqsrp_num(v) := v if is_number(v)
 
-_pf_sqsrp_num(v) := to_number(v) if {
+_pf_sqsrp_num(v) := _pf_tonum(v) if {
 	is_string(v)
 	regex.match("^[0-9]+$", v)
 }

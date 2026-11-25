@@ -13,7 +13,7 @@ violation contains make_diag_full("pf-route53-coordinates-latitude-range", "ERRO
 	is_object(g)
 	c := object.get(g, "Coordinates", null)
 	is_object(c)
-	n := to_number(object.get(c, "Latitude", null))
+	n := _pf_onum(c, "Latitude")
 	abs(n) > 90
 }
 
@@ -30,6 +30,6 @@ violation contains make_diag_full("pf-route53-coordinates-latitude-range", "ERRO
 	is_object(g)
 	c := object.get(g, "Coordinates", null)
 	is_object(c)
-	n := to_number(object.get(c, "Latitude", null))
+	n := _pf_onum(c, "Latitude")
 	abs(n) > 90
 }

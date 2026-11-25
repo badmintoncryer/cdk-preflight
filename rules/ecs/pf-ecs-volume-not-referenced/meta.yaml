@@ -8,6 +8,10 @@ constraintSource: https://docs.aws.amazon.com/AmazonECS/latest/developerguide/ta
 upstream: none
 repro:
   method: real-deploy
-  evidence: "bench 2026-09-08 us-east-1: fail template -> ROLLBACK_COMPLETE (Create TaskDefinition: Volumes [v] are not referenced by any of the containers), pass template -> CREATE_COMPLETE. Log: bench/logs/pf-ecs-volume-not-referenced.log"
+  evidence: "bench 2026-09-08 us-east-1: fail template -> ROLLBACK_COMPLETE (Create TaskDefinition: Volumes [v] are not referenced by any of the containers), pass template -> CREATE_COMPLETE. Log: bench/logs/pf-ecs-volume-not-referenced.log; omission bench 2026-11-25 us-east-1: pass template without AWS::ECS::TaskDefinition.ContainerDefinitions -> ROLLBACK_COMPLETE with \"Create TaskDefinition: Container list cannot be empty.\"; pass template without AWS::ECS::TaskDefinition.ContainerDefinitions.*.MountPoints / AWS::ECS::TaskDefinition.ContainerDefinitions.*.MountPoints.*.SourceVolume -> ROLLBACK_COMPLETE with \"Create TaskDefinition: Volumes [v] are not referenced by any of the containers\""
   expect: "Create TaskDefinition: Volumes [v] are not referenced by any of the containers"
 addedOn: 2026-09-08
+omissionFails:
+  - "AWS::ECS::TaskDefinition.ContainerDefinitions"
+  - "AWS::ECS::TaskDefinition.ContainerDefinitions.*.MountPoints"
+  - "AWS::ECS::TaskDefinition.ContainerDefinitions.*.MountPoints.*.SourceVolume"

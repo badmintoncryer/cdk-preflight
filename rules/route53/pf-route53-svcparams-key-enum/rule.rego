@@ -2,7 +2,7 @@ package cdk_preflight
 
 import rego.v1
 
-violation contains make_diag_full("pf-route53-svcparams-key-enum", "ERROR", name,
+violation contains make_diag_full("pf-route53-svcparams-key-enum", "WARN", name,
 	"Properties.ResourceRecords",
 	sprintf("'%s' is not a defined SvcParam key; Route 53 supports only alpn, no-default-alpn, port, ipv4hint, ech, ipv6hint, dohpath and ohttp (the keyNNNNN form is rejected as well)", [k]),
 	"Use one of the eight defined keys",
@@ -19,7 +19,7 @@ violation contains make_diag_full("pf-route53-svcparams-key-enum", "ERROR", name
 	not k in _pf_r53_svcb_keys
 }
 
-violation contains make_diag_full("pf-route53-svcparams-key-enum", "ERROR", name,
+violation contains make_diag_full("pf-route53-svcparams-key-enum", "WARN", name,
 	sprintf("Properties.RecordSets[%d].ResourceRecords", [_pf_it.index]),
 	sprintf("'%s' is not a defined SvcParam key; Route 53 supports only alpn, no-default-alpn, port, ipv4hint, ech, ipv6hint, dohpath and ohttp (the keyNNNNN form is rejected as well)", [k]),
 	"Use one of the eight defined keys",
@@ -38,7 +38,7 @@ violation contains make_diag_full("pf-route53-svcparams-key-enum", "ERROR", name
 	not k in _pf_r53_svcb_keys
 }
 
-violation contains make_diag_full("pf-route53-svcparams-key-enum", "ERROR", name,
+violation contains make_diag_full("pf-route53-svcparams-key-enum", "WARN", name,
 	"Properties.ResourceRecords",
 	sprintf("'%s' is not a defined SvcParam key; Route 53 supports only alpn, no-default-alpn, port, ipv4hint, ech, ipv6hint, dohpath and ohttp (the keyNNNNN form is rejected as well)", [k]),
 	"Use one of the eight defined keys",
@@ -55,7 +55,7 @@ violation contains make_diag_full("pf-route53-svcparams-key-enum", "ERROR", name
 	not k in _pf_r53_svcb_keys
 }
 
-violation contains make_diag_full("pf-route53-svcparams-key-enum", "ERROR", name,
+violation contains make_diag_full("pf-route53-svcparams-key-enum", "WARN", name,
 	sprintf("Properties.RecordSets[%d].ResourceRecords", [_pf_it.index]),
 	sprintf("'%s' is not a defined SvcParam key; Route 53 supports only alpn, no-default-alpn, port, ipv4hint, ech, ipv6hint, dohpath and ohttp (the keyNNNNN form is rejected as well)", [k]),
 	"Use one of the eight defined keys",

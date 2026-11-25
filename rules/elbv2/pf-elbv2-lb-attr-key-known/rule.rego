@@ -6,7 +6,7 @@ _pf_elbakk_fix := "Use a key from the LoadBalancerAttribute table (a typo is rej
 
 _pf_elbakk_url := "https://docs.aws.amazon.com/elasticloadbalancing/latest/APIReference/API_LoadBalancerAttribute.html"
 
-violation contains make_diag_full("pf-elbv2-lb-attr-key-known", "ERROR", name,
+violation contains make_diag_full("pf-elbv2-lb-attr-key-known", "WARN", name,
 	sprintf("Properties.LoadBalancerAttributes.%d.Key", [p.index]),
 	sprintf("Load balancer attribute key '%s' is not recognized; ModifyLoadBalancerAttributes rejects unknown keys", [p.key]),
 	_pf_elbakk_fix, _pf_elbakk_url) if {

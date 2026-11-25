@@ -19,6 +19,6 @@ violation contains make_diag_full("pf-scheduler-rate-positive", "ERROR", name,
 	endswith(t, ")")
 	inner := trim_space(substring(t, 5, count(t) - 6))
 	parts := split(inner, " ")
-	n := to_number(parts[0])
+	n := _pf_tonum(parts[0])
 	n <= 0
 }

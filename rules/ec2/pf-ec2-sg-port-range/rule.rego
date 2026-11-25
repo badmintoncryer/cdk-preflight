@@ -23,7 +23,7 @@ violation contains make_diag_full("pf-ec2-sg-port-range", "ERROR", name,
 	is_object(entry)
 	_pf_tcp_udp(object.get(entry, "IpProtocol", null))
 	some pname in {"FromPort", "ToPort"}
-	n := to_number(object.get(entry, pname, null))
+	n := _pf_onum(entry, pname)
 	_pf_port_out(n)
 }
 
@@ -39,8 +39,8 @@ violation contains make_diag_full("pf-ec2-sg-port-range", "ERROR", name,
 	entry := item.value
 	is_object(entry)
 	_pf_tcp_udp(object.get(entry, "IpProtocol", null))
-	f := to_number(object.get(entry, "FromPort", null))
-	t := to_number(object.get(entry, "ToPort", null))
+	f := _pf_onum(entry, "FromPort")
+	t := _pf_onum(entry, "ToPort")
 	f >= 0
 	t <= 65535
 	f > t

@@ -15,7 +15,7 @@ _pf_llcr_known := {
 	"provided.al2", "provided.al2023",
 }
 
-violation contains make_diag_full("pf-lambda-layer-compatible-runtimes-enum", "ERROR", name,
+violation contains make_diag_full("pf-lambda-layer-compatible-runtimes-enum", "WARN", name,
 	"Properties.CompatibleRuntimes",
 	sprintf("runtime '%v' is not a Lambda runtime identifier", [v]),
 	_pf_llcr_fix, _pf_llcr_url) if {

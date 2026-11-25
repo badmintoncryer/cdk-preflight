@@ -4,7 +4,7 @@ import rego.v1
 
 _pf_r53_rtypes := {"A", "AAAA", "CAA", "CNAME", "DS", "HTTPS", "MX", "NAPTR", "NS", "PTR", "SOA", "SPF", "SRV", "SSHFP", "SVCB", "TLSA", "TXT"}
 
-violation contains make_diag_full("pf-route53-record-type-enum", "ERROR", name,
+violation contains make_diag_full("pf-route53-record-type-enum", "WARN", name,
 	"Properties.Type",
 	sprintf("'%s' is not a record type Route 53 supports", [t]),
 	"Use one of SOA, A, TXT, NS, CNAME, MX, NAPTR, PTR, SRV, SPF, AAAA, CAA, DS, TLSA, SSHFP, SVCB, HTTPS",
@@ -15,7 +15,7 @@ violation contains make_diag_full("pf-route53-record-type-enum", "ERROR", name,
 	not t in _pf_r53_rtypes
 }
 
-violation contains make_diag_full("pf-route53-record-type-enum", "ERROR", name,
+violation contains make_diag_full("pf-route53-record-type-enum", "WARN", name,
 	sprintf("Properties.RecordSets[%d].Type", [_pf_it.index]),
 	sprintf("'%s' is not a record type Route 53 supports", [t]),
 	"Use one of SOA, A, TXT, NS, CNAME, MX, NAPTR, PTR, SRV, SPF, AAAA, CAA, DS, TLSA, SSHFP, SVCB, HTTPS",

@@ -7,6 +7,9 @@ constraintSource: https://docs.aws.amazon.com/kms/latest/developerguide/key-poli
 upstream: none
 repro:
   method: real-deploy
-  evidence: "bench 2026-09-05 ap-northeast-1: fail template -> ROLLBACK_COMPLETE with \"The new key policy will not allow you to update the key policy in the future.\"; pass template -> CREATE_COMPLETE"
+  evidence: "bench 2026-09-05 ap-northeast-1: fail template -> ROLLBACK_COMPLETE with \"The new key policy will not allow you to update the key policy in the future.\"; pass template -> CREATE_COMPLETE; omission bench 2026-11-25 ap-northeast-1: pass template without AWS::KMS::Key.KeyPolicy.Statement.*.Principal -> ROLLBACK_COMPLETE with \"Policy contains a statement with no principal.\"; pass template without AWS::KMS::Key.KeyPolicy.Statement.*.Action -> ROLLBACK_COMPLETE with \"Missing required field Action\""
   expect: "The new key policy will not allow you to update the key policy in the future"
 addedOn: 2026-09-05
+omissionFails:
+  - "AWS::KMS::Key.KeyPolicy.Statement.*.Principal"
+  - "AWS::KMS::Key.KeyPolicy.Statement.*.Action"

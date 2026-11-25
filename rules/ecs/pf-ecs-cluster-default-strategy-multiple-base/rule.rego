@@ -14,5 +14,5 @@ violation contains make_diag_full("pf-ecs-cluster-default-strategy-multiple-base
 	some name in resources_of_type("AWS::ECS::Cluster")
 	st := _pf_ecs_get(name, "DefaultCapacityProviderStrategy")
 	is_array(st)
-	count([x | some x in st; to_number(_pf_ecs_oget(x, "Base")) > 0]) > 1
+	count([x | some x in st; _pf_tonum(_pf_ecs_oget(x, "Base")) > 0]) > 1
 }

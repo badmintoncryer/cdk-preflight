@@ -11,9 +11,9 @@ violation contains make_diag_full("pf-lambda-esm-max-concurrency-vs-reserved", "
 	sprintf("MaximumConcurrency %v exceeds the %v reserved executions of function '%v'; the mapping can never reach that concurrency", [m, r, fn]),
 	_pf_lemcr_fix, _pf_lemcr_url) if {
 	some name in _pf_lam_esm
-	m := to_number(object.get(_pf_lam_obj(_pf_lam_props(name), "ScalingConfig"), "MaximumConcurrency", 0))
+	m := _pf_onum(_pf_lam_obj(_pf_lam_props(name), "ScalingConfig"), "MaximumConcurrency")
 	fn := resolve(name, "Properties.FunctionName")
 	fn in resources_of_type("AWS::Lambda::Function")
-	r := to_number(_pf_lam_get(fn, "ReservedConcurrentExecutions"))
+	r := _pf_tonum(_pf_lam_get(fn, "ReservedConcurrentExecutions"))
 	m > r
 }

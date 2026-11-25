@@ -17,7 +17,7 @@ _pf_schemaunknownscalar_aws := {
 	"AWSJSON", "AWSURL", "AWSPhone", "AWSIPAddress",
 }
 
-violation contains make_diag_full("pf-appsync-schema-unknown-scalar", "ERROR", name,
+violation contains make_diag_full("pf-appsync-schema-unknown-scalar", "WARN", name,
 	"Properties.Definition",
 	sprintf("'%s' is not an AppSync scalar; the schema create fails with \"The field type '%s' is not present when required\"", [t, t]),
 	"Use one of AWSDate, AWSTime, AWSDateTime, AWSTimestamp, AWSEmail, AWSJSON, AWSURL, AWSPhone, AWSIPAddress",

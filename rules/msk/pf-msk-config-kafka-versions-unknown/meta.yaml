@@ -2,7 +2,7 @@ id: pf-msk-config-kafka-versions-unknown
 service: msk
 benchRegion: us-east-1
 resourceTypes: [AWS::MSK::Configuration]
-severity: ERROR
+severity: WARN
 title: "KafkaVersionsList must name Apache Kafka versions Amazon MSK knows"
 constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-msk-configuration.html
 upstream: none

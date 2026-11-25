@@ -6,7 +6,7 @@ import rego.v1
 # BIGINT, INTEGER, CHAR and VARCHAR are all rejected by name.
 _pf_gluecdt_types := {"BINARY", "BOOLEAN", "DATE", "DECIMAL", "DOUBLE", "FLOAT", "INT", "LONG", "SHORT", "STRING", "TIMESTAMP"}
 
-violation contains make_diag_full("pf-glue-classifier-csv-custom-datatype", "ERROR", name,
+violation contains make_diag_full("pf-glue-classifier-csv-custom-datatype", "WARN", name,
 	sprintf("Properties.CsvClassifier.ContainsCustomDatatype.%d", [i]),
 	sprintf("\"%s\" is not a Glue datatype; CreateClassifier fails with \"The following types are invalid: %s\"", [t, t]),
 	"Use one of BINARY BOOLEAN DATE DECIMAL DOUBLE FLOAT INT LONG SHORT STRING TIMESTAMP",

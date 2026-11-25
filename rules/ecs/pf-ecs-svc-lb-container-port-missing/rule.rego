@@ -13,11 +13,11 @@ violation contains make_diag_full("pf-ecs-svc-lb-container-port-missing", "ERROR
 	some lb in lbs
 	cn := object.get(lb, "ContainerName", null)
 	_pf_ecs_lit(cn)
-	cp := to_number(object.get(lb, "ContainerPort", null))
+	cp := _pf_onum(lb, "ContainerPort")
 	td := _pf_ecs_reftd(name, "Properties.TaskDefinition")
 	some c in _pf_ecs_containers(td)
 	object.get(c.value, "Name", null) == cn
 	pms := _pf_ecs_cget(c, "PortMappings")
 	is_array(pms)
-	not cp in {to_number(object.get(pm, "ContainerPort", null)) | some pm in pms}
+	not cp in {_pf_onum(pm, "ContainerPort") | some pm in pms}
 }

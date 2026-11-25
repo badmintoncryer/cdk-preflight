@@ -27,6 +27,6 @@ violation contains make_diag_full("pf-appautoscaling-dynamodb-target-value-range
 	c := _pf_aasdtv_cfg(name)
 	mt := object.get(object.get(c, "PredefinedMetricSpecification", {}), "PredefinedMetricType", "__pf_absent")
 	mt in _pf_aasdtv_types
-	tv := to_number(object.get(c, "TargetValue", "__pf_absent"))
+	tv := _pf_tonum(object.get(c, "TargetValue", "__pf_absent"))
 	not _pf_aasdtv_in_range(tv)
 }

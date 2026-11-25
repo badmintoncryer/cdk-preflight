@@ -28,7 +28,7 @@ _pf_smrot_days(name) := n if {
 
 _pf_smrot_num(v) := v if is_number(v)
 
-_pf_smrot_num(v) := to_number(v) if {
+_pf_smrot_num(v) := _pf_tonum(v) if {
 	is_string(v)
 	regex.match("^[0-9]+$", v)
 }
@@ -57,7 +57,7 @@ _pf_smrot_outside(n, lo, _) if n < lo
 _pf_smrot_outside(n, _, hi) if n > hi
 
 # rate(): [n, unit] or undefined when the expression is not a well-formed rate
-_pf_smrot_rate(e) := [to_number(m[0][1]), m[0][2]] if {
+_pf_smrot_rate(e) := [_pf_tonum(m[0][1]), m[0][2]] if {
 	m := regex.find_all_string_submatch_n("^rate\\(([0-9]+) (hour|hours|day|days)\\)$", e, 1)
 	count(m) == 1
 }
@@ -141,12 +141,12 @@ _pf_smrot_hours_dense(h) if contains(h, "-")
 _pf_smrot_hours_dense(h) if {
 	m := regex.find_all_string_submatch_n("^[0-9*]+/([0-9]+)$", h, 1)
 	count(m) == 1
-	to_number(m[0][1]) < 4
+	_pf_tonum(m[0][1]) < 4
 }
 
 _pf_smrot_hours_dense(h) if {
 	contains(h, ",")
-	hours := [to_number(x) | some x in split(h, ","); regex.match("^[0-9]+$", x)]
+	hours := [_pf_tonum(x) | some x in split(h, ","); regex.match("^[0-9]+$", x)]
 	some i, a in hours
 	some j, b in hours
 	i != j
@@ -168,7 +168,7 @@ _pf_smrot_duration(name) := d if {
 	is_string(d)
 }
 
-_pf_smrot_dur_hours(d) := to_number(m[0][1]) if {
+_pf_smrot_dur_hours(d) := _pf_tonum(m[0][1]) if {
 	m := regex.find_all_string_submatch_n("^([0-9]+)h$", d, 1)
 	count(m) == 1
 }
@@ -210,5 +210,5 @@ violation contains make_diag_full("pf-secretsmanager-rotation-rules", "ERROR", n
 	h := _pf_smrot_dur_hours(d)
 	f := _pf_smrot_cron(_pf_smrot_expr(name))
 	regex.match("^[0-9]+$", f[1])
-	to_number(f[1]) + h > 24
+	_pf_tonum(f[1]) + h > 24
 }

@@ -112,7 +112,7 @@ _pf_num(name, path) := n if {
 	v := resolve(name, path)
 	v != null
 	not is_boolean(v)
-	n := to_number(v)
+	n := _pf_tonum(v)
 }
 
 # 要素同士を比べるルール（重複、件数、排他、順序）用のゲート。プロパティ丸ごと、または

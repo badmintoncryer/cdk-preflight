@@ -1,7 +1,7 @@
 id: pf-cognito-risk-notify-source-arn-region
 service: cognito
 resourceTypes: [AWS::Cognito::UserPoolRiskConfigurationAttachment]
-severity: ERROR
+severity: WARN
 title: "The notification SourceArn must be in a Cognito-supported SES region"
 constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-cognito-userpoolriskconfigurationattachment.html
 upstream: none

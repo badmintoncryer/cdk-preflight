@@ -15,7 +15,7 @@ violation contains make_diag_full("pf-cloudfront-origin-keepalive-timeout-range"
 	is_object(oc)
 	vraw := object.get(oc, "OriginKeepaliveTimeout", "__pf_absent")
 	vraw != "__pf_absent"
-	v := to_number(vraw)
+	v := _pf_tonum(vraw)
 	v < 1
 }
 
@@ -28,6 +28,6 @@ violation contains make_diag_full("pf-cloudfront-origin-keepalive-timeout-range"
 	is_object(oc)
 	vraw := object.get(oc, "OriginKeepaliveTimeout", "__pf_absent")
 	vraw != "__pf_absent"
-	v := to_number(vraw)
+	v := _pf_tonum(vraw)
 	v > 300
 }

@@ -21,12 +21,12 @@ _pf_dsel_cc(name) := cc if {
 # Chunk size CreateDataSource checks for a given property path.
 _pf_dsel_size(name, path) := n if {
 	path == _pf_dsel_paths[0]
-	n := to_number(object.get(object.get(_pf_dsel_cc(name), "FixedSizeChunkingConfiguration", {}), "MaxTokens", null))
+	n := _pf_onum(object.get(_pf_dsel_cc(name), "FixedSizeChunkingConfiguration", {}), "MaxTokens")
 }
 
 _pf_dsel_size(name, path) := n if {
 	path == _pf_dsel_paths[1]
-	n := to_number(object.get(object.get(_pf_dsel_cc(name), "SemanticChunkingConfiguration", {}), "MaxTokens", null))
+	n := _pf_onum(object.get(_pf_dsel_cc(name), "SemanticChunkingConfiguration", {}), "MaxTokens")
 }
 
 _pf_dsel_size(name, path) := n if {
@@ -34,7 +34,7 @@ _pf_dsel_size(name, path) := n if {
 	ls := object.get(object.get(_pf_dsel_cc(name), "HierarchicalChunkingConfiguration", {}), "LevelConfigurations", [])
 	_pf_countable_items(ls)
 	count(ls) == 2
-	n := to_number(ls[1].MaxTokens)
+	n := _pf_tonum(ls[1].MaxTokens)
 }
 
 violation contains make_diag_full("pf-bedrock-datasource-chunk-tokens-embedding-limit", "ERROR", name,

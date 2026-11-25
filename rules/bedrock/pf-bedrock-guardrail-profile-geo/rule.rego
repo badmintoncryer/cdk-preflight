@@ -36,7 +36,7 @@ _pf_gpge_bad(g, region) if {
 	not startswith(region, "us-gov-")
 }
 
-violation contains make_diag_full("pf-bedrock-guardrail-profile-geo", "ERROR", name,
+violation contains make_diag_full("pf-bedrock-guardrail-profile-geo", "WARN", name,
 	"Properties.CrossRegionConfig.GuardrailProfileArn",
 	sprintf("Guardrail profile '%s' is not usable from Region '%s'; CreateGuardrail fails with \"Guardrail cross-Region profile ID is invalid. Specify a guardrail profile ID that's supported in your current AWS Region\"", [g, region]),
 	"Use the profile of the deploy Region's geography (us., eu., uk., au., ca., apac. or us-gov.)",

@@ -5,7 +5,7 @@ import rego.v1
 # The allowed SES Regions depend on the pool's Region; the table and its
 # measurements live in _lib/cognito.rego (_pf_coglib_ses_region_bad, issue #395).
 
-violation contains make_diag_full("pf-cognito-risk-notify-source-arn-region", "ERROR", name,
+violation contains make_diag_full("pf-cognito-risk-notify-source-arn-region", "WARN", name,
 	"Properties.AccountTakeoverRiskConfiguration.NotifyConfiguration.SourceArn",
 	sprintf("NotifyConfiguration.SourceArn is in %v, which a user pool in %v cannot use; the risk configuration call fails with \"Invalid NotifyConfiguration.SourceArn. Provided SourceArn must be in ...\" (the allowed SES Regions depend on the pool's Region)", [r, dr]),
 	"Use a SES identity in the pool's own Region; pools in the backwards compatible Regions (such as ap-northeast-1) may also use eu-west-1, us-east-1 or us-west-2",

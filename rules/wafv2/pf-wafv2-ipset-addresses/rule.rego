@@ -26,7 +26,7 @@ _pf_wafip_split(a) := [ip, p] if {
 	regex.match("^[^/]+/[0-9]{1,3}$", a)
 	parts := split(a, "/")
 	ip := parts[0]
-	p := to_number(parts[1])
+	p := _pf_tonum(parts[1])
 }
 
 violation contains make_diag_full("pf-wafv2-ipset-addresses", "ERROR", name, _pf_wafip_path(k),
@@ -62,7 +62,7 @@ violation contains make_diag_full("pf-wafv2-ipset-addresses", "ERROR", name, _pf
 	kind != ver
 }
 
-_pf_wafip_octets(ip) := [to_number(o) | some j; o := split(ip, ".")[j]]
+_pf_wafip_octets(ip) := [_pf_tonum(o) | some j; o := split(ip, ".")[j]]
 
 violation contains make_diag_full("pf-wafv2-ipset-addresses", "ERROR", name, _pf_wafip_path(k),
 	sprintf("'%s' has an octet above 255; %s", [a, _pf_wafip_msg]),

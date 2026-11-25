@@ -17,6 +17,6 @@ violation contains make_diag_full("pf-msk-provisioned-throughput-min", "ERROR", 
 	object.get(prov, "Enabled", false) == true
 	v := object.get(prov, "VolumeThroughput", null)
 	v != null
-	t := to_number(v)
+	t := _pf_tonum(v)
 	t < 250
 }

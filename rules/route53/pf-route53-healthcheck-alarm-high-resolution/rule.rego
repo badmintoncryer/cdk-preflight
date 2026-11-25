@@ -11,6 +11,6 @@ violation contains make_diag_full("pf-route53-healthcheck-alarm-high-resolution"
 	cfg := _pf_r53z_hcc(name)
 	_pf_r53z_str(cfg, "Type") == "CLOUDWATCH_METRIC"
 	al := _pf_r53z_alarm_of(cfg)
-	p := to_number(object.get(_pf_r53z_props(al), "Period", "x"))
+	p := _pf_tonum(object.get(_pf_r53z_props(al), "Period", "x"))
 	p < 60
 }

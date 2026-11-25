@@ -10,6 +10,6 @@ violation contains make_diag_full("pf-batch-jd-tmpfs-size-min", "ERROR", name,
 	some name in resources_of_type("AWS::Batch::JobDefinition")
 	_pf_static_list(name, "Properties.ContainerProperties.LinuxParameters.Tmpfs")
 	some t in flatten_list(name, "Properties.ContainerProperties.LinuxParameters.Tmpfs")
-	n := to_number(_pf_batch_oget(t.value, "Size"))
+	n := _pf_tonum(_pf_batch_oget(t.value, "Size"))
 	n < 1
 }

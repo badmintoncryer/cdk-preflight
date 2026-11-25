@@ -2,7 +2,7 @@ id: pf-msk-config-server-properties-allowed-keys
 service: msk
 benchRegion: us-east-1
 resourceTypes: [AWS::MSK::Configuration]
-severity: ERROR
+severity: WARN
 title: "An MSK configuration may only set Amazon MSK's supported Apache Kafka properties"
 constraintSource: https://docs.aws.amazon.com/msk/latest/developerguide/msk-configuration-properties.html
 upstream: none

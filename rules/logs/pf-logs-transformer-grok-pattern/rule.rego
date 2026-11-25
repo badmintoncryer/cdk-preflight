@@ -78,7 +78,7 @@ _pf_lggp_patterns := {
 	"YEAR",
 }
 
-violation contains make_diag_full("pf-logs-transformer-grok-pattern", "ERROR", name,
+violation contains make_diag_full("pf-logs-transformer-grok-pattern", "WARN", name,
 	"Properties.TransformerConfig",
 	sprintf("The grok match references the unknown pattern '%s'; PutTransformer fails with \"No definition for key '%s' found\"", [pattern, pattern]),
 	"Use one of the supported grok pattern names (WORD, NUMBER, TIMESTAMP_ISO8601, ...)",

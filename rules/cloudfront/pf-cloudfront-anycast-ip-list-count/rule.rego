@@ -11,6 +11,6 @@ violation contains make_diag_full("pf-cloudfront-anycast-ip-list-count", "ERROR"
 	_pf_cf_anycast_ip_list_count_fix, _pf_cf_anycast_ip_list_count_url) if {
 	some name in resources_of_type("AWS::CloudFront::AnycastIpList")
 	raw := resolve(name, "Properties.IpCount")
-	c := to_number(raw)
+	c := _pf_tonum(raw)
 	c != 21
 }

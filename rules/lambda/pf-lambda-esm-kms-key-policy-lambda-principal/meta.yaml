@@ -8,6 +8,8 @@ benchRegion: us-east-1
 upstream: none
 repro:
   method: real-deploy
-  evidence: 'CreateEventSourceMapping (us-east-1, 2026-09-07): Lambda service principal was denied access to decrypt your filter criteria. Please check your KMS key policy'
+  evidence: "CreateEventSourceMapping (us-east-1, 2026-09-07): Lambda service principal was denied access to decrypt your filter criteria. Please check your KMS key policy; omission bench 2026-11-25 us-east-1: pass template without AWS::KMS::Key.KeyPolicy -> ROLLBACK_COMPLETE with \"Lambda service principal was denied access to decrypt your filter criteria. Please check your KMS key policy\""
   expect: "Lambda service principal was denied access to decrypt your filter criteria. Please check your KMS key policy"
 addedOn: 2026-09-07
+omissionFails:
+  - "AWS::KMS::Key.KeyPolicy"

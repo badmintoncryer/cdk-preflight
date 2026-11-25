@@ -6,7 +6,7 @@ _pf_elbagw_fix := "On a Gateway Load Balancer keep deletion_protection.enabled a
 
 _pf_elbagw_url := "https://docs.aws.amazon.com/elasticloadbalancing/latest/APIReference/API_LoadBalancerAttribute.html"
 
-violation contains make_diag_full("pf-elbv2-lb-attr-alb-only-on-gwlb", "ERROR", name,
+violation contains make_diag_full("pf-elbv2-lb-attr-alb-only-on-gwlb", "WARN", name,
 	sprintf("Properties.LoadBalancerAttributes.%d.Key", [p.index]),
 	sprintf("Attribute key '%s' is set on a gateway load balancer, which only supports deletion_protection.enabled and load_balancing.cross_zone.enabled", [p.key]),
 	_pf_elbagw_fix, _pf_elbagw_url) if {

@@ -4431,3 +4431,137 @@ describe('user data written as Fn::Base64 sits on the same boundary', () => {
     expect(diagnoseTemplate(ud(n)).some((d) => d.source === 'CUSTOM' && d.ruleId === 'pf-ec2-userdata-size')).toBe(fires);
   });
 });
+
+/**
+ * 2026-11-25 に、デプロイ済みで安定している CDK アプリの合成テンプレートから見つかった誤検知
+ * （#409〜#413）。どれも「ルールの条件が、裏付けた証拠より広かった」もの。
+ */
+describe('false positives found on deployed apps (2026-11-25)', () => {
+  const fired = (tpl: unknown, id: string, region?: string) =>
+    diagnoseTemplate(tpl, region).filter((d) => d.source === 'CUSTOM' && d.ruleId === id);
+
+  test('#409: ContainerName/ContainerPort are required, not rejected, for an SRV registry', () => {
+    const tpl = (recordType: string) => ({
+      Resources: {
+        Ns: { Type: 'AWS::ServiceDiscovery::PrivateDnsNamespace', Properties: { Name: 'app.local', Vpc: 'vpc-0123456789abcdef0' } },
+        Disc: {
+          Type: 'AWS::ServiceDiscovery::Service',
+          Properties: { NamespaceId: { 'Fn::GetAtt': ['Ns', 'Id'] }, DnsConfig: { DnsRecords: [{ Type: recordType, TTL: 10 }], RoutingPolicy: 'MULTIVALUE' } },
+        },
+        Cluster: { Type: 'AWS::ECS::Cluster' },
+        TaskDef: {
+          Type: 'AWS::ECS::TaskDefinition',
+          Properties: {
+            RequiresCompatibilities: ['FARGATE'],
+            NetworkMode: 'awsvpc',
+            Cpu: '256',
+            Memory: '512',
+            ContainerDefinitions: [{ Name: 'web', Image: 'public.ecr.aws/docker/library/nginx:latest', PortMappings: [{ ContainerPort: 3000 }] }],
+          },
+        },
+        Svc: {
+          Type: 'AWS::ECS::Service',
+          Properties: {
+            Cluster: { Ref: 'Cluster' },
+            TaskDefinition: { Ref: 'TaskDef' },
+            LaunchType: 'FARGATE',
+            DesiredCount: 1,
+            NetworkConfiguration: { AwsvpcConfiguration: { Subnets: ['subnet-0123456789abcdef0'] } },
+            ServiceRegistries: [{ RegistryArn: { 'Fn::GetAtt': ['Disc', 'Arn'] }, ContainerName: 'web', ContainerPort: 3000 }],
+          },
+        },
+      },
+    });
+    expect(fired(tpl('SRV'), 'pf-ecs-svc-registries-port-with-awsvpc')).toEqual([]);
+    expect(fired(tpl('A'), 'pf-ecs-svc-registries-port-with-awsvpc')).toHaveLength(1);
+    // 登録先をテンプレート内でたどれないときは黙る
+    const imported = tpl('A');
+    (imported.Resources.Svc.Properties.ServiceRegistries[0] as any).RegistryArn = 'arn:aws:servicediscovery:us-east-1:123456789012:service/srv-0123456789abcdef';
+    expect(fired(imported, 'pf-ecs-svc-registries-port-with-awsvpc')).toEqual([]);
+  });
+
+  test('#410: the parameter named by AutomationTargetParameterName counts as supplied', () => {
+    const tpl = (withTarget: boolean) => ({
+      Resources: {
+        Runbook: {
+          Type: 'AWS::SSM::Document',
+          Properties: {
+            DocumentType: 'Automation',
+            Content: {
+              schemaVersion: '0.3',
+              parameters: { InstanceId: { type: 'String' }, Mode: { type: 'String', default: 'verify' } },
+              mainSteps: [{ name: 'run', action: 'aws:executeAwsApi', inputs: { Service: 'ec2', Api: 'DescribeInstances', InstanceIds: ['{{ InstanceId }}'] } }],
+            },
+          },
+        },
+        Assoc: {
+          Type: 'AWS::SSM::Association',
+          Properties: {
+            Name: { Ref: 'Runbook' },
+            ...(withTarget ? { AutomationTargetParameterName: 'InstanceId' } : {}),
+            Targets: [{ Key: 'tag:PatchGroup', Values: ['web'] }],
+            Parameters: { Mode: ['verify'] },
+            ScheduleExpression: 'cron(0 3 ? * * *)',
+          },
+        },
+      },
+    });
+    const missing = (t: unknown) => fired(t, 'pf-ssm-association-document').filter((d) => /requires parameter 'InstanceId'/.test(d.message));
+    expect(missing(tpl(true))).toEqual([]);
+    expect(missing(tpl(false))).toHaveLength(1);
+  });
+
+  test('#411: hyphens are allowed in a REST API stage name, a space still is not', () => {
+    const tpl = (stageName: string) => ({
+      Resources: {
+        Api: { Type: 'AWS::ApiGateway::RestApi', Properties: { Name: 'demo' } },
+        Stage: { Type: 'AWS::ApiGateway::Stage', Properties: { RestApiId: { Ref: 'Api' }, DeploymentId: 'abc123', StageName: stageName } },
+      },
+    });
+    expect(fired(tpl('my-app-live'), 'pf-apigw-stage-name-charset')).toEqual([]);
+    expect(fired(tpl('my app'), 'pf-apigw-stage-name-charset')).toHaveLength(1);
+  });
+
+  test('#412: a provider that is not in the template is a warning, since it can be added outside CloudFormation', () => {
+    const ds = fired({
+      Resources: {
+        Pool: { Type: 'AWS::Cognito::UserPool' },
+        Client: {
+          Type: 'AWS::Cognito::UserPoolClient',
+          Properties: {
+            UserPoolId: { Ref: 'Pool' },
+            SupportedIdentityProviders: ['CorporateSAML'],
+            AllowedOAuthFlows: ['code'],
+            AllowedOAuthFlowsUserPoolClient: true,
+            AllowedOAuthScopes: ['openid'],
+            CallbackURLs: ['https://example.com/callback'],
+          },
+        },
+      },
+    }, 'pf-cognito-supported-identity-providers-exists');
+    expect(ds.map((d) => d.severity)).toEqual(['WARN']);
+  });
+
+  test('#413: public layers of aws-lambda-web-adapter and Powertools are not cross-account shares to ask for', () => {
+    const tpl = (layer: string) => ({
+      Resources: {
+        Role: {
+          Type: 'AWS::IAM::Role',
+          Properties: { AssumeRolePolicyDocument: { Version: '2012-10-17', Statement: [{ Effect: 'Allow', Principal: { Service: 'lambda.amazonaws.com' }, Action: 'sts:AssumeRole' }] } },
+        },
+        Fn: {
+          Type: 'AWS::Lambda::Function',
+          Properties: { Runtime: 'nodejs22.x', Handler: 'run.sh', Role: { 'Fn::GetAtt': ['Role', 'Arn'] }, Code: { ZipFile: 'x' }, Architectures: ['arm64'], Layers: [layer] },
+        },
+      },
+    });
+    for (const layer of [
+      'arn:aws:lambda:us-east-1:753240598075:layer:LambdaAdapterLayerArm64:28',
+      'arn:aws:lambda:us-east-1:017000801446:layer:AWSLambdaPowertoolsPythonV3-python313-arm64:7',
+      'arn:aws:lambda:us-east-1:094274105915:layer:AWSLambdaPowertoolsTypeScriptV2:24',
+    ]) {
+      expect(fired(tpl(layer), 'pf-lambda-layer-cross-account-needs-permission', 'us-east-1')).toEqual([]);
+    }
+    expect(fired(tpl('arn:aws:lambda:us-east-1:111122223333:layer:Private:1'), 'pf-lambda-layer-cross-account-needs-permission', 'us-east-1')).toHaveLength(1);
+  });
+});

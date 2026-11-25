@@ -13,6 +13,6 @@ violation contains make_diag_full("pf-networkfirewall-rulegroup-capacity-max", "
 	some name in resources_of_type("AWS::NetworkFirewall::RuleGroup")
 	raw := resolve(name, "Properties.Capacity")
 	raw != null
-	c := to_number(raw)
+	c := _pf_tonum(raw)
 	c > 30000
 }

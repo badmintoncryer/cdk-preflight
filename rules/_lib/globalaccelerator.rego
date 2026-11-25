@@ -50,7 +50,7 @@ _pf_galib_int(v) := v if is_number(v)
 _pf_galib_int(v) := n if {
 	is_string(v)
 	regex.match(`^[0-9]+$`, v)
-	n := to_number(v)
+	n := _pf_tonum(v)
 }
 
 _pf_galib_listeners := resources_of_type("AWS::GlobalAccelerator::Listener")

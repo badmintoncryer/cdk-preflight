@@ -51,7 +51,7 @@ _pf_redshiftlib_str(name, k) := v if {
 _pf_redshiftlib_num(name, k) := n if {
 	v := resolve(name, sprintf("Properties.%s", [k]))
 	v != null
-	n := to_number(v)
+	n := _pf_tonum(v)
 }
 
 # Lower-cased literal NodeType ("ra3.large"), and its family ("ra3" / "rg" / "dc2" / "ds2").

@@ -14,6 +14,6 @@ violation contains make_diag_full("pf-bedrock-guardrail-grounding-threshold", "E
 	fs := object.get(object.get(p, "ContextualGroundingPolicyConfig", {}), "FiltersConfig", [])
 	some i, f in fs
 	is_object(f)
-	t := to_number(f.Threshold)
+	t := _pf_tonum(f.Threshold)
 	t >= 1
 }

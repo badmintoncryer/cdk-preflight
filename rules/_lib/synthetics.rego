@@ -40,7 +40,7 @@ _pf_synlib_rate(expr) := [n, unit] if {
 	endswith(expr, ")")
 	parts := split(substring(expr, 5, count(expr) - 6), " ")
 	count(parts) == 2
-	n := to_number(parts[0])
+	n := _pf_tonum(parts[0])
 	unit := parts[1]
 }
 

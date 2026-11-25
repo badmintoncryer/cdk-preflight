@@ -8,7 +8,7 @@ _pf_lcprt_url := "https://docs.aws.amazon.com/lambda/latest/dg/lambda-managed-in
 
 _pf_lcprt_ok := {"java21", "java25", "python3.13", "python3.14", "python3.15", "nodejs22.x", "nodejs24.x", "nodejs26.x", "dotnet8", "dotnet10", "provided.al2023"}
 
-violation contains make_diag_full("pf-lambda-capacity-provider-runtime", "ERROR", name,
+violation contains make_diag_full("pf-lambda-capacity-provider-runtime", "WARN", name,
 	"Properties.Runtime",
 	sprintf("runtime '%v' with a capacity provider; Lambda Managed Instances run Java 21+, Python 3.13+, Node.js 22+, .NET 8+ and Rust on provided.al2023 only", [rt]),
 	_pf_lcprt_fix, _pf_lcprt_url) if {

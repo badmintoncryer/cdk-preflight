@@ -41,7 +41,7 @@ violation contains make_diag_full("pf-secretsmanager-hosted-rotation", "ERROR", 
 
 _pf_smhr_types := ["Db2SingleUser", "Db2MultiUser", "MySQLSingleUser", "MySQLMultiUser", "PostgreSQLSingleUser", "PostgreSQLMultiUser", "OracleSingleUser", "OracleMultiUser", "MariaDBSingleUser", "MariaDBMultiUser", "SQLServerSingleUser", "SQLServerMultiUser", "RedshiftSingleUser", "RedshiftMultiUser", "MongoDBSingleUser", "MongoDBMultiUser"]
 
-violation contains make_diag_full("pf-secretsmanager-hosted-rotation", "ERROR", name,
+violation contains make_diag_full("pf-secretsmanager-hosted-rotation", "WARN", name,
 	"Properties.HostedRotationLambda.RotationType",
 	sprintf("RotationType '%s' is not one of the rotation function templates; the AWS::SecretsManager transform fails with \"%s is not a supported rotation engine type\"", [t, t]),
 	_pf_smhr_fix, _pf_smhr_url) if {

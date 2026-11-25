@@ -7,19 +7,19 @@ import rego.v1
 _pf_ekettl_minutes(v) := n if {
 	is_string(v)
 	regex.match(`^[0-9]+m$`, v)
-	n := to_number(trim_suffix(v, "m"))
+	n := _pf_tonum(trim_suffix(v, "m"))
 }
 
 _pf_ekettl_minutes(v) := n if {
 	is_string(v)
 	regex.match(`^[0-9]+h$`, v)
-	n := to_number(trim_suffix(v, "h")) * 60
+	n := _pf_tonum(trim_suffix(v, "h")) * 60
 }
 
 _pf_ekettl_minutes(v) := n if {
 	is_string(v)
 	regex.match(`^[0-9]+s$`, v)
-	n := to_number(trim_suffix(v, "s")) / 60
+	n := _pf_tonum(trim_suffix(v, "s")) / 60
 }
 
 _pf_ekettl_out(m) if m < 10

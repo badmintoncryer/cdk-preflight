@@ -2,7 +2,7 @@ id: pf-s3express-ap-scope-permissions
 service: s3
 benchRegion: us-east-1
 resourceTypes: [AWS::S3Express::AccessPoint]
-severity: ERROR
+severity: WARN
 title: "Access point scope permissions are bare API names, not s3: actions"
 constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-s3express-accesspoint-scope.html
 upstream: cfn-schema

@@ -12,7 +12,7 @@ _pf_asgttsp_periods(name) := {p |
 	v := object.get(st, "Period", null)
 	v != null
 	not is_object(v)
-	p := to_number(v)
+	p := _pf_tonum(v)
 }
 
 violation contains make_diag_full("pf-asg-tt-mq-same-period-required", "ERROR", name,

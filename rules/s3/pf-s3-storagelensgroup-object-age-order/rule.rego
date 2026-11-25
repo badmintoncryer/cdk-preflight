@@ -17,7 +17,7 @@ violation contains make_diag_full("pf-s3-storagelensgroup-object-age-order", "ER
 	rawg != null
 	rawl := object.get(m, "DaysLessThan", null)
 	rawl != null
-	gt := to_number(rawg)
-	lt := to_number(rawl)
+	gt := _pf_tonum(rawg)
+	lt := _pf_tonum(rawl)
 	gt >= lt
 }

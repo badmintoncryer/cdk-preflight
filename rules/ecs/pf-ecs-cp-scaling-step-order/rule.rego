@@ -10,7 +10,7 @@ violation contains make_diag_full("pf-ecs-cp-scaling-step-order", "ERROR", name,
 	some name in resources_of_type("AWS::ECS::CapacityProvider")
 	asg := _pf_ecs_get(name, "AutoScalingGroupProvider")
 	ms := _pf_ecs_oget(asg, "ManagedScaling")
-	mn := to_number(_pf_ecs_oget(ms, "MinimumScalingStepSize"))
-	mx := to_number(_pf_ecs_oget(ms, "MaximumScalingStepSize"))
+	mn := _pf_tonum(_pf_ecs_oget(ms, "MinimumScalingStepSize"))
+	mx := _pf_tonum(_pf_ecs_oget(ms, "MaximumScalingStepSize"))
 	mn > mx
 }

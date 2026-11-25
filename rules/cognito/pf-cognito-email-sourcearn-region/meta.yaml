@@ -1,7 +1,7 @@
 id: pf-cognito-email-sourcearn-region
 service: cognito
 resourceTypes: [AWS::Cognito::UserPool]
-severity: ERROR
+severity: WARN
 title: "The SES SourceArn must be in a Cognito-supported SES region"
 constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-cognito-userpool.html
 upstream: none

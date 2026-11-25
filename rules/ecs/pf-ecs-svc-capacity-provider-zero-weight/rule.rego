@@ -11,5 +11,5 @@ violation contains make_diag_full("pf-ecs-svc-capacity-provider-zero-weight", "E
 	cps := _pf_ecs_get(name, "CapacityProviderStrategy")
 	is_array(cps)
 	count(cps) > 0
-	sum([to_number(object.get(x, "Weight", 0)) | some x in cps]) == 0
+	sum([_pf_tonum(object.get(x, "Weight", 0)) | some x in cps]) == 0
 }

@@ -16,6 +16,6 @@ violation contains make_diag_full("pf-cloudfront-origin-group-failover-status-co
 	sc := object.get(fc, "StatusCodes", null)
 	is_object(sc)
 	some c in object.get(sc, "Items", [])
-	n := to_number(c)
+	n := _pf_tonum(c)
 	not n in {400, 403, 404, 405, 410, 414, 416, 500, 502, 503, 504}
 }

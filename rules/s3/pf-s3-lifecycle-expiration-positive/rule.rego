@@ -15,6 +15,6 @@ violation contains make_diag_full("pf-s3-lifecycle-expiration-positive", "ERROR"
 	is_object(r.value)
 	raw := object.get(r.value, "ExpirationInDays", null)
 	raw != null
-	d := to_number(raw)
+	d := _pf_tonum(raw)
 	d <= 0
 }

@@ -2,6 +2,7 @@ id: pf-lambda-layer-cross-account-needs-permission
 service: lambda
 resourceTypes: [AWS::Lambda::Function]
 severity: WARN
+assumes: [outside-template]
 title: "A cross-account layer needs a share"
 constraintSource: https://docs.aws.amazon.com/lambda/latest/dg/adding-layers.html
 benchRegion: us-east-1

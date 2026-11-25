@@ -28,7 +28,7 @@ violation contains make_diag_full("pf-s3-lifecycle-min-storage-duration-chain", 
 	raw1 != null
 	raw2 := object.get(t2, "TransitionInDays", null)
 	raw2 != null
-	d1 := to_number(raw1)
-	d2 := to_number(raw2)
+	d1 := _pf_tonum(raw1)
+	d2 := _pf_tonum(raw2)
 	d2 - d1 < mind
 }

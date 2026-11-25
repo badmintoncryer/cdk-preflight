@@ -32,7 +32,7 @@ _pf_bklib_num(o, k) := n if {
 	v := _pf_bklib_get(o, k)
 	v != null
 	not is_boolean(v)
-	n := to_number(v)
+	n := _pf_tonum(v)
 }
 
 # --- (2) BackupPlan の走査 --------------------------------------------------

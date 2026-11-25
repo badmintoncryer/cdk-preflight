@@ -134,7 +134,7 @@ _pf_r53z_cidrs(name) := [[loc.index, i, c] |
 	is_string(c)
 ]
 
-_pf_r53z_prefix(c) := to_number(p) if {
+_pf_r53z_prefix(c) := _pf_tonum(p) if {
 	parts := split(c, "/")
 	count(parts) == 2
 	p := parts[1]

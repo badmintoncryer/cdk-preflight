@@ -2,7 +2,7 @@ id: pf-appsync-schema-unknown-scalar
 service: appsync
 resourceTypes: [AWS::AppSync::GraphQLSchema]
 benchRegion: us-east-1
-severity: ERROR
+severity: WARN
 title: Only AppSync's own AWS scalars exist
 constraintSource: https://docs.aws.amazon.com/appsync/latest/devguide/scalars.html
 upstream: none

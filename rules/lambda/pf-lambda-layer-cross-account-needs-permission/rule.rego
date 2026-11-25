@@ -21,12 +21,16 @@ _pf_llcp_url := "https://docs.aws.amazon.com/lambda/latest/dg/adding-layers.html
 # region-info on 2026-09-17 (test/lambda-layer-publishers.test.ts fails when
 # the installed region-info knows an account this table lacks), plus
 # 615299751070, the account behind the AWSOpenTelemetryDistro* layers, which
-# region-info does not carry yet. One entry per line: the engine caps a Rego
+# region-info does not carry yet, and the public layers that AWS projects outside
+# region-info share with every principal (#413): 753240598075 (aws-lambda-web-adapter,
+# LambdaAdapterLayerX86 / LambdaAdapterLayerArm64), 017000801446 (Powertools for AWS
+# Lambda, Python) and 094274105915 (Powertools for AWS Lambda, TypeScript). One entry per line: the engine caps a Rego
 # line at 1024 columns.
 _pf_llcp_aws_publishers := {
 	"000010852771",
 	"012438385374",
 	"015030872274",
+	"017000801446",
 	"027255383542",
 	"033019950311",
 	"039592058896",
@@ -35,6 +39,7 @@ _pf_llcp_aws_publishers := {
 	"066940009817",
 	"070087711984",
 	"080788657173",
+	"094274105915",
 	"122132214140",
 	"127562683043",
 	"129776340158",
@@ -94,6 +99,7 @@ _pf_llcp_aws_publishers := {
 	"732604637566",
 	"738900069198",
 	"751350123760",
+	"753240598075",
 	"758369105281",
 	"761018874580",
 	"761377655185",

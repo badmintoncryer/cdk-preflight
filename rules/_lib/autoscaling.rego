@@ -47,7 +47,7 @@ _pf_aslib_num(name, path) := n if {
 	v := resolve(name, path)
 	v != null
 	not is_boolean(v)
-	n := to_number(v)
+	n := _pf_tonum(v)
 }
 
 # ScalingPolicy の実効 PolicyType（未指定時の既定は SimpleScaling）
@@ -114,7 +114,7 @@ _pf_aslib_int(s) := n if {
 	regex.match("^[0-9]+$", s)
 	t := trim_left(s, "0")
 	t != ""
-	n := to_number(t)
+	n := _pf_tonum(t)
 }
 
 # 1 フィールド内の裸の数値。範囲(a-b)・リスト(a,b)・ステップ(*/n)を分解した後の数字だけを見る。
@@ -133,7 +133,7 @@ _pf_aslib_step_lo(s) := n if {
 	v := object.get(s, "MetricIntervalLowerBound", null)
 	v != null
 	not is_object(v)
-	n := to_number(v)
+	n := _pf_tonum(v)
 }
 
 _pf_aslib_step_lo(s) := -1000000000 if object.get(s, "MetricIntervalLowerBound", null) == null
@@ -142,7 +142,7 @@ _pf_aslib_step_hi(s) := n if {
 	v := object.get(s, "MetricIntervalUpperBound", null)
 	v != null
 	not is_object(v)
-	n := to_number(v)
+	n := _pf_tonum(v)
 }
 
 _pf_aslib_step_hi(s) := 1000000000 if object.get(s, "MetricIntervalUpperBound", null) == null

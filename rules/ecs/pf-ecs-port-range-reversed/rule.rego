@@ -16,5 +16,5 @@ violation contains make_diag_full("pf-ecs-port-range-reversed", "ERROR", name,
 	_pf_ecs_lit(r)
 	parts := split(r, "-")
 	count(parts) == 2
-	to_number(parts[0]) >= to_number(parts[1])
+	_pf_tonum(parts[0]) >= _pf_tonum(parts[1])
 }

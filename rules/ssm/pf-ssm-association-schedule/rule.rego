@@ -33,7 +33,7 @@ violation contains make_diag_full("pf-ssm-association-schedule", "ERROR", name,
 	not _pf_ssmas_kind(s)
 }
 
-_pf_ssmas_rate(s) := [to_number(m[0][1]), m[0][2]] if {
+_pf_ssmas_rate(s) := [_pf_tonum(m[0][1]), m[0][2]] if {
 	m := regex.find_all_string_submatch_n("^rate\\(([0-9]+) (minute|minutes|hour|hours|day|days)\\)$", s, 1)
 	count(m) == 1
 }
@@ -203,7 +203,7 @@ _pf_ssmas_bad contains [name, "#n must select the 1st..5th weekday"] if {
 	some name in resources_of_type("AWS::SSM::Association")
 	f := _pf_ssmas_f6(name)
 	some m in regex.find_all_string_submatch_n("#([0-9]+)", f[4], -1)
-	to_number(m[1]) > 5
+	_pf_tonum(m[1]) > 5
 }
 
 violation contains make_diag_full("pf-ssm-association-schedule", "ERROR", name,

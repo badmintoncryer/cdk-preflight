@@ -6,12 +6,12 @@ import rego.v1
 # CloudFormation shape is {"<status>": {"ResponseParameters": [...]}}).
 _pf_agvrpsc_bad(k) if {
 	regex.match(`^[0-9]+$`, k)
-	to_number(k) < 200
+	_pf_tonum(k) < 200
 }
 
 _pf_agvrpsc_bad(k) if {
 	regex.match(`^[0-9]+$`, k)
-	to_number(k) > 599
+	_pf_tonum(k) > 599
 }
 
 violation contains make_diag_full("pf-apigwv2-response-parameter-status-code", "ERROR", name,

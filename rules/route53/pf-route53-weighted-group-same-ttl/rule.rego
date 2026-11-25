@@ -19,5 +19,5 @@ violation contains make_diag_full("pf-route53-weighted-group-same-ttl", "ERROR",
 	"Weight" in _pf_r53lib_kinds(b.value)
 	ta := _pf_r53lib_get(a.value, "TTL")
 	tb := _pf_r53lib_get(b.value, "TTL")
-	to_number(ta) != to_number(tb)
+	_pf_tonum(ta) != _pf_tonum(tb)
 }

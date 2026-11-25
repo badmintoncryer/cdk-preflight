@@ -22,7 +22,7 @@ violation contains make_diag_full("pf-msk-provisioned-throughput-max-per-instanc
 	cap != null
 	v := object.get(prov, "VolumeThroughput", null)
 	v != null
-	t := to_number(v)
+	t := _pf_tonum(v)
 	t > cap
 }
 

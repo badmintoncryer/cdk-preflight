@@ -11,7 +11,7 @@ violation contains make_diag_full("pf-route53-geoproximity-bias-range", "ERROR",
 	rs := _pf_r53lib_props(name)
 	g := _pf_r53lib_get(rs, "GeoProximityLocation")
 	is_object(g)
-	n := to_number(object.get(g, "Bias", null))
+	n := _pf_onum(g, "Bias")
 	abs(n) > 99
 }
 
@@ -26,6 +26,6 @@ violation contains make_diag_full("pf-route53-geoproximity-bias-range", "ERROR",
 	is_object(rs)
 	g := _pf_r53lib_get(rs, "GeoProximityLocation")
 	is_object(g)
-	n := to_number(object.get(g, "Bias", null))
+	n := _pf_onum(g, "Bias")
 	abs(n) > 99
 }

@@ -1,7 +1,7 @@
 id: pf-elbv2-lb-attr-key-known
 service: elbv2
 resourceTypes: [AWS::ElasticLoadBalancingV2::LoadBalancer]
-severity: ERROR
+severity: WARN
 title: "A load balancer attribute key must be one the service recognises"
 constraintSource: https://docs.aws.amazon.com/elasticloadbalancing/latest/APIReference/API_LoadBalancerAttribute.html
 benchRegion: us-east-1

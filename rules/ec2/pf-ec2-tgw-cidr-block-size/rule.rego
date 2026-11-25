@@ -12,6 +12,6 @@ violation contains make_diag_full("pf-ec2-tgw-cidr-block-size", "ERROR", name,
 	c := item.value
 	is_string(c)
 	regex.match(`^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+/[0-9]+$`, c)
-	p := to_number(split(c, "/")[1])
+	p := _pf_tonum(split(c, "/")[1])
 	p > 24
 }

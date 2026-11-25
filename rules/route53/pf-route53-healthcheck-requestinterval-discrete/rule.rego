@@ -9,6 +9,6 @@ violation contains make_diag_full("pf-route53-healthcheck-requestinterval-discre
 	"https://docs.aws.amazon.com/Route53/latest/APIReference/API_HealthCheckConfig.html") if {
 	some name in resources_of_type("AWS::Route53::HealthCheck")
 	cfg := _pf_r53z_hcc(name)
-	v := to_number(_pf_r53z_get(cfg, "RequestInterval"))
+	v := _pf_tonum(_pf_r53z_get(cfg, "RequestInterval"))
 	not v in {10, 30}
 }

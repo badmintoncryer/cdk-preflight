@@ -12,7 +12,7 @@ violation contains make_diag_full("pf-codepipeline-run-order-range", "ERROR", na
 	some si, st in _pf_cplib_stages(name)
 	some ai, a in _pf_cplib_actions(st)
 	_pf_cplib_plain(a)
-	ro := to_number(object.get(a, "RunOrder", 1))
+	ro := _pf_onum(a, "RunOrder")
 	ro < 1
 }
 
@@ -25,6 +25,6 @@ violation contains make_diag_full("pf-codepipeline-run-order-range", "ERROR", na
 	some si, st in _pf_cplib_stages(name)
 	some ai, a in _pf_cplib_actions(st)
 	_pf_cplib_plain(a)
-	ro := to_number(object.get(a, "RunOrder", 1))
+	ro := _pf_onum(a, "RunOrder")
 	ro > 999
 }

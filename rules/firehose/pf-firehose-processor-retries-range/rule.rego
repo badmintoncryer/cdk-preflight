@@ -10,7 +10,7 @@ violation contains make_diag_full("pf-firehose-processor-retries-range", "ERROR"
 	some [name, path, i, t, pr] in _pf_fhlib_procs
 	t == "Lambda"
 	some raw in _pf_fhlib_params(pr, "NumberOfRetries")
-	v := to_number(raw)
+	v := _pf_tonum(raw)
 	_pf_fhprr_out(v)
 }
 

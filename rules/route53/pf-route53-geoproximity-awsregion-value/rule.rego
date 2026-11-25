@@ -4,7 +4,7 @@ import rego.v1
 
 # 実在する AWS リージョン（aws-cdk-lib の region-info、2026-09-10 時点）。
 # 新設リージョンが aws-cdk-lib に入るまでの間だけ取りこぼす。
-violation contains make_diag_full("pf-route53-geoproximity-awsregion-value", "ERROR", name,
+violation contains make_diag_full("pf-route53-geoproximity-awsregion-value", "WARN", name,
 	"Properties.GeoProximityLocation.AWSRegion",
 	sprintf("'%s' is not an AWS Region; Route 53 rejects the record with \"Cannot find GeoProximityLocation with AWSRegion\"", [r]),
 	"Use an existing Region name",
@@ -18,7 +18,7 @@ violation contains make_diag_full("pf-route53-geoproximity-awsregion-value", "ER
 	not r in _pf_r53_regions
 }
 
-violation contains make_diag_full("pf-route53-geoproximity-awsregion-value", "ERROR", name,
+violation contains make_diag_full("pf-route53-geoproximity-awsregion-value", "WARN", name,
 	sprintf("Properties.RecordSets[%d].GeoProximityLocation.AWSRegion", [_pf_it.index]),
 	sprintf("'%s' is not an AWS Region; Route 53 rejects the record with \"Cannot find GeoProximityLocation with AWSRegion\"", [r]),
 	"Use an existing Region name",

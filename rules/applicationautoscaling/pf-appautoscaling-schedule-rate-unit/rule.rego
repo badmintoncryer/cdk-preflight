@@ -42,6 +42,6 @@ violation contains make_diag_full("pf-appautoscaling-schedule-rate-unit", "ERROR
 	is_object(sched)
 	s := object.get(sched, "Schedule", null)
 	is_string(s)
-	v := to_number(_pf_aasrat_parts(_pf_aasrat_body(s))[1])
+	v := _pf_tonum(_pf_aasrat_parts(_pf_aasrat_body(s))[1])
 	v < 1
 }

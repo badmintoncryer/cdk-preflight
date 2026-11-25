@@ -14,7 +14,7 @@ violation contains make_diag_full("pf-cloudfront-origin-connection-attempts-rang
 	is_object(o.value)
 	raw := object.get(o.value, "ConnectionAttempts", "__pf_absent")
 	raw != "__pf_absent"
-	v := to_number(raw)
+	v := _pf_tonum(raw)
 	v < 1
 }
 
@@ -26,6 +26,6 @@ violation contains make_diag_full("pf-cloudfront-origin-connection-attempts-rang
 	is_object(o.value)
 	raw := object.get(o.value, "ConnectionAttempts", "__pf_absent")
 	raw != "__pf_absent"
-	v := to_number(raw)
+	v := _pf_tonum(raw)
 	v > 3
 }

@@ -21,7 +21,7 @@ _pf_snslmp_size(t) := n if {
 	v := resolve(t, "Properties.MaximumMessageSize")
 	not is_boolean(v)
 	v != null
-	n := to_number(v)
+	n := _pf_tonum(v)
 }
 
 violation contains make_diag_full("pf-sns-large-message-subscription-protocol", "ERROR", name,

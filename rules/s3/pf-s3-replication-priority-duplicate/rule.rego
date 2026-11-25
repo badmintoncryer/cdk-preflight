@@ -20,8 +20,8 @@ violation contains make_diag_full("pf-s3-replication-priority-duplicate", "ERROR
 	is_object(r2.value)
 	raw := object.get(r1.value, "Priority", null)
 	raw != null
-	p := to_number(raw)
+	p := _pf_tonum(raw)
 	other := object.get(r2.value, "Priority", null)
 	other != null
-	p == to_number(other)
+	p == _pf_tonum(other)
 }

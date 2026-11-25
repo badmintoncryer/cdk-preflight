@@ -20,6 +20,6 @@ violation contains make_diag_full("pf-cloudfront-origin-read-timeout-range", "ER
 	is_object(oc)
 	vraw := object.get(oc, "OriginReadTimeout", "__pf_absent")
 	vraw != "__pf_absent"
-	v := to_number(vraw)
+	v := _pf_tonum(vraw)
 	v < 1
 }

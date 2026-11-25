@@ -87,7 +87,7 @@ _pf_mskspk_bad(name) := ks if {
 	]
 }
 
-violation contains make_diag_full("pf-msk-config-server-properties-allowed-keys", "ERROR", name,
+violation contains make_diag_full("pf-msk-config-server-properties-allowed-keys", "WARN", name,
 	"Properties.ServerProperties",
 	sprintf("ServerProperties sets %s, which Amazon MSK does not allow in a custom configuration; the create fails with \"Key '%s' is not supported by at least one Apache Kafka version\"", [concat(", ", bad), bad[0]]),
 	"Keep ServerProperties to the properties listed under \"Custom Amazon MSK configurations\" (read-only and per-broker Kafka properties cannot be set)",

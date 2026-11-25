@@ -13,7 +13,7 @@ violation contains make_diag_full("pf-route53-naptr-order-range", "ERROR", name,
 	some v in _pf_r53lib_vals(rs)
 	f := _pf_r53lib_fields(v)
 	count(f) == 6
-	n := to_number(f[0])
+	n := _pf_tonum(f[0])
 	n > 65535
 }
 
@@ -31,6 +31,6 @@ violation contains make_diag_full("pf-route53-naptr-order-range", "ERROR", name,
 	some v in _pf_r53lib_vals(rs)
 	f := _pf_r53lib_fields(v)
 	count(f) == 6
-	n := to_number(f[0])
+	n := _pf_tonum(f[0])
 	n > 65535
 }

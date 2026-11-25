@@ -1,7 +1,7 @@
 id: pf-asg-termination-policy-lambda-arn-format
 service: autoscaling
 resourceTypes: [AWS::AutoScaling::AutoScalingGroup]
-severity: ERROR
+severity: WARN
 title: A termination policy is a published name or a Lambda ARN
 constraintSource: https://docs.aws.amazon.com/autoscaling/ec2/APIReference/API_CreateAutoScalingGroup.html
 upstream: none

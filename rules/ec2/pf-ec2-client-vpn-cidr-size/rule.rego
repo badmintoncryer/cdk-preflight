@@ -15,6 +15,6 @@ violation contains make_diag_full("pf-ec2-client-vpn-cidr-size", "ERROR", name,
 	c := resolve(name, "Properties.ClientCidrBlock")
 	is_string(c)
 	regex.match(`^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+/[0-9]+$`, c)
-	p := to_number(split(c, "/")[1])
+	p := _pf_tonum(split(c, "/")[1])
 	_pf_cvpncidr_out(p)
 }

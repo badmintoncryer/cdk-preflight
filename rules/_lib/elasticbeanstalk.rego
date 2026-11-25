@@ -124,7 +124,7 @@ _pf_eblib_lit_obj(o) if {
 	object.get(o, "__conditional", "_") == "_"
 }
 
-_pf_eblib_num(s) := to_number(s) if regex.match(`^-?(0|[1-9][0-9]*)(\.[0-9]+)?$`, s)
+_pf_eblib_num(s) := _pf_tonum(s) if regex.match(`^-?(0|[1-9][0-9]*)(\.[0-9]+)?$`, s)
 
 # 数値そのもの、または数値の文字列（プロパティが integer 型のとき、どちらの書き方もある）
 _pf_eblib_numv(v) := v if is_number(v)
@@ -216,7 +216,7 @@ _pf_eblib_iso_ok(s) if {
 _pf_eblib_iso_part(s, unit) := n if {
 	m := regex.find_n(sprintf("[0-9]+%s", [unit]), s, 1)
 	count(m) == 1
-	n := to_number(substring(m[0], 0, count(m[0]) - 1))
+	n := _pf_tonum(substring(m[0], 0, count(m[0]) - 1))
 }
 
 _pf_eblib_iso_part(s, unit) := 0 if {

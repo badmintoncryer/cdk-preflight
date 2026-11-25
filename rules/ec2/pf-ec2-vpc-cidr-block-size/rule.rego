@@ -13,7 +13,7 @@ violation contains make_diag_full("pf-ec2-vpc-cidr-block-size", "ERROR", name,
 	c := resolve(name, "Properties.CidrBlock")
 	is_string(c)
 	regex.match(`^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+/[0-9]+$`, c)
-	p := to_number(split(c, "/")[1])
+	p := _pf_tonum(split(c, "/")[1])
 	_pf_ec2vcs_out(p)
 }
 

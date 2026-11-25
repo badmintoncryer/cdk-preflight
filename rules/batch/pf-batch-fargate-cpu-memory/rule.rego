@@ -23,7 +23,7 @@ _pf_batchfcm_req(name, rtype) := v if {
 	object.get(entry, "Type", "") == rtype
 	raw := object.get(entry, "Value", null)
 	is_string(raw)
-	v := to_number(raw)
+	v := _pf_tonum(raw)
 }
 
 _pf_batchfcm_bad(v, m) if {

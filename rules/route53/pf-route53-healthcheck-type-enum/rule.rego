@@ -2,7 +2,7 @@ package cdk_preflight
 
 import rego.v1
 
-violation contains make_diag_full("pf-route53-healthcheck-type-enum", "ERROR", name,
+violation contains make_diag_full("pf-route53-healthcheck-type-enum", "WARN", name,
 	"Properties.HealthCheckConfig.Type",
 	sprintf("health check type %s is not one of CALCULATED, CLOUDWATCH_METRIC, HTTP, HTTPS, HTTP_STR_MATCH, HTTPS_STR_MATCH, TCP, RECOVERY_CONTROL", [t]),
 	"Use one of the eight documented health check types",

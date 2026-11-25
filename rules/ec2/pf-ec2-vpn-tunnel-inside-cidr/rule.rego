@@ -13,7 +13,7 @@ _pf_vpntic_reserved := {
 
 _pf_vpntic_outside(c) if not startswith(c, "169.254.")
 
-_pf_vpntic_outside(c) if to_number(split(c, "/")[1]) != 30
+_pf_vpntic_outside(c) if _pf_tonum(split(c, "/")[1]) != 30
 
 _pf_vpntic_cidr(item) := c if {
 	c := object.get(item.value, "TunnelInsideCidr", null)
