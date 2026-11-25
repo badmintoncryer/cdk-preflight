@@ -8,6 +8,8 @@ constraintSource: https://docs.aws.amazon.com/athena/latest/APIReference/API_Wor
 upstream: none
 repro:
   method: real-deploy
-  evidence: "api-probe 2026-09-13 us-east-1: CreateWorkGroup -> \"InvalidRequestException: ExecutionRole is null or empty\"; bench 2026-09-13 us-east-1: fail -> \"Invalid request provided: ExecutionRole is null or empty\" (ROLLBACK_COMPLETE); pass -> CREATE_COMPLETE"
+  evidence: "api-probe 2026-09-13 us-east-1: CreateWorkGroup -> \"InvalidRequestException: ExecutionRole is null or empty\"; bench 2026-09-13 us-east-1: fail -> \"Invalid request provided: ExecutionRole is null or empty\" (ROLLBACK_COMPLETE); pass -> CREATE_COMPLETE; omission bench 2026-11-25 us-east-1: pass template without AWS::Athena::WorkGroup.WorkGroupConfiguration.ExecutionRole -> ROLLBACK_COMPLETE with \"Invalid request provided: ExecutionRole is null or empty\""
   expect: "ExecutionRole is null or empty"
 addedOn: 2026-09-13
+omissionFails:
+  - "AWS::Athena::WorkGroup.WorkGroupConfiguration.ExecutionRole"

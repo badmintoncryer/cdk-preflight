@@ -8,6 +8,8 @@ benchRegion: us-east-1
 upstream: none
 repro:
   method: real-deploy
-  evidence: "bench 2026-09-09 us-east-1: the fail template rolled back with \"For conditions of type 'path-pattern', you must specify the following fields: 'Values or RegexValues or PathPatternConfig'\"; the pass template reached CREATE_COMPLETE."
+  evidence: "bench 2026-09-09 us-east-1: the fail template rolled back with \"For conditions of type 'path-pattern', you must specify the following fields: 'Values or RegexValues or PathPatternConfig'\"; the pass template reached CREATE_COMPLETE.; omission bench 2026-11-25 us-east-1: pass template without AWS::ElasticLoadBalancingV2::ListenerRule.Conditions.*.PathPatternConfig -> ROLLBACK_COMPLETE with \"For conditions of type 'path-pattern', you must specify the following fields: 'Values or RegexValues or PathPatternConfig'\""
   expect: "For conditions of type 'path-pattern', you must specify the following fields: 'Values or RegexValues or PathPatternConfig"
 addedOn: 2026-09-08
+omissionFails:
+  - "AWS::ElasticLoadBalancingV2::ListenerRule.Conditions.*.PathPatternConfig"

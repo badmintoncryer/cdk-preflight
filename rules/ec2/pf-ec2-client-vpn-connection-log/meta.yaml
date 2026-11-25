@@ -7,6 +7,8 @@ constraintSource: https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_Cre
 upstream: none
 repro:
   method: real-deploy
-  evidence: 'bench 2026-09-06 ap-northeast-1: fail template -> ROLLBACK_COMPLETE, "Please provide a cloudwatch log group"; pass template -> CREATE_COMPLETE (deployed with the placeholder ACM ARNs replaced by a real bench certificate, because the committed fixture must not carry an account-specific ARN)'
+  evidence: "bench 2026-09-06 ap-northeast-1: fail template -> ROLLBACK_COMPLETE, \"Please provide a cloudwatch log group\"; pass template -> CREATE_COMPLETE (deployed with the placeholder ACM ARNs replaced by a real bench certificate, because the committed fixture must not carry an account-specific ARN); omission bench 2026-11-25 ap-northeast-1: pass template without AWS::EC2::ClientVpnEndpoint.ConnectionLogOptions.CloudwatchLogGroup -> ROLLBACK_COMPLETE with \"Please provide a cloudwatch log group\""
   expect: "Please provide a cloudwatch log group"
 addedOn: 2026-09-06
+omissionFails:
+  - "AWS::EC2::ClientVpnEndpoint.ConnectionLogOptions.CloudwatchLogGroup"

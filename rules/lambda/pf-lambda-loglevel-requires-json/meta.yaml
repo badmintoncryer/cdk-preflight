@@ -8,6 +8,8 @@ benchRegion: us-east-1
 upstream: none
 repro:
   method: real-deploy
-  evidence: 'CreateFunction (us-east-1, 2026-09-07): "LogLevel is not supported when LogFormat is set to "Text". Remove LogLevel from your request or change the LogFormat to "JSON" and try again."'
+  evidence: "CreateFunction (us-east-1, 2026-09-07): \"LogLevel is not supported when LogFormat is set to \"Text\". Remove LogLevel from your request or change the LogFormat to \"JSON\" and try again.\"; omission bench 2026-11-25 us-east-1: pass template without AWS::Lambda::Function.LoggingConfig.LogFormat -> ROLLBACK_COMPLETE with \"LogLevel is not supported when LogFormat is set to \"Text\".\""
   expect: "Remove LogLevel from your request or change the LogFormat to"
 addedOn: 2026-09-07
+omissionFails:
+  - "AWS::Lambda::Function.LoggingConfig.LogFormat"

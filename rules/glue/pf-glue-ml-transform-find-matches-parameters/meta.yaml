@@ -8,6 +8,8 @@ constraintSource: https://docs.aws.amazon.com/glue/latest/dg/machine-learning.ht
 upstream: none
 repro:
   method: real-deploy
-  evidence: "bench 2026-09-14 us-east-1: fail template (TransformParameters with TransformType FIND_MATCHES and no FindMatchesParameters) -> \"Find Matches parameters have not been set\" (ROLLBACK_COMPLETE); pass template (FindMatchesParameters with PrimaryKeyColumnName) -> CREATE_COMPLETE. The missing primary key inside FindMatchesParameters is a separate sentence (\"A primary key must be specified in Find Matches parameters\") but the bundled engine already refuses it as a schema error, so this rule does not repeat it."
+  evidence: "bench 2026-09-14 us-east-1: fail template (TransformParameters with TransformType FIND_MATCHES and no FindMatchesParameters) -> \"Find Matches parameters have not been set\" (ROLLBACK_COMPLETE); pass template (FindMatchesParameters with PrimaryKeyColumnName) -> CREATE_COMPLETE. The missing primary key inside FindMatchesParameters is a separate sentence (\"A primary key must be specified in Find Matches parameters\") but the bundled engine already refuses it as a schema error, so this rule does not repeat it.; omission bench 2026-11-25 us-east-1: pass template without AWS::Glue::MLTransform.TransformParameters.FindMatchesParameters -> ROLLBACK_COMPLETE with \"Find Matches parameters have not been set\""
   expect: "Find Matches parameters have not been set"
 addedOn: 2026-09-14
+omissionFails:
+  - "AWS::Glue::MLTransform.TransformParameters.FindMatchesParameters"

@@ -8,6 +8,9 @@ constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide
 upstream: none
 repro:
   method: real-deploy
-  evidence: "bench 2026-09-14 us-east-1: Sasl.Iam.Enabled false with Unauthenticated.Enabled false -> \"Unauthenticated cannot be set to false without enabling any authentication mechanisms. ... 'clientAuthentication'\" (ROLLBACK_COMPLETE); pass Sasl.Iam.Enabled true with the same Unauthenticated.Enabled false -> CREATE_COMPLETE"
+  evidence: "bench 2026-09-14 us-east-1: Sasl.Iam.Enabled false with Unauthenticated.Enabled false -> \"Unauthenticated cannot be set to false without enabling any authentication mechanisms. ... 'clientAuthentication'\" (ROLLBACK_COMPLETE); pass Sasl.Iam.Enabled true with the same Unauthenticated.Enabled false -> CREATE_COMPLETE; omission bench 2026-11-25 us-east-1: pass template without AWS::MSK::Cluster.ClientAuthentication.Sasl / AWS::MSK::Cluster.ClientAuthentication.Sasl.Iam -> ROLLBACK_COMPLETE with \"Unauthenticated cannot be set to false without enabling any authentication mechanisms.\""
   expect: "Unauthenticated cannot be set to false without enabling any authentication mechanisms"
 addedOn: 2026-09-14
+omissionFails:
+  - "AWS::MSK::Cluster.ClientAuthentication.Sasl"
+  - "AWS::MSK::Cluster.ClientAuthentication.Sasl.Iam"

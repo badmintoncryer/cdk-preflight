@@ -7,6 +7,12 @@ constraintSource: https://docs.aws.amazon.com/systems-manager/latest/userguide/d
 upstream: none
 repro:
   method: real-deploy
-  evidence: "bench 2026-09-05 ap-northeast-1: fail template -> ROLLBACK_COMPLETE with \"Invalid request provided: Unknown plugin name: aws:doesNotExist\"; pass template -> CREATE_COMPLETE"
+  evidence: "bench 2026-09-05 ap-northeast-1: fail template -> ROLLBACK_COMPLETE with \"Invalid request provided: Unknown plugin name: aws:doesNotExist\"; pass template -> CREATE_COMPLETE; omission bench 2026-11-25 ap-northeast-1: pass template without AWS::SSM::Document.Content.mainSteps -> ROLLBACK_COMPLETE with \"Missing \"mainSteps\" in the document.\"; pass template without AWS::SSM::Document.Content.mainSteps.*.action -> ROLLBACK_COMPLETE with \"Missing \"action\" in step detail.\"; pass template without AWS::SSM::Document.Content.mainSteps.*.name -> ROLLBACK_COMPLETE with \"Missing \"name\" in step detail.\"; pass template without AWS::SSM::Document.Content.parameters / AWS::SSM::Document.Content.parameters.msg -> ROLLBACK_COMPLETE with \"Parameter \"msg\" is not declared.\""
   expect: "Unknown plugin name: aws:doesNotExist"
 addedOn: 2026-09-05
+omissionFails:
+  - "AWS::SSM::Document.Content.mainSteps"
+  - "AWS::SSM::Document.Content.mainSteps.*.action"
+  - "AWS::SSM::Document.Content.mainSteps.*.name"
+  - "AWS::SSM::Document.Content.parameters"
+  - "AWS::SSM::Document.Content.parameters.msg"
