@@ -2533,6 +2533,29 @@ describe('stepfunctions rules', () => {
  * JSON 文字列形のポリシー、Topic 内インライン Subscription、リテラル ARN、
  * リージョン束縛、Ref / Fn::GetAtt の区別。
  */
+/**
+ * PipelineType を省略したパイプラインは、いまは V2 で作られる（bench 2026-11-25 us-east-1:
+ * get-pipeline が pipelineType V2 / executionMode SUPERSEDED を返し、V2 専用の機能もそのまま
+ * デプロイできた）。省略を V1 と読んでいた pf-codepipeline-v1-* の誤検知を固定する。
+ */
+describe('an omitted PipelineType is V2', () => {
+  const RULES = ['action-provider', 'execution-mode', 'stage-conditions', 'triggers', 'variables'];
+  const failTemplate = (r: string) => JSON.parse(fs.readFileSync(
+    path.join(__dirname, '..', 'rules', 'codepipeline', `pf-codepipeline-v1-${r}`, 'templates', 'fail.template.json'), 'utf8'));
+  const withoutType = (tpl: any) => {
+    for (const res of Object.values<any>(tpl.Resources)) {
+      if (res.Type === 'AWS::CodePipeline::Pipeline') delete res.Properties.PipelineType;
+    }
+    return tpl;
+  };
+  const ids = (tpl: unknown) => diagnoseTemplate(tpl).filter((d) => d.source === 'CUSTOM').map((d) => d.ruleId);
+
+  test.each(RULES)('pf-codepipeline-v1-%s stays silent without PipelineType and fires on an explicit V1', (r) => {
+    expect(ids(withoutType(failTemplate(r)))).not.toContain(`pf-codepipeline-v1-${r}`);
+    expect(ids(failTemplate(r))).toContain(`pf-codepipeline-v1-${r}`);
+  });
+});
+
 describe('sqs / sns rules', () => {
   const ids = (ds: Diagnostic[]) => ds.filter((d) => d.source === 'CUSTOM').map((d) => d.ruleId);
   const queue = (props: Record<string, unknown>, extra: Record<string, unknown> = {}) => ({ Resources: { Q: { Type: 'AWS::SQS::Queue', Properties: props }, ...extra } });

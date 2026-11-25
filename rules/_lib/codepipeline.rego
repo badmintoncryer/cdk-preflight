@@ -144,10 +144,13 @@ _pf_cplib_queryable_ok(secret, required) if {
 
 # ---- C2 (stage / trigger / V1-V2 / webhook) ----------------------------------
 
-# PipelineType is optional and defaults to V1, so an absent key is a real V1
-# pipeline. A Ref resolves to a logical id rather than a literal and is left alone.
+# Only an explicit PipelineType: V1 is a V1 pipeline. An omitted PipelineType now
+# creates a V2 pipeline (bench 2026-11-25 us-east-1: a pipeline without it came
+# back as pipelineType V2 / executionMode SUPERSEDED, and each V2-only feature
+# deployed without it). A Ref resolves to a logical id rather than a literal and
+# is left alone.
 _pf_cplib_v1(name) if {
-	t := object.get(_pf_cplib_props(name), "PipelineType", "V1")
+	t := _pf_cplib_props(name).PipelineType
 	_pf_cplib_lit(t)
 	t == "V1"
 }

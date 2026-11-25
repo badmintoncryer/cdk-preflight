@@ -67,7 +67,6 @@
       ]
      }
     ],
-    "PipelineType": "V2",
     "Triggers": [
      {
       "ProviderType": "CodeStarSourceConnection",
