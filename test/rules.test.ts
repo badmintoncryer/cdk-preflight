@@ -1434,6 +1434,44 @@ describe('cognito rules', () => {
   });
 });
 
+/**
+ * issue #393: `_pf_coglib_at` は欠けたキーに番兵の文字列 "__pf_absent" を返すので、
+ * `is_string` を通ってしまい、省略した AttributeDataType を型として比べて誤検知していた。
+ * 同じ書き方の pf-cognito-log-delivery-event-source-duplicate（EventSource 省略）と
+ * pf-cognito-role-mapping-rule-match-type（MatchType 省略）は、省略した構成が実際にデプロイで
+ * 失敗する（bench 2026-11-25）ので、そのまま残している。
+ */
+describe('the cognito absence sentinel is not read as a value (#393)', () => {
+  const customIds = (tpl: unknown) => diagnoseTemplate(tpl).filter((d) => d.source === 'CUSTOM').map((d) => d.ruleId);
+
+  test('pf-cognito-schema-standard-attr-datatype stays silent on a standard attribute without AttributeDataType', () => {
+    // cognito.UserPool の standardAttributes が合成する形（CDK は AttributeDataType を出さない）
+    const tpl = {
+      Resources: {
+        Pool: {
+          Type: 'AWS::Cognito::UserPool',
+          Properties: {
+            Schema: [
+              { Name: 'email', Required: true, Mutable: true },
+              { Name: 'given_name', Required: false, Mutable: true },
+            ],
+          },
+        },
+      },
+    };
+    expect(customIds(tpl)).not.toContain('pf-cognito-schema-standard-attr-datatype');
+  });
+
+  test('pf-cognito-schema-standard-attr-datatype still fires on a retyped standard attribute', () => {
+    const tpl = {
+      Resources: {
+        Pool: { Type: 'AWS::Cognito::UserPool', Properties: { Schema: [{ Name: 'email', AttributeDataType: 'Number' }] } },
+      },
+    };
+    expect(customIds(tpl)).toContain('pf-cognito-schema-standard-attr-datatype');
+  });
+});
+
 describe('pf-cognito-domain-reserved-word', () => {
   const ids = (ds: Diagnostic[]) => ds.filter((d) => d.source === 'CUSTOM').map((d) => d.ruleId);
   const domain = (d: string) => ({

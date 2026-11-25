@@ -3,7 +3,9 @@ package cdk_preflight
 import rego.v1
 
 # The schema entry may re-declare a standard attribute (to make it required or
-# immutable) but not retype it; the type table is service knowledge.
+# immutable) but not retype it; the type table is service knowledge. An omitted
+# AttributeDataType keeps the standard type (the CDK never emits one), so the
+# absence sentinel must not be compared as a type (issue #393).
 
 violation contains make_diag_full("pf-cognito-schema-standard-attr-datatype", "ERROR", name,
 	sprintf("Properties.Schema.%d.AttributeDataType", [a.index]),
@@ -15,7 +17,6 @@ violation contains make_diag_full("pf-cognito-schema-standard-attr-datatype", "E
 	is_object(a.value)
 	n := object.get(a.value, "Name", "")
 	want := _pf_coglib_std_attr_types[n]
-	dt := _pf_coglib_at(a.value, "AttributeDataType")
-	is_string(dt)
+	dt := _pf_coglib_str(_pf_coglib_at(a.value, "AttributeDataType"))
 	dt != want
 }
