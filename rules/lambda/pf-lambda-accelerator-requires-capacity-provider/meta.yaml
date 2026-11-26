@@ -8,6 +8,8 @@ constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateR
 upstream: pending-engine
 repro:
   method: real-deploy
-  evidence: "bench 2026-11-23 us-east-1: AcceleratorConfig without CapacityProviderConfig -> Invalid request provided: AcceleratorConfig can't be specified unless creating a Lambda Managed Instance function. (HandlerErrorCode: InvalidRequest, ROLLBACK_COMPLETE); pass (needs a GPU capacity provider) not deployed for cost"
+  evidence: "bench 2026-11-23 us-east-1: AcceleratorConfig without CapacityProviderConfig -> Invalid request provided: AcceleratorConfig can't be specified unless creating a Lambda Managed Instance function. (HandlerErrorCode: InvalidRequest, ROLLBACK_COMPLETE); pass (needs a GPU capacity provider) not deployed for cost; omission bench 2026-11-26 us-east-1: pass template without AWS::Lambda::Function.CapacityProviderConfig -> ROLLBACK_COMPLETE with \"Invalid request provided: AcceleratorConfig can't be specified unless creating a Lambda Managed Instance function.\""
   expect: "AcceleratorConfig can't be specified unless creating a Lambda Managed Instance function"
 addedOn: 2026-11-23
+omissionFails:
+  - "AWS::Lambda::Function.CapacityProviderConfig"

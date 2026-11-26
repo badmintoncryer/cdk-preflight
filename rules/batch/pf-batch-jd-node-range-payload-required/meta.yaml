@@ -8,6 +8,8 @@ constraintSource: https://docs.aws.amazon.com/batch/latest/APIReference/API_Node
 upstream: none
 repro:
   method: real-deploy
-  evidence: "bench 2026-09-12 us-east-1: fail template -> \"Must specify container for node range 0:1.\" (ROLLBACK_COMPLETE); pass template CREATE_COMPLETE."
+  evidence: "bench 2026-09-12 us-east-1: fail template -> \"Must specify container for node range 0:1.\" (ROLLBACK_COMPLETE); pass template CREATE_COMPLETE; omission bench 2026-11-26 us-east-1: pass template without AWS::Batch::JobDefinition.NodeProperties.NodeRangeProperties.*.Container -> ROLLBACK_COMPLETE with \"Error executing request, Exception : Must specify container for node range 0:1., RequestId: c545883a-3bad-4f71-afc1-efbbdf95ae01\""
   expect: "Must specify container for node range 0:1"
 addedOn: 2026-09-12
+omissionFails:
+  - "AWS::Batch::JobDefinition.NodeProperties.NodeRangeProperties.*.Container"

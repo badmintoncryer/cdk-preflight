@@ -8,6 +8,8 @@ constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateR
 upstream: none
 repro:
   method: real-deploy
-  evidence: "bench 2026-09-08 us-east-1: fail template -> \"Role ARN must be specified for AWS integration configuration with Subtype: SQS-SendMessage\" (ROLLBACK_COMPLETE)"
+  evidence: "bench 2026-09-08 us-east-1: fail template -> \"Role ARN must be specified for AWS integration configuration with Subtype: SQS-SendMessage\" (ROLLBACK_COMPLETE); omission bench 2026-11-26 us-east-1: pass template without AWS::ApiGatewayV2::Integration.CredentialsArn -> ROLLBACK_COMPLETE with \"Role ARN must be specified for AWS integration configuration with Subtype: SQS-SendMessage\""
   expect: "Role ARN must be specified for AWS integration configuration with Subtype: SQS-SendMessage"
 addedOn: 2026-09-08
+omissionFails:
+  - "AWS::ApiGatewayV2::Integration.CredentialsArn"

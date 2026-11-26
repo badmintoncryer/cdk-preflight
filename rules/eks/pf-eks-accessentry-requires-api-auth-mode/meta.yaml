@@ -8,6 +8,9 @@ constraintSource: https://docs.aws.amazon.com/eks/latest/userguide/grant-k8s-acc
 upstream: none
 repro:
   method: real-deploy
-  evidence: "bench 2026-09-25 us-east-1: an AWS::EKS::Cluster with no AccessConfig at all (the CloudFormation default, CONFIG_MAP) plus an access entry -> ROLLBACK_COMPLETE, \"The cluster's authentication mode must be set to one of [API, API_AND_CONFIG_MAP] to perform this operation.\" The fail fixture leaves AccessConfig out rather than writing CONFIG_MAP, because that is the shape a template lands in by accident. fail-only; the fixture builds its own cluster."
+  evidence: "bench 2026-09-25 us-east-1: an AWS::EKS::Cluster with no AccessConfig at all (the CloudFormation default, CONFIG_MAP) plus an access entry -> ROLLBACK_COMPLETE, \"The cluster's authentication mode must be set to one of [API, API_AND_CONFIG_MAP] to perform this operation.\" The fail fixture leaves AccessConfig out rather than writing CONFIG_MAP, because that is the shape a template lands in by accident. fail-only; the fixture builds its own cluster; omission bench 2026-11-26 us-east-1: pass template without AWS::EKS::Cluster.AccessConfig -> ROLLBACK_COMPLETE with \"The cluster's authentication mode must be set to one of [API, API_AND_CONFIG_MAP] to perform this operation.\"; omission bench 2026-11-26 us-east-1: pass template without AWS::EKS::Cluster.AccessConfig.AuthenticationMode -> ROLLBACK_COMPLETE with \"The cluster's authentication mode must be set to one of [API, API_AND_CONFIG_MAP] to perform this operation.\""
   expect: "The cluster's authentication mode must be set to one of"
 addedOn: 2026-09-25
+omissionFails:
+  - "AWS::EKS::Cluster.AccessConfig"
+  - "AWS::EKS::Cluster.AccessConfig.AuthenticationMode"

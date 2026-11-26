@@ -8,6 +8,8 @@ constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateR
 upstream: none
 repro:
   method: real-deploy
-  evidence: "bench 2026-09-08 us-east-1: fail template -> \"Invalid cache key parameter specified\" (ROLLBACK_COMPLETE)"
+  evidence: "bench 2026-09-08 us-east-1: fail template -> \"Invalid cache key parameter specified\" (ROLLBACK_COMPLETE); omission bench 2026-11-26 us-east-1: pass template without AWS::ApiGateway::Method.RequestParameters -> ROLLBACK_COMPLETE with \"Invalid cache key parameter specified\""
   expect: "Invalid cache key parameter specified"
 addedOn: 2026-09-08
+omissionFails:
+  - "AWS::ApiGateway::Method.RequestParameters"

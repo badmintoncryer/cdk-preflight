@@ -8,6 +8,8 @@ constraintSource: https://docs.aws.amazon.com/bedrock/latest/APIReference/API_ag
 upstream: none
 repro:
   method: real-deploy
-  evidence: "bench 2026-09-06 us-east-1 (API/CFN probe): Type VECTOR without StorageConfiguration -> CreateKnowledgeBase 400 ValidationException: You must provide a storage configuration if you create a VECTOR knowledge base; verify-rule.sh 2026-09-06 us-east-1: fail ROLLBACK_COMPLETE, pass CREATE_COMPLETE and deleted. Log: bench/logs/pf-bedrock-kb-vector-storage-required.log"
+  evidence: "bench 2026-09-06 us-east-1 (API/CFN probe): Type VECTOR without StorageConfiguration -> CreateKnowledgeBase 400 ValidationException: You must provide a storage configuration if you create a VECTOR knowledge base; verify-rule.sh 2026-09-06 us-east-1: fail ROLLBACK_COMPLETE, pass CREATE_COMPLETE and deleted. Log: bench/logs/pf-bedrock-kb-vector-storage-required.log; omission bench 2026-11-26 us-east-1: pass template without AWS::Bedrock::KnowledgeBase.StorageConfiguration -> ROLLBACK_COMPLETE with \"You must provide a storage configuration if you create a VECTOR knowledge base.\""
   expect: "You must provide a storage configuration if you create a VECTOR knowledge base"
 addedOn: 2026-09-06
+omissionFails:
+  - "AWS::Bedrock::KnowledgeBase.StorageConfiguration"

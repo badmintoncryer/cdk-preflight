@@ -8,6 +8,10 @@ constraintSource: https://docs.aws.amazon.com/apigateway/latest/developerguide/h
 upstream: none
 repro:
   method: real-deploy
-  evidence: "bench 2026-09-08 us-east-1: fail template -> \"Operation: EventBridge-PutEvents requires enabling passthrough, or defining all of the following parameters in the parameter mapping: [Detail, DetailType, Source]\" (ROLLBACK_COMPLETE)"
+  evidence: "bench 2026-09-08 us-east-1: fail template -> \"Operation: EventBridge-PutEvents requires enabling passthrough, or defining all of the following parameters in the parameter mapping: [Detail, DetailType, Source]\" (ROLLBACK_COMPLETE); omission bench 2026-11-26 us-east-1: pass template without AWS::ApiGatewayV2::Integration.RequestParameters.Detail -> ROLLBACK_COMPLETE with \"Operation: EventBridge-PutEvents requires enabling passthrough, or defining all of the following parameters in the parameter mapping: [Detail, DetailType, So...\"; omission bench 2026-11-26 us-east-1: pass template without AWS::ApiGatewayV2::Integration.RequestParameters.DetailType -> ROLLBACK_COMPLETE with \"Operation: EventBridge-PutEvents requires enabling passthrough, or defining all of the following parameters in the parameter mapping: [Detail, DetailType, So...\"; omission bench 2026-11-26 us-east-1: pass template without AWS::ApiGatewayV2::Integration.RequestParameters.Source -> ROLLBACK_COMPLETE with \"Operation: EventBridge-PutEvents requires enabling passthrough, or defining all of the following parameters in the parameter mapping: [Detail, DetailType, So...\""
   expect: "Operation: EventBridge-PutEvents requires enabling passthrough, or defining all of the following parameters in the parameter mapping"
 addedOn: 2026-09-08
+omissionFails:
+  - "AWS::ApiGatewayV2::Integration.RequestParameters.Detail"
+  - "AWS::ApiGatewayV2::Integration.RequestParameters.DetailType"
+  - "AWS::ApiGatewayV2::Integration.RequestParameters.Source"

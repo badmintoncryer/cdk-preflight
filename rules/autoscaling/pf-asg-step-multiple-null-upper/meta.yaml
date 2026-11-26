@@ -8,6 +8,8 @@ upstream: none
 benchRegion: us-east-1
 repro:
   method: real-deploy
-  evidence: "bench 2026-09-09 us-east-1: At most one StepAdjustment may have an unspecified upper bound (i.e., upper bound is null). -> ROLLBACK_COMPLETE. pass template CREATE_COMPLETE."
+  evidence: "bench 2026-09-09 us-east-1: At most one StepAdjustment may have an unspecified upper bound (i.e., upper bound is null). -> ROLLBACK_COMPLETE. pass template CREATE_COMPLETE; omission bench 2026-11-26 us-east-1: pass template without AWS::AutoScaling::ScalingPolicy.StepAdjustments.*.MetricIntervalUpperBound -> ROLLBACK_COMPLETE with \"At most one StepAdjustment may have an unspecified upper bound (i.e., upper bound is null).\""
   expect: "At most one StepAdjustment may have an unspecified upper bound (i.e., upper bound is null"
 addedOn: 2026-09-09
+omissionFails:
+  - "AWS::AutoScaling::ScalingPolicy.StepAdjustments.*.MetricIntervalUpperBound"

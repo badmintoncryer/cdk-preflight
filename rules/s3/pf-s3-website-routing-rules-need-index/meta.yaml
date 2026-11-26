@@ -8,6 +8,8 @@ constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateR
 upstream: none
 repro:
   method: real-deploy
-  evidence: "bench 2026-09-06 us-east-1: fail template -> ROLLBACK_COMPLETE \"Invalid request provided: Property IndexDocument cannot be empty.\"; pass template -> CREATE_COMPLETE"
+  evidence: "bench 2026-09-06 us-east-1: fail template -> ROLLBACK_COMPLETE \"Invalid request provided: Property IndexDocument cannot be empty.\"; pass template -> CREATE_COMPLETE; omission bench 2026-11-26 us-east-1: pass template without AWS::S3::Bucket.WebsiteConfiguration.IndexDocument -> ROLLBACK_COMPLETE with \"Invalid request provided: Property IndexDocument cannot be empty.\""
   expect: "Property IndexDocument cannot be empty"
 addedOn: 2026-09-06
+omissionFails:
+  - "AWS::S3::Bucket.WebsiteConfiguration.IndexDocument"

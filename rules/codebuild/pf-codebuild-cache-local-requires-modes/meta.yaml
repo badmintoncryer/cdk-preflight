@@ -8,6 +8,8 @@ constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateR
 upstream: none
 repro:
   method: real-deploy
-  evidence: "bench 2026-09-14 us-east-1: fail template (Cache.Type LOCAL with no Modes) -> \"At least one mode must be provided for cache type: LOCAL\" (ROLLBACK_COMPLETE); pass template (Cache.Type LOCAL with Modes [LOCAL_CUSTOM_CACHE]) -> CREATE_COMPLETE."
+  evidence: "bench 2026-09-14 us-east-1: fail template (Cache.Type LOCAL with no Modes) -> \"At least one mode must be provided for cache type: LOCAL\" (ROLLBACK_COMPLETE); pass template (Cache.Type LOCAL with Modes [LOCAL_CUSTOM_CACHE]) -> CREATE_COMPLETE; omission bench 2026-11-26 us-east-1: pass template without AWS::CodeBuild::Project.Cache.Modes -> ROLLBACK_COMPLETE with \"At least one mode must be provided for cache type: LOCAL\""
   expect: "At least one mode must be provided for cache type: LOCAL"
 addedOn: 2026-09-14
+omissionFails:
+  - "AWS::CodeBuild::Project.Cache.Modes"

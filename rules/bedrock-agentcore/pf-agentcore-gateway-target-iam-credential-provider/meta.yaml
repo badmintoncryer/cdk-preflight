@@ -8,6 +8,8 @@ constraintSource: https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/
 upstream: none
 repro:
   method: real-deploy
-  evidence: "bench 2026-09-05 us-east-1 (probe): OpenAPI target + GATEWAY_IAM_ROLE without CredentialProvider.IamCredentialProvider -> CREATE_FAILED (BedrockAgentCoreControl 400: IamCredentialProvider is required for openApiSchema targets using IAM authentication); McpServer target same shape -> 400: IamCredentialProvider is required for mcpServer targets using IAM authentication; OpenAPI target with IamCredentialProvider.Service=execute-api CREATE_COMPLETE. verify-rule.sh 2026-09-05 us-east-1: fail ROLLBACK_COMPLETE, pass CREATE_COMPLETE and deleted. Log: bench/logs/pf-agentcore-gateway-target-iam-credential-provider.log"
+  evidence: "bench 2026-09-05 us-east-1 (probe): OpenAPI target + GATEWAY_IAM_ROLE without CredentialProvider.IamCredentialProvider -> CREATE_FAILED (BedrockAgentCoreControl 400: IamCredentialProvider is required for openApiSchema targets using IAM authentication); McpServer target same shape -> 400: IamCredentialProvider is required for mcpServer targets using IAM authentication; OpenAPI target with IamCredentialProvider.Service=execute-api CREATE_COMPLETE. verify-rule.sh 2026-09-05 us-east-1: fail ROLLBACK_COMPLETE, pass CREATE_COMPLETE and deleted. Log: bench/logs/pf-agentcore-gateway-target-iam-credential-provider.log; omission bench 2026-11-26 us-east-1: pass template without AWS::BedrockAgentCore::GatewayTarget.CredentialProviderConfigurations.*.CredentialProvider -> ROLLBACK_COMPLETE with \"IamCredentialProvider is required for openApiSchema targets using IAM authentication\""
   expect: "IamCredentialProvider is required for openApiSchema targets using IAM authentication"
 addedOn: 2026-09-05
+omissionFails:
+  - "AWS::BedrockAgentCore::GatewayTarget.CredentialProviderConfigurations.*.CredentialProvider"

@@ -8,6 +8,8 @@ constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateR
 upstream: none
 repro:
   method: real-deploy
-  evidence: "bench 2026-09-25 us-east-1: ComputeConfig with NodePools [\"general-purpose\"] and no NodeRoleArn -> ROLLBACK_COMPLETE, \"When Compute Config nodeRoleArn is null or empty, nodePool list cannot be populated.\" (HandlerErrorCode: InvalidRequest); adding NodeRoleArn reaches the next check. fail-only, no cluster created."
+  evidence: "bench 2026-09-25 us-east-1: ComputeConfig with NodePools [\"general-purpose\"] and no NodeRoleArn -> ROLLBACK_COMPLETE, \"When Compute Config nodeRoleArn is null or empty, nodePool list cannot be populated.\" (HandlerErrorCode: InvalidRequest); adding NodeRoleArn reaches the next check. fail-only, no cluster created; omission bench 2026-11-26 us-east-1: pass template without AWS::EKS::Cluster.ComputeConfig.NodeRoleArn -> ROLLBACK_COMPLETE with \"When Compute Config nodeRoleArn is null or empty, nodePool list cannot be populated.\""
   expect: "When Compute Config nodeRoleArn is null or empty, nodePool list cannot be populated"
 addedOn: 2026-09-25
+omissionFails:
+  - "AWS::EKS::Cluster.ComputeConfig.NodeRoleArn"

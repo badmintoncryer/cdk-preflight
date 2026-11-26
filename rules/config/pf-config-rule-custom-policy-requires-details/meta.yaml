@@ -8,6 +8,8 @@ constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateR
 upstream: none
 repro:
   method: real-deploy
-  evidence: "bench 2026-09-24 us-east-1: fail -> ROLLBACK_COMPLETE \"CustomPolicyDetails is required when Owner is CUSTOM_POLICY\"; pass -> CREATE_COMPLETE"
+  evidence: "bench 2026-09-24 us-east-1: fail -> ROLLBACK_COMPLETE \"CustomPolicyDetails is required when Owner is CUSTOM_POLICY\"; pass -> CREATE_COMPLETE; omission bench 2026-11-26 us-east-1: pass template without AWS::Config::ConfigRule.Source.CustomPolicyDetails -> ROLLBACK_COMPLETE with \"CustomPolicyDetails is required when Owner is CUSTOM_POLICY\""
   expect: "CustomPolicyDetails is required when Owner is CUSTOM_POLICY"
 addedOn: 2026-09-24
+omissionFails:
+  - "AWS::Config::ConfigRule.Source.CustomPolicyDetails"

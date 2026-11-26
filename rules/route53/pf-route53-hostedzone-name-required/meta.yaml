@@ -8,6 +8,8 @@ constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateR
 upstream: none
 repro:
   method: real-deploy
-  evidence: "bench 2026-09-10 us-east-1: fail template -> Error occurred: InvalidInputException - Invalid XML ; javax.xml.stream.XMLStreamException: org.xml.sax.SAXParseException; lineNumber: 1; columnNumber: 276; cvc-complex-type.2.4.b: The content of element 'CreateHostedZoneRequest' is not complete. One of '{\"https://route53.amazonaws.com/doc/2013-04-01/\":Name, \"https://route53.amazonaws.com/doc/2013-04-01/\":VPC, \"https://route53.amazonaws.com/doc/2013-04-01/\":DelegationSetId}' is expected. (ROLLBACK_COMPLETE)"
+  evidence: "bench 2026-09-10 us-east-1: fail template -> Error occurred: InvalidInputException - Invalid XML ; javax.xml.stream.XMLStreamException: org.xml.sax.SAXParseException; lineNumber: 1; columnNumber: 276; cvc-complex-type.2.4.b: The content of element 'CreateHostedZoneRequest' is not complete. One of '{\"https://route53.amazonaws.com/doc/2013-04-01/\":Name, \"https://route53.amazonaws.com/doc/2013-04-01/\":VPC, \"https://route53.amazonaws.com/doc/2013-04-01/\":DelegationSetId}' is expected. (ROLLBACK_COMPLETE); omission bench 2026-11-26 us-east-1: pass template without AWS::Route53::HostedZone.Name -> ROLLBACK_COMPLETE with \"Error occurred: InvalidInputException - Invalid XML ; javax.xml.stream.XMLStreamException: org.xml.sax.SAXParseException; lineNumber: 1; columnNumber: 213; c...\""
   expect: "Error occurred: InvalidInputException - Invalid XML ; javax.xml.stream.XMLStreamException: org.xml.sax.SAXParseException; lineNumber: 1; columnNumber: 276; cvc-complex-type.2.4.b: The content of element 'CreateHostedZoneRequest' is not complete. One of"
 addedOn: 2026-09-10
+omissionFails:
+  - "AWS::Route53::HostedZone.Name"

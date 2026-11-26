@@ -7,5 +7,7 @@ constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateR
 upstream: none
 repro:
   method: real-deploy
-  evidence: "bench 2026-09-03 ap-northeast-1: zero destination configurations (f03) and ExtendedS3 + HttpEndpoint together (f04) -> both \"Exactly one destination configuration is supported for a Firehose\". ROLLBACK_COMPLETE. The schema oneOf is not evaluated by the engine (clean on both)."
+  evidence: "bench 2026-09-03 ap-northeast-1: zero destination configurations (f03) and ExtendedS3 + HttpEndpoint together (f04) -> both \"Exactly one destination configuration is supported for a Firehose\". ROLLBACK_COMPLETE. The schema oneOf is not evaluated by the engine (clean on both); omission bench 2026-11-26 ap-northeast-1: pass template without AWS::KinesisFirehose::DeliveryStream.ExtendedS3DestinationConfiguration -> ROLLBACK_COMPLETE with \"Exactly one destination configuration is supported for a Firehose\""
 addedOn: 2026-09-03
+omissionFails:
+  - "AWS::KinesisFirehose::DeliveryStream.ExtendedS3DestinationConfiguration"

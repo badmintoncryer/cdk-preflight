@@ -8,6 +8,8 @@ constraintSource: https://docs.aws.amazon.com/glue/latest/webapi/API_CreateCusto
 upstream: pending-engine
 repro:
   method: real-deploy
-  evidence: "bench 2026-09-14 us-east-1: fail template (custom entity type with ContextWords but no RegexString) -> \"1 validation error detected: Value null at 'regexString' failed to satisfy constraint: Member must not be null\" (ROLLBACK_COMPLETE); pass template (RegexString [0-9]{3}) -> CREATE_COMPLETE. The CloudFormation reference documents RegexString as Required: No, and the botocore model already calls it required."
+  evidence: "bench 2026-09-14 us-east-1: fail template (custom entity type with ContextWords but no RegexString) -> \"1 validation error detected: Value null at 'regexString' failed to satisfy constraint: Member must not be null\" (ROLLBACK_COMPLETE); pass template (RegexString [0-9]{3}) -> CREATE_COMPLETE. The CloudFormation reference documents RegexString as Required: No, and the botocore model already calls it required; omission bench 2026-11-26 us-east-1: pass template without AWS::Glue::CustomEntityType.RegexString -> ROLLBACK_COMPLETE with \"1 validation error detected: Value null at 'regexString' failed to satisfy constraint: Member must not be null\""
   expect: "1 validation error detected: Value null at 'regexString' failed to satisfy constraint: Member must not be null"
 addedOn: 2026-09-14
+omissionFails:
+  - "AWS::Glue::CustomEntityType.RegexString"

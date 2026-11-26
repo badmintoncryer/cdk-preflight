@@ -8,6 +8,8 @@ constraintSource: https://docs.aws.amazon.com/bedrock/latest/userguide/guardrail
 upstream: none
 repro:
   method: real-deploy
-  evidence: "bench 2026-09-06 us-east-1 (API/CFN probe): ContentFiltersTierConfig STANDARD without CrossRegionConfig -> CreateGuardrail 400 ValidationException: Can't configure guardrail policy tier. Enable cross-Region inference for your guardrail to use Standard tier; same for TopicsTierConfig; with CrossRegionConfig us.guardrail.v1:0 it deploys; verify-rule.sh 2026-09-06 us-east-1: fail ROLLBACK_COMPLETE, pass CREATE_COMPLETE and deleted. Log: bench/logs/pf-bedrock-guardrail-standard-tier-cross-region.log"
+  evidence: "bench 2026-09-06 us-east-1 (API/CFN probe): ContentFiltersTierConfig STANDARD without CrossRegionConfig -> CreateGuardrail 400 ValidationException: Can't configure guardrail policy tier. Enable cross-Region inference for your guardrail to use Standard tier; same for TopicsTierConfig; with CrossRegionConfig us.guardrail.v1:0 it deploys; verify-rule.sh 2026-09-06 us-east-1: fail ROLLBACK_COMPLETE, pass CREATE_COMPLETE and deleted. Log: bench/logs/pf-bedrock-guardrail-standard-tier-cross-region.log; omission bench 2026-11-26 us-east-1: pass template without AWS::Bedrock::Guardrail.CrossRegionConfig -> ROLLBACK_COMPLETE with \"Can't configure guardrail policy tier. Enable cross-Region inference for your guardrail to use Standard tier. For more information, see the Amazon Bedrock do...\""
   expect: "Can't configure guardrail policy tier. Enable cross-Region inference for your guardrail to use Standard tier"
 addedOn: 2026-09-06
+omissionFails:
+  - "AWS::Bedrock::Guardrail.CrossRegionConfig"

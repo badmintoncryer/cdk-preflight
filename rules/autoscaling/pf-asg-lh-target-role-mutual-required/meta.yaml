@@ -8,6 +8,9 @@ upstream: none
 benchRegion: us-east-1
 repro:
   method: real-deploy
-  evidence: "bench 2026-09-09 us-east-1: 'NotificationTargetARN' parameter required when 'RoleARN' parameter is specified -> ROLLBACK_COMPLETE. pass template CREATE_COMPLETE."
+  evidence: "bench 2026-09-09 us-east-1: 'NotificationTargetARN' parameter required when 'RoleARN' parameter is specified -> ROLLBACK_COMPLETE. pass template CREATE_COMPLETE; omission bench 2026-11-26 us-east-1: pass template without AWS::AutoScaling::LifecycleHook.RoleARN -> ROLLBACK_COMPLETE with \"'RoleARN' parameter required when 'NotificationTargetARN' parameter is specified\"; omission bench 2026-11-26 us-east-1: pass template without AWS::AutoScaling::LifecycleHook.NotificationTargetARN -> ROLLBACK_COMPLETE with \"'NotificationTargetARN' parameter required when 'RoleARN' parameter is specified\""
   expect: "NotificationTargetARN' parameter required when 'RoleARN' parameter is specified"
 addedOn: 2026-09-09
+omissionFails:
+  - "AWS::AutoScaling::LifecycleHook.RoleARN"
+  - "AWS::AutoScaling::LifecycleHook.NotificationTargetARN"

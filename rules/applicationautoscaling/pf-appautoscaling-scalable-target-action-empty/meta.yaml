@@ -8,6 +8,8 @@ constraintSource: https://docs.aws.amazon.com/autoscaling/application/APIReferen
 upstream: none
 repro:
   method: real-deploy
-  evidence: "bench 2026-09-24 us-east-1: ScalableTargetAction {} -> \"At least one of minimum capacity and maximum capacity should be provided\" (ROLLBACK_COMPLETE); pass one action with only MinCapacity and one with only MaxCapacity -> CREATE_COMPLETE, i.e. either half alone is enough"
+  evidence: "bench 2026-09-24 us-east-1: ScalableTargetAction {} -> \"At least one of minimum capacity and maximum capacity should be provided\" (ROLLBACK_COMPLETE); pass one action with only MinCapacity and one with only MaxCapacity -> CREATE_COMPLETE, i.e. either half alone is enough; omission bench 2026-11-26 us-east-1: pass template without AWS::ApplicationAutoScaling::ScalableTarget.ScheduledActions.*.ScalableTargetAction.MinCapacity -> ROLLBACK_COMPLETE with \"At least one of minimum capacity and maximum capacity should be provided\""
   expect: "At least one of minimum capacity and maximum capacity should be provided"
 addedOn: 2026-09-24
+omissionFails:
+  - "AWS::ApplicationAutoScaling::ScalableTarget.ScheduledActions.*.ScalableTargetAction.MinCapacity"

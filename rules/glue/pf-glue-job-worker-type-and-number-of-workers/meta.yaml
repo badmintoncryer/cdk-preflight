@@ -8,6 +8,9 @@ constraintSource: https://docs.aws.amazon.com/glue/latest/dg/add-job.html
 upstream: none
 repro:
   method: real-deploy
-  evidence: "bench 2026-09-13 us-east-1: fail template (one job with WorkerType G.1X and no NumberOfWorkers, a second with NumberOfWorkers 2 and no WorkerType) -> \"Please set both Worker Type and Number of Workers.\" (ROLLBACK_COMPLETE); pass template (both set) -> CREATE_COMPLETE. Both directions were rejected with that same message by a CreateJob probe the same day."
+  evidence: "bench 2026-09-13 us-east-1: fail template (one job with WorkerType G.1X and no NumberOfWorkers, a second with NumberOfWorkers 2 and no WorkerType) -> \"Please set both Worker Type and Number of Workers.\" (ROLLBACK_COMPLETE); pass template (both set) -> CREATE_COMPLETE. Both directions were rejected with that same message by a CreateJob probe the same day; omission bench 2026-11-26 us-east-1: pass template without AWS::Glue::Job.WorkerType -> ROLLBACK_COMPLETE with \"Please set both Worker Type and Number of Workers.\"; omission bench 2026-11-26 us-east-1: pass template without AWS::Glue::Job.NumberOfWorkers -> ROLLBACK_COMPLETE with \"Please set both Worker Type and Number of Workers.\""
   expect: "Please set both Worker Type and Number of Workers"
 addedOn: 2026-09-13
+omissionFails:
+  - "AWS::Glue::Job.WorkerType"
+  - "AWS::Glue::Job.NumberOfWorkers"

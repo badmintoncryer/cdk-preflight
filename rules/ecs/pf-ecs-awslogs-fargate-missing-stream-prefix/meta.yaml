@@ -8,6 +8,8 @@ constraintSource: https://docs.aws.amazon.com/AmazonECS/latest/developerguide/ta
 upstream: none
 repro:
   method: real-deploy
-  evidence: "bench 2026-09-08 us-east-1: fail template -> ROLLBACK_COMPLETE (Create TaskDefinition: Fargate requires log configuration options to include awslogs-stream-prefix to support log driver awslogs.), pass template -> CREATE_COMPLETE. Log: bench/logs/pf-ecs-awslogs-fargate-missing-stream-prefix.log"
+  evidence: "bench 2026-09-08 us-east-1: fail template -> ROLLBACK_COMPLETE (Create TaskDefinition: Fargate requires log configuration options to include awslogs-stream-prefix to support log driver awslogs.), pass template -> CREATE_COMPLETE. Log: bench/logs/pf-ecs-awslogs-fargate-missing-stream-prefix.log; omission bench 2026-11-26 us-east-1: pass template without AWS::ECS::TaskDefinition.ContainerDefinitions.*.LogConfiguration.Options -> ROLLBACK_COMPLETE with \"Invalid request provided: Create TaskDefinition: Log driver awslogs requires options: awslogs-region, awslogs-group\""
   expect: "Create TaskDefinition: Fargate requires log configuration options to include awslogs-stream-prefix to support log driver awslogs"
 addedOn: 2026-09-08
+omissionFails:
+  - "AWS::ECS::TaskDefinition.ContainerDefinitions.*.LogConfiguration.Options"

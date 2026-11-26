@@ -8,6 +8,10 @@ upstream: none
 benchRegion: us-east-1
 repro:
   method: real-deploy
-  evidence: "bench 2026-09-08 us-east-1: fail template -> ROLLBACK_COMPLETE with \"clientId, clientSecret and authorizeScopes are all required idp details.\"; pass template -> CREATE_COMPLETE"
+  evidence: "bench 2026-09-08 us-east-1: fail template -> ROLLBACK_COMPLETE with \"clientId, clientSecret and authorizeScopes are all required idp details.\"; pass template -> CREATE_COMPLETE; omission bench 2026-11-26 us-east-1: pass template without AWS::Cognito::UserPoolIdentityProvider.ProviderDetails.client_id -> ROLLBACK_COMPLETE with \"clientId, clientSecret and authorizeScopes are all required idp details.\"; omission bench 2026-11-26 us-east-1: pass template without AWS::Cognito::UserPoolIdentityProvider.ProviderDetails.client_secret -> ROLLBACK_COMPLETE with \"clientId, clientSecret and authorizeScopes are all required idp details.\"; omission bench 2026-11-26 us-east-1: pass template without AWS::Cognito::UserPoolIdentityProvider.ProviderDetails.authorize_scopes -> ROLLBACK_COMPLETE with \"clientId, clientSecret and authorizeScopes are all required idp details.\""
   expect: "clientId, clientSecret and authorizeScopes are all required idp details"
 addedOn: 2026-09-08
+omissionFails:
+  - "AWS::Cognito::UserPoolIdentityProvider.ProviderDetails.client_id"
+  - "AWS::Cognito::UserPoolIdentityProvider.ProviderDetails.client_secret"
+  - "AWS::Cognito::UserPoolIdentityProvider.ProviderDetails.authorize_scopes"

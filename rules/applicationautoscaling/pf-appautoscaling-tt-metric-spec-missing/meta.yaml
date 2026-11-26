@@ -8,6 +8,8 @@ constraintSource: https://docs.aws.amazon.com/autoscaling/application/userguide/
 upstream: none
 repro:
   method: real-deploy
-  evidence: "bench 2026-09-24 us-east-1: a TargetTrackingScaling policy with TargetValue and neither metric specification -> \"PredefinedMetricSpecification or CustomizedMetricSpecification must be set for target tracking scaling.\" (ROLLBACK_COMPLETE); pass the same policy with PredefinedMetricSpecification ECSServiceAverageMemoryUtilization -> CREATE_COMPLETE"
+  evidence: "bench 2026-09-24 us-east-1: a TargetTrackingScaling policy with TargetValue and neither metric specification -> \"PredefinedMetricSpecification or CustomizedMetricSpecification must be set for target tracking scaling.\" (ROLLBACK_COMPLETE); pass the same policy with PredefinedMetricSpecification ECSServiceAverageMemoryUtilization -> CREATE_COMPLETE; omission bench 2026-11-26 us-east-1: pass template without AWS::ApplicationAutoScaling::ScalingPolicy.TargetTrackingScalingPolicyConfiguration.PredefinedMetricSpecification -> ROLLBACK_COMPLETE with \"PredefinedMetricSpecification or CustomizedMetricSpecification must be set for target tracking scaling.\""
   expect: "PredefinedMetricSpecification or CustomizedMetricSpecification must be set for target tracking scaling"
 addedOn: 2026-09-24
+omissionFails:
+  - "AWS::ApplicationAutoScaling::ScalingPolicy.TargetTrackingScalingPolicyConfiguration.PredefinedMetricSpecification"

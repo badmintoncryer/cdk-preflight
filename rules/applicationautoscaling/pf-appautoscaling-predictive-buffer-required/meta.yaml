@@ -8,6 +8,8 @@ constraintSource: https://docs.aws.amazon.com/autoscaling/application/APIReferen
 upstream: none
 repro:
   method: real-deploy
-  evidence: "bench 2026-09-24 us-east-1: PredictiveScalingPolicyConfiguration with MaxCapacityBreachBehavior IncreaseMaxCapacity and no MaxCapacityBuffer -> \"You must specify MaxCapacityBuffer when using IncreaseMaxCapacity.\" (ROLLBACK_COMPLETE); pass the same policy with MaxCapacityBuffer 10 -> CREATE_COMPLETE (fail and pass both register an ecs:service:DesiredCount target on a LaunchType EC2 service with DesiredCount 0, because PutScalingPolicy looks the target up before it validates the configuration)"
+  evidence: "bench 2026-09-24 us-east-1: PredictiveScalingPolicyConfiguration with MaxCapacityBreachBehavior IncreaseMaxCapacity and no MaxCapacityBuffer -> \"You must specify MaxCapacityBuffer when using IncreaseMaxCapacity.\" (ROLLBACK_COMPLETE); pass the same policy with MaxCapacityBuffer 10 -> CREATE_COMPLETE (fail and pass both register an ecs:service:DesiredCount target on a LaunchType EC2 service with DesiredCount 0, because PutScalingPolicy looks the target up before it validates the configuration); omission bench 2026-11-26 us-east-1: pass template without AWS::ApplicationAutoScaling::ScalingPolicy.PredictiveScalingPolicyConfiguration.MaxCapacityBuffer -> ROLLBACK_COMPLETE with \"You must specify MaxCapacityBuffer when using IncreaseMaxCapacity.\""
   expect: "You must specify MaxCapacityBuffer when using IncreaseMaxCapacity"
 addedOn: 2026-09-24
+omissionFails:
+  - "AWS::ApplicationAutoScaling::ScalingPolicy.PredictiveScalingPolicyConfiguration.MaxCapacityBuffer"

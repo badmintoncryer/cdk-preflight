@@ -8,6 +8,8 @@ upstream: none
 benchRegion: us-east-1
 repro:
   method: real-deploy
-  evidence: "bench 2026-09-09 us-east-1: You must specify PredictiveScalingConfiguration. -> ROLLBACK_COMPLETE. pass template CREATE_COMPLETE."
+  evidence: "bench 2026-09-09 us-east-1: You must specify PredictiveScalingConfiguration. -> ROLLBACK_COMPLETE. pass template CREATE_COMPLETE; omission bench 2026-11-26 us-east-1: pass template without AWS::AutoScaling::ScalingPolicy.PredictiveScalingConfiguration -> ROLLBACK_COMPLETE with \"You must specify PredictiveScalingConfiguration.\""
   expect: "You must specify PredictiveScalingConfiguration"
 addedOn: 2026-09-09
+omissionFails:
+  - "AWS::AutoScaling::ScalingPolicy.PredictiveScalingConfiguration"

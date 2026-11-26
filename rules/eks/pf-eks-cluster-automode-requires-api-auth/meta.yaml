@@ -8,6 +8,9 @@ constraintSource: https://docs.aws.amazon.com/eks/latest/userguide/automode-get-
 upstream: none
 repro:
   method: real-deploy
-  evidence: "bench 2026-09-25 us-east-1: Auto Mode fully enabled with no AccessConfig at all (CloudFormation defaults AuthenticationMode to CONFIG_MAP) -> ROLLBACK_COMPLETE, \"When EKS Auto Mode is enabled, you must use an EKS access config authentication mode of API_AND_CONFIG_MAP or API\" (HandlerErrorCode: InvalidRequest); adding AccessConfig.AuthenticationMode API reaches the next check. fail-only, no cluster created."
+  evidence: "bench 2026-09-25 us-east-1: Auto Mode fully enabled with no AccessConfig at all (CloudFormation defaults AuthenticationMode to CONFIG_MAP) -> ROLLBACK_COMPLETE, \"When EKS Auto Mode is enabled, you must use an EKS access config authentication mode of API_AND_CONFIG_MAP or API\" (HandlerErrorCode: InvalidRequest); adding AccessConfig.AuthenticationMode API reaches the next check. fail-only, no cluster created; omission bench 2026-11-26 us-east-1: pass template without AWS::EKS::Cluster.AccessConfig -> ROLLBACK_COMPLETE with \"When EKS Auto Mode is enabled, you must use an EKS access config authentication mode of API_AND_CONFIG_MAP or API\"; omission bench 2026-11-26 us-east-1: pass template without AWS::EKS::Cluster.AccessConfig.AuthenticationMode -> ROLLBACK_COMPLETE with \"When EKS Auto Mode is enabled, you must use an EKS access config authentication mode of API_AND_CONFIG_MAP or API\""
   expect: "When EKS Auto Mode is enabled, you must use an EKS access config authentication mode of API_AND_CONFIG_MAP or API"
 addedOn: 2026-09-25
+omissionFails:
+  - "AWS::EKS::Cluster.AccessConfig"
+  - "AWS::EKS::Cluster.AccessConfig.AuthenticationMode"

@@ -8,6 +8,8 @@ constraintSource: https://docs.aws.amazon.com/glue/latest/webapi/API_CreateTrigg
 upstream: none
 repro:
   method: real-deploy
-  evidence: "bench 2026-09-14 us-east-1: fail template (Type SCHEDULED, no Schedule) -> \"Schedule cannot be null or empty\" (ROLLBACK_COMPLETE); pass template (same trigger with Schedule cron(0 10 1 * ? 2099), StartOnCreation false so it is created deactivated and never fires) -> CREATE_COMPLETE"
+  evidence: "bench 2026-09-14 us-east-1: fail template (Type SCHEDULED, no Schedule) -> \"Schedule cannot be null or empty\" (ROLLBACK_COMPLETE); pass template (same trigger with Schedule cron(0 10 1 * ? 2099), StartOnCreation false so it is created deactivated and never fires) -> CREATE_COMPLETE; omission bench 2026-11-26 us-east-1: pass template without AWS::Glue::Trigger.Schedule -> ROLLBACK_COMPLETE with \"Schedule cannot be null or empty\""
   expect: "Schedule cannot be null or empty"
 addedOn: 2026-09-14
+omissionFails:
+  - "AWS::Glue::Trigger.Schedule"

@@ -8,6 +8,8 @@ constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateR
 upstream: none
 repro:
   method: real-deploy
-  evidence: "bench 2026-09-08 us-east-1: fail template -> \"AuthorizerUri is a required field in an Authorizer\" (ROLLBACK_COMPLETE)"
+  evidence: "bench 2026-09-08 us-east-1: fail template -> \"AuthorizerUri is a required field in an Authorizer\" (ROLLBACK_COMPLETE); omission bench 2026-11-26 us-east-1: pass template without AWS::ApiGatewayV2::Authorizer.AuthorizerUri -> ROLLBACK_COMPLETE with \"AuthorizerUri is a required field in an Authorizer\""
   expect: "AuthorizerUri is a required field in an Authorizer"
 addedOn: 2026-09-08
+omissionFails:
+  - "AWS::ApiGatewayV2::Authorizer.AuthorizerUri"

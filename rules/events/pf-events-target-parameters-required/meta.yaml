@@ -8,6 +8,8 @@ upstream: none
 benchRegion: us-east-1
 repro:
   method: real-deploy
-  evidence: "bench 2026-09-07 us-east-1: an ECS cluster target with no EcsParameters -> ROLLBACK_COMPLETE \"Parameter(s) EcsParameters must be specified for target: t1\". Batch behaves the same, and an sqs .fifo target without SqsParameters gives \"Parameter(s) SqsParameters must be specified for target: t1\" (the same queue with SqsParameters.MessageGroupId is accepted). Measured the same day via events:PutTargets. A Kinesis stream target without KinesisParameters is accepted, so it is not reported."
+  evidence: "bench 2026-09-07 us-east-1: an ECS cluster target with no EcsParameters -> ROLLBACK_COMPLETE \"Parameter(s) EcsParameters must be specified for target: t1\". Batch behaves the same, and an sqs .fifo target without SqsParameters gives \"Parameter(s) SqsParameters must be specified for target: t1\" (the same queue with SqsParameters.MessageGroupId is accepted). Measured the same day via events:PutTargets. A Kinesis stream target without KinesisParameters is accepted, so it is not reported; omission bench 2026-11-26 us-east-1: pass template without AWS::Events::Rule.Targets.*.EcsParameters -> ROLLBACK_COMPLETE with \"Parameter(s) EcsParameters must be specified for target: t1.\""
   expect: "Parameter(s) EcsParameters must be specified for target: t1"
 addedOn: 2026-09-07
+omissionFails:
+  - "AWS::Events::Rule.Targets.*.EcsParameters"

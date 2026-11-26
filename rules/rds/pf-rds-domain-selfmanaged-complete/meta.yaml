@@ -8,6 +8,10 @@ constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateR
 upstream: none
 repro:
   method: real-deploy
-  evidence: "bench 2026-11-25 us-east-1: sqlserver-ex with DomainFqdn and DomainDnsIps but no DomainOu/DomainAuthSecretArn -> \"Ensure all of the self-managed Active Directory parameters have been passed in.\" (ROLLBACK_COMPLETE). Pass not deployed (needs a reachable domain)."
+  evidence: "bench 2026-11-25 us-east-1: sqlserver-ex with DomainFqdn and DomainDnsIps but no DomainOu/DomainAuthSecretArn -> \"Ensure all of the self-managed Active Directory parameters have been passed in.\" (ROLLBACK_COMPLETE). Pass not deployed (needs a reachable domain); omission bench 2026-11-26 us-east-1: pass template without AWS::RDS::DBInstance.DomainOu -> ROLLBACK_COMPLETE with \"Ensure all of the self-managed Active Directory parameters have been passed in.\"; omission bench 2026-11-26 us-east-1: pass template without AWS::RDS::DBInstance.DomainAuthSecretArn -> ROLLBACK_COMPLETE with \"Ensure all of the self-managed Active Directory parameters have been passed in.\"; omission bench 2026-11-26 us-east-1: pass template without AWS::RDS::DBInstance.DomainDnsIps -> ROLLBACK_COMPLETE with \"Ensure all of the self-managed Active Directory parameters have been passed in.\""
   expect: "Ensure all of the self-managed Active Directory parameters have been passed in"
 addedOn: 2026-11-25
+omissionFails:
+  - "AWS::RDS::DBInstance.DomainOu"
+  - "AWS::RDS::DBInstance.DomainAuthSecretArn"
+  - "AWS::RDS::DBInstance.DomainDnsIps"

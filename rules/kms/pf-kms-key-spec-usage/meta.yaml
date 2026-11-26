@@ -7,6 +7,9 @@ constraintSource: https://docs.aws.amazon.com/kms/latest/APIReference/API_Create
 upstream: none
 repro:
   method: real-deploy
-  evidence: "bench 2026-09-05 ap-northeast-1: fail template -> ROLLBACK_COMPLETE with \"KeyUsage ENCRYPT_DECRYPT is not compatible with KeySpec HMAC_256\"; pass template -> CREATE_COMPLETE"
+  evidence: "bench 2026-09-05 ap-northeast-1: fail template -> ROLLBACK_COMPLETE with \"KeyUsage ENCRYPT_DECRYPT is not compatible with KeySpec HMAC_256\"; pass template -> CREATE_COMPLETE; omission bench 2026-11-26 ap-northeast-1: pass template without AWS::KMS::Key.KeySpec -> ROLLBACK_COMPLETE with \"KeyUsage GENERATE_VERIFY_MAC is not compatible with KeySpec SYMMETRIC_DEFAULT\"; omission bench 2026-11-26 ap-northeast-1: pass template without AWS::KMS::Key.KeyUsage -> ROLLBACK_COMPLETE with \"KeyUsage ENCRYPT_DECRYPT is not compatible with KeySpec HMAC_256\""
   expect: "KeyUsage ENCRYPT_DECRYPT is not compatible with KeySpec HMAC_256"
 addedOn: 2026-09-05
+omissionFails:
+  - "AWS::KMS::Key.KeySpec"
+  - "AWS::KMS::Key.KeyUsage"

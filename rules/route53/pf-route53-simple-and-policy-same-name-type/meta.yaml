@@ -8,6 +8,8 @@ constraintSource: https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/rout
 upstream: none
 repro:
   method: real-deploy
-  evidence: "bench 2026-09-10 us-east-1: fail template -> [RRSet with DNS name www.cdkpf-example.com., type A, SetIdentifier s1 cannot be created as a non-weighted set exists with the same name and type.] (ROLLBACK_COMPLETE)"
+  evidence: "bench 2026-09-10 us-east-1: fail template -> [RRSet with DNS name www.cdkpf-example.com., type A, SetIdentifier s1 cannot be created as a non-weighted set exists with the same name and type.] (ROLLBACK_COMPLETE); omission bench 2026-11-26 us-east-1: pass template without AWS::Route53::RecordSetGroup.RecordSets.*.Weight -> ROLLBACK_COMPLETE with \"Invalid request: Expected exactly one of [Weight, Region, Failover, GeoLocation, MultiValueAnswer, GeoProximityLocation, CidrRoutingConfig, or AZAffinity], b...\""
   expect: "type A, SetIdentifier s1 cannot be created as a non-weighted set exists with the same name and type"
 addedOn: 2026-09-10
+omissionFails:
+  - "AWS::Route53::RecordSetGroup.RecordSets.*.Weight"

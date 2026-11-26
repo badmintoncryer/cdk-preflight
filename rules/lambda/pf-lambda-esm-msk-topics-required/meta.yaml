@@ -8,6 +8,8 @@ benchRegion: us-east-1
 upstream: none
 repro:
   method: real-deploy
-  evidence: 'CreateEventSourceMapping (us-east-1, 2026-09-07): Required ''topics'' parameter is missing.'
+  evidence: "CreateEventSourceMapping (us-east-1, 2026-09-07): Required 'topics' parameter is missing; omission bench 2026-11-26 us-east-1: pass template without AWS::Lambda::EventSourceMapping.Topics -> ROLLBACK_COMPLETE with \"Invalid request provided: Required 'topics' parameter is missing.\""
   expect: "Required 'topics' parameter is missing"
 addedOn: 2026-09-07
+omissionFails:
+  - "AWS::Lambda::EventSourceMapping.Topics"

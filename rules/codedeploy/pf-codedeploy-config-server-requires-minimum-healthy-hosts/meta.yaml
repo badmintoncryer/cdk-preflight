@@ -8,6 +8,8 @@ constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateR
 upstream: none
 repro:
   method: real-deploy
-  evidence: "bench 2026-09-14 us-east-1: ComputePlatform Server with no MinimumHealthyHosts -> \"minimum healthy hosts argument is missing\" (ROLLBACK_COMPLETE); pass the same with MinimumHealthyHosts FLEET_PERCENT 75 -> CREATE_COMPLETE. api-probe 2026-09-14 us-east-1: omitting ComputePlatform altogether gives the same message, which is the Server default talking."
+  evidence: "bench 2026-09-14 us-east-1: ComputePlatform Server with no MinimumHealthyHosts -> \"minimum healthy hosts argument is missing\" (ROLLBACK_COMPLETE); pass the same with MinimumHealthyHosts FLEET_PERCENT 75 -> CREATE_COMPLETE. api-probe 2026-09-14 us-east-1: omitting ComputePlatform altogether gives the same message, which is the Server default talking; omission bench 2026-11-26 us-east-1: pass template without AWS::CodeDeploy::DeploymentConfig.MinimumHealthyHosts -> ROLLBACK_COMPLETE with \"minimum healthy hosts argument is missing\""
   expect: "minimum healthy hosts argument is missing"
 addedOn: 2026-09-14
+omissionFails:
+  - "AWS::CodeDeploy::DeploymentConfig.MinimumHealthyHosts"

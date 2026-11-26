@@ -8,6 +8,8 @@ constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateR
 upstream: none
 repro:
   method: real-deploy
-  evidence: "real-deploy 2026-09-12 us-east-1: Resource handler returned message: \"Request and Response mapping templates can not be supplied with provided resolver runtime.\" (RequestToken: 6ad5c0aa-9583-94e2-9fa5-e80338eac535, HandlerErrorCode: InvalidRequest)"
+  evidence: "real-deploy 2026-09-12 us-east-1: Resource handler returned message: \"Request and Response mapping templates can not be supplied with provided resolver runtime.\" (RequestToken: 6ad5c0aa-9583-94e2-9fa5-e80338eac535, HandlerErrorCode: InvalidRequest); omission bench 2026-11-26 us-east-1: pass template without AWS::AppSync::Resolver.Code -> ROLLBACK_COMPLETE with \"Code must be provided for the provided runtime.\""
   expect: "Request and Response mapping templates can not be supplied with provided resolver runtime"
 addedOn: 2026-09-12
+omissionFails:
+  - "AWS::AppSync::Resolver.Code"

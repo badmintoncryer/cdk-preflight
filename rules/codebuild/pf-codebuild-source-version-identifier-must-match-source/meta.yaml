@@ -8,6 +8,8 @@ constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateR
 upstream: none
 repro:
   method: real-deploy
-  evidence: "bench 2026-09-14 us-east-1: fail template (a SecondarySourceVersions entry naming SourceIdentifier \"s9\" on a project with no SecondarySources) -> \"Invalid input: secondary source identifier does not exist\" (ROLLBACK_COMPLETE); pass template (SecondarySources declaring \"s0\" and the version entry naming \"s0\") -> CREATE_COMPLETE. Only secondary sources count: CreateProject answers an entry pointing at the primary Source.SourceIdentifier with the same message."
+  evidence: "bench 2026-09-14 us-east-1: fail template (a SecondarySourceVersions entry naming SourceIdentifier \"s9\" on a project with no SecondarySources) -> \"Invalid input: secondary source identifier does not exist\" (ROLLBACK_COMPLETE); pass template (SecondarySources declaring \"s0\" and the version entry naming \"s0\") -> CREATE_COMPLETE. Only secondary sources count: CreateProject answers an entry pointing at the primary Source.SourceIdentifier with the same message; omission bench 2026-11-26 us-east-1: pass template without AWS::CodeBuild::Project.SecondarySources -> ROLLBACK_COMPLETE with \"Invalid input: secondary source identifier does not exist\""
   expect: "Invalid input: secondary source identifier does not exist"
 addedOn: 2026-09-14
+omissionFails:
+  - "AWS::CodeBuild::Project.SecondarySources"

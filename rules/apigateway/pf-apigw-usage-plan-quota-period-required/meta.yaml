@@ -8,6 +8,8 @@ constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateR
 upstream: none
 repro:
   method: real-deploy
-  evidence: "bench 2026-09-08 us-east-1: fail template -> \"Invalid Usage Plan quota period specified. Must be one of [DAY, WEEK, MONTH]\" (ROLLBACK_COMPLETE)"
+  evidence: "bench 2026-09-08 us-east-1: fail template -> \"Invalid Usage Plan quota period specified. Must be one of [DAY, WEEK, MONTH]\" (ROLLBACK_COMPLETE); omission bench 2026-11-26 us-east-1: pass template without AWS::ApiGateway::UsagePlan.Quota.Period -> ROLLBACK_COMPLETE with \"Invalid Usage Plan quota period specified. Must be one of [DAY, WEEK, MONTH]\""
   expect: "Invalid Usage Plan quota period specified. Must be one of"
 addedOn: 2026-09-08
+omissionFails:
+  - "AWS::ApiGateway::UsagePlan.Quota.Period"

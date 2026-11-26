@@ -8,6 +8,8 @@ constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateR
 upstream: none
 repro:
   method: real-deploy
-  evidence: "bench 2026-09-14 us-east-1: fail template (one SecondaryArtifacts entry with Type S3 and a Location but no ArtifactIdentifier) -> \"Invalid input: artifactIdentifier is required for secondary artifacts\" (ROLLBACK_COMPLETE); pass template (the same entry carrying ArtifactIdentifier \"a0\") -> CREATE_COMPLETE."
+  evidence: "bench 2026-09-14 us-east-1: fail template (one SecondaryArtifacts entry with Type S3 and a Location but no ArtifactIdentifier) -> \"Invalid input: artifactIdentifier is required for secondary artifacts\" (ROLLBACK_COMPLETE); pass template (the same entry carrying ArtifactIdentifier \"a0\") -> CREATE_COMPLETE; omission bench 2026-11-26 us-east-1: pass template without AWS::CodeBuild::Project.SecondaryArtifacts.*.ArtifactIdentifier -> ROLLBACK_COMPLETE with \"Invalid input: artifactIdentifier is required for secondary artifacts\""
   expect: "Invalid input: artifactIdentifier is required for secondary artifacts"
 addedOn: 2026-09-14
+omissionFails:
+  - "AWS::CodeBuild::Project.SecondaryArtifacts.*.ArtifactIdentifier"

@@ -7,6 +7,8 @@ constraintSource: https://docs.aws.amazon.com/firehose/latest/dev/create-destina
 upstream: none
 repro:
   method: real-deploy
-  evidence: "bench 2026-09-10 ap-northeast-1: User must be provided. -> ROLLBACK_COMPLETE. api 2026-09-10 us-east-1 CreateDeliveryStream: SnowflakeDestinationConfiguration without User -> InvalidArgumentException \"User must be provided.\" Benched fail-only: the pass fixture carries a placeholder private key."
+  evidence: "bench 2026-09-10 ap-northeast-1: User must be provided. -> ROLLBACK_COMPLETE. api 2026-09-10 us-east-1 CreateDeliveryStream: SnowflakeDestinationConfiguration without User -> InvalidArgumentException \"User must be provided.\" Benched fail-only: the pass fixture carries a placeholder private key; omission bench 2026-11-26 ap-northeast-1: pass template without AWS::KinesisFirehose::DeliveryStream.SnowflakeDestinationConfiguration.User -> ROLLBACK_COMPLETE with \"User must be provided.\""
   expect: "User must be provided"
 addedOn: 2026-09-10
+omissionFails:
+  - "AWS::KinesisFirehose::DeliveryStream.SnowflakeDestinationConfiguration.User"

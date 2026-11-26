@@ -8,6 +8,8 @@ constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateR
 upstream: none
 repro:
   method: real-deploy
-  evidence: "bench 2026-09-08 us-east-1: fail -> ROLLBACK_COMPLETE, \"Invalid request provided: You cannot specify both ReadCapacityUnits and ReadCapacityAutoScalingSettings at the same time for one replica or GSI.\"; pass -> CREATE_COMPLETE."
+  evidence: "bench 2026-09-08 us-east-1: fail -> ROLLBACK_COMPLETE, \"Invalid request provided: You cannot specify both ReadCapacityUnits and ReadCapacityAutoScalingSettings at the same time for one replica or GSI.\"; pass -> CREATE_COMPLETE; omission bench 2026-11-26 us-east-1: pass template without AWS::DynamoDB::GlobalTable.Replicas.*.ReadProvisionedThroughputSettings.ReadCapacityUnits -> ROLLBACK_COMPLETE with \"Invalid request provided: You must specify ReadCapacityUnits or ReadCapacityAutoScalingSettings for each global table replica and each of its GSIs when Billi...\""
   expect: "You cannot specify both ReadCapacityUnits and ReadCapacityAutoScalingSettings at the same time for one replica or GSI"
 addedOn: 2026-09-08
+omissionFails:
+  - "AWS::DynamoDB::GlobalTable.Replicas.*.ReadProvisionedThroughputSettings.ReadCapacityUnits"

@@ -8,6 +8,8 @@ benchRegion: us-east-1
 upstream: none
 repro:
   method: real-deploy
-  evidence: 'CreateEventSourceMapping (us-east-1, 2026-09-07): Invalid parameters: databaseName'
+  evidence: "CreateEventSourceMapping (us-east-1, 2026-09-07): Invalid parameters: databaseName; omission bench 2026-11-26 us-east-1: pass template without AWS::Lambda::EventSourceMapping.DocumentDBEventSourceConfig.DatabaseName -> ROLLBACK_COMPLETE with \"Invalid request provided: Invalid parameters: databaseName\""
   expect: "Invalid parameters: databaseName"
 addedOn: 2026-09-07
+omissionFails:
+  - "AWS::Lambda::EventSourceMapping.DocumentDBEventSourceConfig.DatabaseName"

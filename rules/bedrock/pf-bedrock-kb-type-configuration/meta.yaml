@@ -8,6 +8,8 @@ constraintSource: https://docs.aws.amazon.com/bedrock/latest/APIReference/API_ag
 upstream: none
 repro:
   method: real-deploy
-  evidence: "bench 2026-09-06 us-east-1 (API/CFN probe): Type VECTOR without VectorKnowledgeBaseConfiguration -> CreateKnowledgeBase 400 ValidationException: VectorKnowledgeBaseConfiguration is required when knowledgeBase type is VECTOR; same shape for KENDRA and SQL (MANAGED deploys without a block); verify-rule.sh 2026-09-06 us-east-1: fail ROLLBACK_COMPLETE, pass CREATE_COMPLETE and deleted. Log: bench/logs/pf-bedrock-kb-type-configuration.log"
+  evidence: "bench 2026-09-06 us-east-1 (API/CFN probe): Type VECTOR without VectorKnowledgeBaseConfiguration -> CreateKnowledgeBase 400 ValidationException: VectorKnowledgeBaseConfiguration is required when knowledgeBase type is VECTOR; same shape for KENDRA and SQL (MANAGED deploys without a block); verify-rule.sh 2026-09-06 us-east-1: fail ROLLBACK_COMPLETE, pass CREATE_COMPLETE and deleted. Log: bench/logs/pf-bedrock-kb-type-configuration.log; omission bench 2026-11-26 us-east-1: pass template without AWS::Bedrock::KnowledgeBase.KnowledgeBaseConfiguration.VectorKnowledgeBaseConfiguration -> ROLLBACK_COMPLETE with \"VectorKnowledgeBaseConfiguration is required when knowledgeBase type is VECTOR.\""
   expect: "VectorKnowledgeBaseConfiguration is required when knowledgeBase type is VECTOR"
 addedOn: 2026-09-06
+omissionFails:
+  - "AWS::Bedrock::KnowledgeBase.KnowledgeBaseConfiguration.VectorKnowledgeBaseConfiguration"

@@ -8,6 +8,8 @@ constraintSource: https://docs.aws.amazon.com/vpc-lattice/latest/APIReference/AP
 upstream: none
 repro:
   method: real-deploy
-  evidence: "bench 2026-10-18 us-east-1 (#363 c4/verify.sh): fail SINGLE without ResourceConfigurationDefinition -> ROLLBACK_COMPLETE (Missing expected resourceConfigurationDefinition for type SINGLE); pass SINGLE with IpResource 172.31.<n>.10 (one address per stack) -> CREATE_COMPLETE."
+  evidence: "bench 2026-10-18 us-east-1 (#363 c4/verify.sh): fail SINGLE without ResourceConfigurationDefinition -> ROLLBACK_COMPLETE (Missing expected resourceConfigurationDefinition for type SINGLE); pass SINGLE with IpResource 172.31.<n>.10 (one address per stack) -> CREATE_COMPLETE; omission bench 2026-11-26 us-east-1: pass template without AWS::VpcLattice::ResourceConfiguration.ResourceConfigurationDefinition -> ROLLBACK_COMPLETE with \"Missing expected resourceConfigurationDefinition for type SINGLE\""
   expect: "Missing expected resourceConfigurationDefinition for type SINGLE"
 addedOn: 2026-10-18
+omissionFails:
+  - "AWS::VpcLattice::ResourceConfiguration.ResourceConfigurationDefinition"

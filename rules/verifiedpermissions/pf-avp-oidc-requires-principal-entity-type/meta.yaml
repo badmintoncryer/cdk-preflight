@@ -8,6 +8,8 @@ constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide
 upstream: none
 repro:
   method: real-deploy
-  evidence: "bench 2026-09-26 us-east-1: fail -> ROLLBACK_COMPLETE, \"Invalid PrincipalEntityType, must not be empty (Service: VerifiedPermissions, Status Code: 400).\"; pass (the same identity source with PrincipalEntityType added) -> CREATE_COMPLETE."
+  evidence: "bench 2026-09-26 us-east-1: fail -> ROLLBACK_COMPLETE, \"Invalid PrincipalEntityType, must not be empty (Service: VerifiedPermissions, Status Code: 400).\"; pass (the same identity source with PrincipalEntityType added) -> CREATE_COMPLETE; omission bench 2026-11-26 us-east-1: pass template without AWS::VerifiedPermissions::IdentitySource.PrincipalEntityType -> ROLLBACK_COMPLETE with \"Invalid PrincipalEntityType, must not be empty\""
   expect: "Invalid PrincipalEntityType, must not be empty"
 addedOn: 2026-09-26
+omissionFails:
+  - "AWS::VerifiedPermissions::IdentitySource.PrincipalEntityType"

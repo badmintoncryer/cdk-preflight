@@ -8,6 +8,8 @@ constraintSource: https://docs.aws.amazon.com/batch/latest/APIReference/API_EksP
 upstream: none
 repro:
   method: real-deploy
-  evidence: "bench 2026-09-12 us-east-1: fail template -> \"Containers must be provided for Batch on EKS jobs.\" (ROLLBACK_COMPLETE); pass template CREATE_COMPLETE."
+  evidence: "bench 2026-09-12 us-east-1: fail template -> \"Containers must be provided for Batch on EKS jobs.\" (ROLLBACK_COMPLETE); pass template CREATE_COMPLETE; omission bench 2026-11-26 us-east-1: pass template without AWS::Batch::JobDefinition.EksProperties.PodProperties.Containers -> ROLLBACK_COMPLETE with \"Error executing request, Exception : Containers must be provided for Batch on EKS jobs., RequestId: 2f66a905-5531-4411-88b0-842305f5706b\""
   expect: "Containers must be provided for Batch on EKS jobs"
 addedOn: 2026-09-12
+omissionFails:
+  - "AWS::Batch::JobDefinition.EksProperties.PodProperties.Containers"

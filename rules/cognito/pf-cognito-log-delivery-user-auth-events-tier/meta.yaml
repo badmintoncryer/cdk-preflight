@@ -8,6 +8,8 @@ upstream: none
 benchRegion: us-east-1
 repro:
   method: real-deploy
-  evidence: "bench 2026-09-08 us-east-1: fail template -> ROLLBACK_COMPLETE with \"The following feature is not available for the ESSENTIALS pricing tier configured: Log Streaming\"; pass template -> CREATE_COMPLETE"
+  evidence: "bench 2026-09-08 us-east-1: fail template -> ROLLBACK_COMPLETE with \"The following feature is not available for the ESSENTIALS pricing tier configured: Log Streaming\"; pass template -> CREATE_COMPLETE; omission bench 2026-11-26 us-east-1: pass template without AWS::Cognito::UserPool.UserPoolTier -> ROLLBACK_COMPLETE with \"The following feature is not available for the ESSENTIALS pricing tier configured: Log Streaming\""
   expect: "The following feature is not available for the ESSENTIALS pricing tier configured: Log Streaming"
 addedOn: 2026-09-08
+omissionFails:
+  - "AWS::Cognito::UserPool.UserPoolTier"

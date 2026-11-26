@@ -7,6 +7,8 @@ constraintSource: https://docs.aws.amazon.com/step-functions/latest/apireference
 upstream: none
 repro:
   method: real-deploy
-  evidence: "bench 2026-09-05 ap-northeast-1: fail template -> ROLLBACK_COMPLETE with \"Invalid Encryption Configuration: Must set a valid kmsKeyId.\"; pass template -> CREATE_COMPLETE"
+  evidence: "bench 2026-09-05 ap-northeast-1: fail template -> ROLLBACK_COMPLETE with \"Invalid Encryption Configuration: Must set a valid kmsKeyId.\"; pass template -> CREATE_COMPLETE; omission bench 2026-11-26 ap-northeast-1: pass template without AWS::StepFunctions::StateMachine.EncryptionConfiguration.KmsKeyId -> ROLLBACK_COMPLETE with \"Invalid Encryption Configuration: Must set a valid kmsKeyId.\""
   expect: "Invalid Encryption Configuration: Must set a valid kmsKeyId"
 addedOn: 2026-09-05
+omissionFails:
+  - "AWS::StepFunctions::StateMachine.EncryptionConfiguration.KmsKeyId"

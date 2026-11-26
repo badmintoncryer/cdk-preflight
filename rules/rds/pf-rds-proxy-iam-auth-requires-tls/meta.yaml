@@ -8,6 +8,8 @@ upstream: none
 benchRegion: us-east-1
 repro:
   method: real-deploy
-  evidence: "bench 2026-09-08 us-east-1: fail fixture -> \"Must enable TLS, when IAM Auth is required\" ROLLBACK_COMPLETE"
+  evidence: "bench 2026-09-08 us-east-1: fail fixture -> \"Must enable TLS, when IAM Auth is required\" ROLLBACK_COMPLETE; omission bench 2026-11-26 us-east-1: pass template without AWS::RDS::DBProxy.RequireTLS -> ROLLBACK_COMPLETE with \"Must enable TLS, when IAM Auth is required\""
   expect: "Must enable TLS, when IAM Auth is required"
 addedOn: 2026-09-08
+omissionFails:
+  - "AWS::RDS::DBProxy.RequireTLS"

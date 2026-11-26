@@ -8,6 +8,9 @@ benchRegion: us-east-1
 upstream: none
 repro:
   method: real-deploy
-  evidence: "bench 2026-09-09 us-east-1: the fail template rolled back with \"A protocol must be specified\"; the pass template reached CREATE_COMPLETE."
+  evidence: "bench 2026-09-09 us-east-1: the fail template rolled back with \"A protocol must be specified\"; the pass template reached CREATE_COMPLETE; omission bench 2026-11-26 us-east-1: pass template without AWS::ElasticLoadBalancingV2::TargetGroup.Protocol -> ROLLBACK_COMPLETE with \"A protocol must be specified\"; omission bench 2026-11-26 us-east-1: pass template without AWS::ElasticLoadBalancingV2::TargetGroup.Port -> ROLLBACK_COMPLETE with \"A port must be specified\""
   expect: "A protocol must be specified"
 addedOn: 2026-09-08
+omissionFails:
+  - "AWS::ElasticLoadBalancingV2::TargetGroup.Protocol"
+  - "AWS::ElasticLoadBalancingV2::TargetGroup.Port"

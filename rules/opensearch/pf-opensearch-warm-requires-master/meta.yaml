@@ -8,6 +8,8 @@ constraintSource: https://docs.aws.amazon.com/opensearch-service/latest/develope
 upstream: none
 repro:
   method: real-deploy
-  evidence: "bench 2026-09-25 us-east-1: fail (WarmEnabled with ultrawarm1.medium.search x2 and no dedicated masters) -> \"To use warm storage, your domain must have dedicated master nodes.\" (ROLLBACK_COMPLETE); pass (the same template plus 3 m6g.large.search masters) not deployed (--fail-only)."
+  evidence: "bench 2026-09-25 us-east-1: fail (WarmEnabled with ultrawarm1.medium.search x2 and no dedicated masters) -> \"To use warm storage, your domain must have dedicated master nodes.\" (ROLLBACK_COMPLETE); pass (the same template plus 3 m6g.large.search masters) not deployed (--fail-only); omission bench 2026-11-26 us-east-1: pass template without AWS::OpenSearchService::Domain.ClusterConfig.DedicatedMasterEnabled -> ROLLBACK_COMPLETE with \"Invalid request provided: DedicatedMasterEnabled must be set to True to specify the DedicatedMasterCount and DedicatedMasterType options.\""
   expect: "To use warm storage, your domain must have dedicated master nodes"
 addedOn: 2026-09-25
+omissionFails:
+  - "AWS::OpenSearchService::Domain.ClusterConfig.DedicatedMasterEnabled"

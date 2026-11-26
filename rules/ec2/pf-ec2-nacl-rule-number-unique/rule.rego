@@ -2,12 +2,12 @@ package cdk_preflight
 
 import rego.v1
 
-# Egress defaults to false, so an absent property takes the ingress table.
+# The direction is read only when Egress is written. An entry without Egress next
+# to an explicit ingress entry with the same number deployed (omission bench
+# 2026-11-26 ap-northeast-1: CREATE_COMPLETE), so an omitted Egress is not judged.
 _pf_ec2nre_egress(n) := e if {
 	e := coerce_to_bool(resolve(n, "Properties.Egress"))
 }
-
-_pf_ec2nre_egress(n) := false if _pf_ec2lib_absent(n, "Egress")
 
 _pf_ec2nre_key(n) := [acl, eg, num] if {
 	acl := resolve(n, "Properties.NetworkAclId")

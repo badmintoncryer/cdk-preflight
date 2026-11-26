@@ -8,6 +8,8 @@ constraintSource: https://docs.aws.amazon.com/bedrock/latest/APIReference/API_ag
 upstream: none
 repro:
   method: real-deploy
-  evidence: "bench 2026-09-06 us-east-1 (API/CFN probe): connection with Source Nope -> CloudFormation CREATE_FAILED: Prepare of AWS::Bedrock::Flow failed to stabilize. Validation messages: [The connection between the nodes 'Nope' and 'FlowOutputNode' references an unknown source node 'Nope'…]; unknown Target fails the same way; verify-rule.sh 2026-09-06 us-east-1: fail ROLLBACK_COMPLETE, pass CREATE_COMPLETE and deleted. Log: bench/logs/pf-bedrock-flow-connection-nodes.log"
+  evidence: "bench 2026-09-06 us-east-1 (API/CFN probe): connection with Source Nope -> CloudFormation CREATE_FAILED: Prepare of AWS::Bedrock::Flow failed to stabilize. Validation messages: [The connection between the nodes 'Nope' and 'FlowOutputNode' references an unknown source node 'Nope'…]; unknown Target fails the same way; verify-rule.sh 2026-09-06 us-east-1: fail ROLLBACK_COMPLETE, pass CREATE_COMPLETE and deleted. Log: bench/logs/pf-bedrock-flow-connection-nodes.log; omission bench 2026-11-26 us-east-1: pass template without AWS::Bedrock::Flow.Definition.Nodes -> ROLLBACK_COMPLETE with \"Prepare of AWS::Bedrock::Flow [5P3KD3ERSS] failed to stabilize. Validation messages: [The flow is missing a required Flow Input node. Add an Input node to de...\""
   expect: "failed to stabilize. Validation messages: [The connection between the nodes 'Nope' and 'FlowOutputNode' references an unknown source node 'Nope"
 addedOn: 2026-09-06
+omissionFails:
+  - "AWS::Bedrock::Flow.Definition.Nodes"

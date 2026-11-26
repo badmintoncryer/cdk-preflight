@@ -8,6 +8,8 @@ constraintSource: https://docs.aws.amazon.com/glue/latest/webapi/API_CreateTrigg
 upstream: none
 repro:
   method: real-deploy
-  evidence: "bench 2026-09-14 us-east-1: fail template (Type EVENT, no WorkflowName) -> \"Workflow name cannot be null or empty\" (ROLLBACK_COMPLETE); pass template (EVENT trigger in a workflow created by the same stack) -> CREATE_COMPLETE"
+  evidence: "bench 2026-09-14 us-east-1: fail template (Type EVENT, no WorkflowName) -> \"Workflow name cannot be null or empty\" (ROLLBACK_COMPLETE); pass template (EVENT trigger in a workflow created by the same stack) -> CREATE_COMPLETE; omission bench 2026-11-26 us-east-1: pass template without AWS::Glue::Trigger.WorkflowName -> ROLLBACK_COMPLETE with \"Workflow name cannot be null or empty\""
   expect: "Workflow name cannot be null or empty"
 addedOn: 2026-09-14
+omissionFails:
+  - "AWS::Glue::Trigger.WorkflowName"

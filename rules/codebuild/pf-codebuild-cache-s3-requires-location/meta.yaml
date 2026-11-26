@@ -8,6 +8,8 @@ constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateR
 upstream: none
 repro:
   method: real-deploy
-  evidence: "bench 2026-09-14 us-east-1: fail template (Cache.Type S3 with no Location) -> \"Invalid cache: location must be a valid S3 bucket, followed by slash and the prefix\" (ROLLBACK_COMPLETE); pass template (Cache.Type S3 with Location bucket/cache) -> CREATE_COMPLETE."
+  evidence: "bench 2026-09-14 us-east-1: fail template (Cache.Type S3 with no Location) -> \"Invalid cache: location must be a valid S3 bucket, followed by slash and the prefix\" (ROLLBACK_COMPLETE); pass template (Cache.Type S3 with Location bucket/cache) -> CREATE_COMPLETE; omission bench 2026-11-26 us-east-1: pass template without AWS::CodeBuild::Project.Cache.Location -> ROLLBACK_COMPLETE with \"Invalid cache: location must be a valid S3 bucket, followed by slash and the prefix\""
   expect: "Invalid cache: location must be a valid S3 bucket, followed by slash and the prefix"
 addedOn: 2026-09-14
+omissionFails:
+  - "AWS::CodeBuild::Project.Cache.Location"

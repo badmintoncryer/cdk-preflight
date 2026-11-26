@@ -8,6 +8,8 @@ constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide
 upstream: none
 repro:
   method: real-deploy
-  evidence: "bench 2026-09-14 us-east-1: OpenMonitoring.Prometheus with neither exporter -> \"You must specify at least one type of exporter, either nodeExporter or jmxExporter. ... 'openMonitoring'\" (ROLLBACK_COMPLETE); pass Prometheus with JmxExporter.EnabledInBroker true -> CREATE_COMPLETE"
+  evidence: "bench 2026-09-14 us-east-1: OpenMonitoring.Prometheus with neither exporter -> \"You must specify at least one type of exporter, either nodeExporter or jmxExporter. ... 'openMonitoring'\" (ROLLBACK_COMPLETE); pass Prometheus with JmxExporter.EnabledInBroker true -> CREATE_COMPLETE; omission bench 2026-11-26 us-east-1: pass template without AWS::MSK::Cluster.OpenMonitoring.Prometheus.JmxExporter -> ROLLBACK_COMPLETE with \"[ClientRequestToken: 0f2dd0fe-b6b6-f22e-c09d-bba81a60db4a] You must specify at least one type of exporter, either nodeExporter or jmxExporter.\""
   expect: "You must specify at least one type of exporter, either nodeExporter or jmxExporter"
 addedOn: 2026-09-14
+omissionFails:
+  - "AWS::MSK::Cluster.OpenMonitoring.Prometheus.JmxExporter"

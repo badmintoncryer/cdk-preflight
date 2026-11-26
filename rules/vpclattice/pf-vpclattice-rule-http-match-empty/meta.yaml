@@ -8,6 +8,8 @@ constraintSource: https://docs.aws.amazon.com/vpc-lattice/latest/APIReference/AP
 upstream: none
 repro:
   method: real-deploy
-  evidence: "bench 2026-10-18 us-east-1 (#363 c2/verify.sh): fail rule with Match.HttpMatch {} -> ROLLBACK_FAILED (At least one of method, pathMatch, headerMatches should be specified to be valid.); pass HttpMatch Method GET -> CREATE_COMPLETE."
+  evidence: "bench 2026-10-18 us-east-1 (#363 c2/verify.sh): fail rule with Match.HttpMatch {} -> ROLLBACK_FAILED (At least one of method, pathMatch, headerMatches should be specified to be valid.); pass HttpMatch Method GET -> CREATE_COMPLETE; omission bench 2026-11-26 us-east-1: pass template without AWS::VpcLattice::Rule.Match.HttpMatch.Method -> ROLLBACK_COMPLETE with \"At least one of method, pathMatch, headerMatches should be specified to be valid.\""
   expect: "At least one of method, pathMatch, headerMatches should be specified"
 addedOn: 2026-10-18
+omissionFails:
+  - "AWS::VpcLattice::Rule.Match.HttpMatch.Method"

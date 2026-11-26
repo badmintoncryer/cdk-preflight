@@ -7,6 +7,8 @@ constraintSource: https://docs.aws.amazon.com/waf/latest/APIReference/API_Statem
 upstream: none
 repro:
   method: real-deploy
-  evidence: "bench 2026-09-05 ap-northeast-1: fail template -> ROLLBACK_COMPLETE with \"Error reason: EXACTLY_ONE_CONDITION_REQUIRED, field: STATEMENT, parameter: Statement\"; pass template -> CREATE_COMPLETE"
+  evidence: "bench 2026-09-05 ap-northeast-1: fail template -> ROLLBACK_COMPLETE with \"Error reason: EXACTLY_ONE_CONDITION_REQUIRED, field: STATEMENT, parameter: Statement\"; pass template -> CREATE_COMPLETE; omission bench 2026-11-26 ap-northeast-1: pass template without AWS::WAFv2::WebACL.Rules.*.Statement.GeoMatchStatement -> ROLLBACK_COMPLETE with \"Error reason: EXACTLY_ONE_CONDITION_REQUIRED, field: STATEMENT, parameter: Statement\""
   expect: "Error reason: EXACTLY_ONE_CONDITION_REQUIRED, field: STATEMENT, parameter: Statement"
 addedOn: 2026-09-05
+omissionFails:
+  - "AWS::WAFv2::WebACL.Rules.*.Statement.GeoMatchStatement"

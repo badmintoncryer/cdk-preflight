@@ -8,6 +8,8 @@ constraintSource: https://docs.aws.amazon.com/glue/latest/webapi/API_CreateTrigg
 upstream: none
 repro:
   method: real-deploy
-  evidence: "bench 2026-09-14 us-east-1: fail template (Type CONDITIONAL, no Predicate) -> \"Predicate cannot be null or empty\" (ROLLBACK_COMPLETE); pass template (one condition on an upstream job) -> CREATE_COMPLETE"
+  evidence: "bench 2026-09-14 us-east-1: fail template (Type CONDITIONAL, no Predicate) -> \"Predicate cannot be null or empty\" (ROLLBACK_COMPLETE); pass template (one condition on an upstream job) -> CREATE_COMPLETE; omission bench 2026-11-26 us-east-1: pass template without AWS::Glue::Trigger.Predicate -> ROLLBACK_COMPLETE with \"Predicate cannot be null or empty\""
   expect: "Predicate cannot be null or empty"
 addedOn: 2026-09-14
+omissionFails:
+  - "AWS::Glue::Trigger.Predicate"
