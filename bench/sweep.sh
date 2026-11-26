@@ -3,6 +3,9 @@
 # 回収しきれなかったものは "LEFTOVER:" 行で報告する（report.sh が拾う）。
 set -u
 
+# verify-rule.sh と同じ一覧（#372）
+BILLED_TYPES='^AWS::(EKS::(Cluster|Nodegroup)|MSK::(Cluster|ServerlessCluster)|ElastiCache::(CacheCluster|ReplicationGroup|ServerlessCache)|MemoryDB::Cluster|OpenSearchService::Domain|Elasticsearch::Domain|Redshift::Cluster|RDS::(DBCluster|DBInstance)|DocDB::(DBCluster|DBInstance)|Neptune::(DBCluster|DBInstance)|EC2::(NatGateway|Instance)|Route53RecoveryControl::Cluster|DMS::ReplicationInstance)$'
+
 # 失敗した回収の理由。LEFTOVER 行に載せる（載せないと次の分岐を足すのに実行のやり直しが要る）
 RECLAIM_ERR=$(mktemp)
 trap 'rm -f "$RECLAIM_ERR"' EXIT
@@ -383,7 +386,13 @@ for region in ap-northeast-1 us-east-1 us-west-2; do
     if ! aws cloudformation wait stack-delete-complete --stack-name "$s" --region "$region" 2>/dev/null; then
       ids=$(aws cloudformation describe-stack-resources --stack-name "$s" --region "$region" \
         --query "StackResources[?ResourceStatus=='DELETE_FAILED'].LogicalResourceId" --output text 2>/dev/null)
-      if [ -n "$ids" ] && [ "$ids" != "None" ]; then
+      # 時間課金の型は retain で切り離さない（孤児が課金され続け、スタック一覧から辿れなくなる。#372）
+      billed=$(aws cloudformation describe-stack-resources --stack-name "$s" --region "$region" \
+        --query "StackResources[?ResourceStatus=='DELETE_FAILED'].ResourceType" --output text 2>/dev/null |
+        tr '\t' '\n' | grep -E "$BILLED_TYPES" | sort -u | tr '\n' ' ')
+      if [ -n "$billed" ]; then
+        echo "LEFTOVER: $s ($region) stuck with hourly-billed resources, not retained: $billed"
+      elif [ -n "$ids" ] && [ "$ids" != "None" ]; then
         aws cloudformation delete-stack --stack-name "$s" --region "$region" --retain-resources $ids 2>/dev/null
         if aws cloudformation wait stack-delete-complete --stack-name "$s" --region "$region" 2>/dev/null; then
           echo "LEFTOVER: $s ($region) deleted with retained resources: $ids"
