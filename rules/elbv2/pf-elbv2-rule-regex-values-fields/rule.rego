@@ -13,6 +13,6 @@ violation contains make_diag_full("pf-elbv2-rule-regex-values-fields", "ERROR", 
 	some name in _pf_elb_rules
 	some c in _pf_elb_conditions(name)
 	count(_pf_elb_cond_of(c.value, "RegexValues")) > 0
-	f := object.get(c.value, "Field", "")
+	f := _pf_oval(c.value, "Field")
 	not f in {"http-header", "host-header", "path-pattern"}
 }

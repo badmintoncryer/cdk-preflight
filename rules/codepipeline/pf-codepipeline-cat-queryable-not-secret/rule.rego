@@ -13,8 +13,8 @@ violation contains make_diag_full("pf-codepipeline-cat-queryable-not-secret", "E
 	some i, p in object.get(_pf_cplib_props(name), "ConfigurationProperties", [])
 	_pf_cplib_plain(p)
 	object.get(p, "Queryable", false) == true
-	secret := object.get(p, "Secret", false)
-	required := object.get(p, "Required", false)
+	secret := _pf_oval(p, "Secret")
+	required := _pf_oval(p, "Required")
 	not _pf_cplib_queryable_ok(secret, required)
-	pn := object.get(p, "Name", "")
+	pn := _pf_oval(p, "Name")
 }

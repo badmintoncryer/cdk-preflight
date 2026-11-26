@@ -22,7 +22,7 @@ violation contains make_diag_full("pf-s3-lifecycle-tag-key-duplicate", "ERROR", 
 	i < j
 	is_object(tags[i])
 	is_object(tags[j])
-	key := object.get(tags[i], "Key", "")
+	key := _pf_oval(tags[i], "Key")
 	key != ""
-	key == object.get(tags[j], "Key", "")
+	key == _pf_oval(tags[j], "Key")
 }

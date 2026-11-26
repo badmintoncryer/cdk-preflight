@@ -14,6 +14,6 @@ violation contains make_diag_full("pf-codepipeline-source-action-first-stage-onl
 	some ai, a in _pf_cplib_actions(st)
 	_pf_cplib_plain(a)
 	_pf_cplib_category(a) == "Source"
-	an := object.get(a, "Name", "")
-	sn := object.get(st, "Name", "")
+	an := _pf_oval(a, "Name")
+	sn := _pf_oval(st, "Name")
 }

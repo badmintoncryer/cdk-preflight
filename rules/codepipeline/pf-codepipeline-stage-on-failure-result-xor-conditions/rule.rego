@@ -14,5 +14,5 @@ violation contains make_diag_full("pf-codepipeline-stage-on-failure-result-xor-c
 	_pf_cplib_plain(of)
 	not _pf_cplib_absent(of, "Result")
 	not _pf_cplib_absent(of, "Conditions")
-	sn := object.get(st, "Name", "")
+	sn := _pf_oval(st, "Name")
 }

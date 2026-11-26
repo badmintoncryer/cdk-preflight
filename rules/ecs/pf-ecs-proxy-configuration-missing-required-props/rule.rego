@@ -9,7 +9,7 @@ violation contains make_diag_full("pf-ecs-proxy-configuration-missing-required-p
 	"https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task_definition_parameters.html") if {
 	some name in resources_of_type("AWS::ECS::TaskDefinition")
 	pc := _pf_ecs_get(name, "ProxyConfiguration")
-	object.get(pc, "Type", "APPMESH") == "APPMESH"
+	_pf_oval(pc, "Type") == "APPMESH"
 	given := {n | some p in object.get(pc, "ProxyConfigurationProperties", []); n := object.get(p, "Name", null)}
 	some req in {"ProxyIngressPort", "ProxyEgressPort", "AppPorts", "EgressIgnoredIPs"}
 	not req in given

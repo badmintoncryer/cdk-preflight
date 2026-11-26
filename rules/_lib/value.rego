@@ -105,3 +105,7 @@ _pf_json_size_min(doc) := n if {
 	markers := regex.find_n(`\{"__[a-z_]+":(?:"(?:[^"\\]|\\.)*"|[^{}"])*\}`, s, -1)
 	n := count(s) - sum([x | some m in markers; x := count(m) - 2])
 }
+
+# オブジェクト o のキー k の値。キーが無ければ未定義（object.get の既定値の代わり）。
+# 省略を「サービスの既定値が指定された」と読まずに、その判定ごと降りる。
+_pf_oval(o, k) := o[k] if is_object(o)

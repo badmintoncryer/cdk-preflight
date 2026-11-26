@@ -17,5 +17,5 @@ violation contains make_diag_full("pf-codepipeline-v1-action-provider", "ERROR",
 	prov := _pf_cplib_get(_pf_cplib_tid(a), "Provider")
 	_pf_cplib_lit(prov)
 	prov in _pf_cplib_v2_only_providers
-	an := object.get(a, "Name", "")
+	an := _pf_oval(a, "Name")
 }

@@ -12,6 +12,6 @@ violation contains make_diag_full("pf-elbv2-listener-alb-target-tg-listener-prot
 	_pf_elblatp_fix, _pf_elblatp_url) if {
 	some p in _pf_elb_listener_tgs
 	_pf_elb_tgtype(p.tg) == "alb"
-	proto := object.get(_pf_elb_props(p.listener), "Protocol", "")
+	proto := _pf_oval(_pf_elb_props(p.listener), "Protocol")
 	proto != "TCP"
 }

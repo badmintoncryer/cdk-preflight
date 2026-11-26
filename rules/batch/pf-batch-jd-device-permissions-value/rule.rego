@@ -4,7 +4,7 @@ import rego.v1
 
 violation contains make_diag_full("pf-batch-jd-device-permissions-value", "ERROR", name,
 	"Properties.ContainerProperties.LinuxParameters.Devices",
-	sprintf("%v is not a device permission (\"Invalid permission: %v for device %v\")", [p, p, object.get(d.value, "HostPath", "")]),
+	sprintf("%v is not a device permission (\"Invalid permission: %v for device %v\")", [p, p, _pf_oval(d.value, "HostPath")]),
 	"Use READ, WRITE or MKNOD",
 	"https://docs.aws.amazon.com/batch/latest/APIReference/API_Device.html") if {
 	some name in resources_of_type("AWS::Batch::JobDefinition")

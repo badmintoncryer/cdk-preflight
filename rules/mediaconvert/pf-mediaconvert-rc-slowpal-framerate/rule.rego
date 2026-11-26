@@ -17,7 +17,7 @@ violation contains make_diag_full("pf-mediaconvert-rc-slowpal-framerate", "ERROR
 	"Set FramerateControl to SPECIFIED with FramerateNumerator 25 and a FramerateDenominator, or set SlowPal to DISABLED", _pf_mc_rc_slowpal_framerate_url) if {
 	some rn in resources_of_type("AWS::MediaConvert::Preset")
 	st := _pf_mcsp_h264(rn)
-	fc := object.get(st, "FramerateControl", "INITIALIZE_FROM_SOURCE")
+	fc := _pf_oval(st, "FramerateControl")
 	is_string(fc)
 	fc != "SPECIFIED"
 }

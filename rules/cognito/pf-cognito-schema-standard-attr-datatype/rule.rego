@@ -15,7 +15,7 @@ violation contains make_diag_full("pf-cognito-schema-standard-attr-datatype", "E
 	some name in resources_of_type("AWS::Cognito::UserPool")
 	some a in flatten_list(name, "Properties.Schema")
 	is_object(a.value)
-	n := object.get(a.value, "Name", "")
+	n := _pf_oval(a.value, "Name")
 	want := _pf_coglib_std_attr_types[n]
 	dt := _pf_coglib_str(_pf_coglib_at(a.value, "AttributeDataType"))
 	dt != want

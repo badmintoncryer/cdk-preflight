@@ -10,7 +10,7 @@ violation contains make_diag_full("pf-cognito-managed-login-branding-asset-exten
 	some name in resources_of_type("AWS::Cognito::ManagedLoginBranding")
 	some a in flatten_list(name, "Properties.Assets")
 	is_object(a.value)
-	cat := object.get(a.value, "Category", "")
+	cat := _pf_oval(a.value, "Category")
 	object.get(a.value, "Extension", "") == "ICO"
 	cat != "FAVICON_ICO"
 }

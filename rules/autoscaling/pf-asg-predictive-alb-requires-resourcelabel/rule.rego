@@ -16,7 +16,7 @@ violation contains make_diag_full("pf-asg-predictive-alb-requires-resourcelabel"
 	some k in _pf_asgpar_keys
 	spec := object.get(s, k, null)
 	is_object(spec)
-	t := object.get(spec, "PredefinedMetricType", "")
+	t := _pf_oval(spec, "PredefinedMetricType")
 	startswith(t, "ALB")
 	object.get(spec, "ResourceLabel", "__pf_absent") == "__pf_absent"
 }

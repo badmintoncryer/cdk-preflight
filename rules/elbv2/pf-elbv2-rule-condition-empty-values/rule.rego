@@ -12,8 +12,8 @@ violation contains make_diag_full("pf-elbv2-rule-condition-empty-values", "ERROR
 	_pf_elbrce_fix, _pf_elbrce_url) if {
 	some name in _pf_elb_rules
 	some c in _pf_elb_conditions(name)
-	f := object.get(c.value, "Field", "")
-	cfg := object.get(_pf_elb_cond_config, f, "")
+	f := _pf_oval(c.value, "Field")
+	cfg := _pf_oval(_pf_elb_cond_config, f)
 	_pf_elb_ohas(c.value, cfg)
 	count(_pf_elb_cond_values(c.value)) == 0
 }

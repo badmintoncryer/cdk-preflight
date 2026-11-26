@@ -13,7 +13,7 @@ violation contains make_diag_full("pf-lambda-runtime-arn-manual-only", "ERROR", 
 	some name in _pf_lam_fn
 	rmc := _pf_lam_obj(_pf_lam_props(name), "RuntimeManagementConfig")
 	_pf_lam_has_key(rmc, "RuntimeVersionArn")
-	mode := object.get(rmc, "UpdateRuntimeOn", "Auto")
+	mode := _pf_oval(rmc, "UpdateRuntimeOn")
 	is_string(mode)
 	mode != "Manual"
 }

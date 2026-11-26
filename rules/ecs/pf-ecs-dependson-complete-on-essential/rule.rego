@@ -18,5 +18,5 @@ violation contains make_diag_full("pf-ecs-dependson-complete-on-essential", "ERR
 	_pf_ecs_lit(t)
 	some tc in _pf_ecs_containers(name)
 	object.get(tc.value, "Name", null) == t
-	object.get(tc.value, "Essential", true) == true
+	_pf_oval(tc.value, "Essential") == true
 }

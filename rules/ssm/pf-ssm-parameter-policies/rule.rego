@@ -52,7 +52,7 @@ violation contains make_diag_full("pf-ssm-parameter-policies", "ERROR", name,
 	some name in resources_of_type("AWS::SSM::Parameter")
 	some i, p in _pf_ssmpp_list(name)
 	is_object(p)
-	t := object.get(p, "Type", "")
+	t := _pf_oval(p, "Type")
 	not t in _pf_ssmpp_types
 }
 
@@ -63,7 +63,7 @@ violation contains make_diag_full("pf-ssm-parameter-policies", "ERROR", name,
 	some name in resources_of_type("AWS::SSM::Parameter")
 	some i, p in _pf_ssmpp_list(name)
 	is_object(p)
-	v := object.get(p, "Version", "")
+	v := _pf_oval(p, "Version")
 	v != "1.0"
 }
 
@@ -74,7 +74,7 @@ violation contains make_diag_full("pf-ssm-parameter-policies", "ERROR", name,
 	some name in resources_of_type("AWS::SSM::Parameter")
 	some i, p in _pf_ssmpp_list(name)
 	is_object(p)
-	object.get(p, "Type", "") in _pf_ssmpp_types
+	_pf_oval(p, "Type") in _pf_ssmpp_types
 	not is_object(object.get(p, "Attributes", null))
 }
 
@@ -141,7 +141,7 @@ violation contains make_diag_full("pf-ssm-parameter-policies", "ERROR", name,
 	some name in resources_of_type("AWS::SSM::Parameter")
 	some i, p in _pf_ssmpp_list(name)
 	is_object(p)
-	t := object.get(p, "Type", "")
+	t := _pf_oval(p, "Type")
 	some k in _pf_ssmpp_required[t]
 	a := _pf_ssmpp_attrs(p)
 	object.get(a, k, "__pf_absent") == "__pf_absent"
@@ -154,7 +154,7 @@ violation contains make_diag_full("pf-ssm-parameter-policies", "ERROR", name,
 	some name in resources_of_type("AWS::SSM::Parameter")
 	some i, p in _pf_ssmpp_list(name)
 	is_object(p)
-	t := object.get(p, "Type", "")
+	t := _pf_oval(p, "Type")
 	some k in ["Before", "After"]
 	k in _pf_ssmpp_required[t]
 	v := object.get(_pf_ssmpp_attrs(p), k, null)
@@ -180,7 +180,7 @@ violation contains make_diag_full("pf-ssm-parameter-policies", "ERROR", name,
 	some name in resources_of_type("AWS::SSM::Parameter")
 	some i, p in _pf_ssmpp_list(name)
 	is_object(p)
-	object.get(p, "Type", "") in ["ExpirationNotification", "NoChangeNotification"]
+	_pf_oval(p, "Type") in ["ExpirationNotification", "NoChangeNotification"]
 	u := object.get(_pf_ssmpp_attrs(p), "Unit", null)
 	u != null
 	not _pf_ssmpp_unit(u)

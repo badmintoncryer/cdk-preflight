@@ -13,5 +13,5 @@ violation contains make_diag_full("pf-codepipeline-v1-stage-conditions", "ERROR"
 	some si, st in _pf_cplib_stages(name)
 	some gate in ["BeforeEntry", "OnSuccess", "OnFailure"]
 	_pf_cplib_plain(object.get(st, gate, null))
-	sn := object.get(st, "Name", "")
+	sn := _pf_oval(st, "Name")
 }

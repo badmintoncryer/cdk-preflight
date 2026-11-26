@@ -16,11 +16,11 @@ violation contains make_diag_full("pf-codepipeline-action-config-required-keys",
 	some ai, a in _pf_cplib_actions(st)
 	_pf_cplib_plain(a)
 	tid := _pf_cplib_tid(a)
-	object.get(tid, "Owner", "AWS") == "AWS"
-	key := sprintf("%v/%v", [_pf_cplib_category(a), object.get(tid, "Provider", "")])
+	_pf_oval(tid, "Owner") == "AWS"
+	key := sprintf("%v/%v", [_pf_cplib_category(a), _pf_oval(tid, "Provider")])
 	some req in _pf_cplib_required_config[key]
 	cfg := object.get(a, "Configuration", {})
 	_pf_cplib_plain(cfg)
 	_pf_cplib_absent(cfg, req)
-	an := object.get(a, "Name", "")
+	an := _pf_oval(a, "Name")
 }

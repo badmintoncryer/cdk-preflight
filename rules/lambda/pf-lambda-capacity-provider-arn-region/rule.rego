@@ -14,7 +14,7 @@ violation contains make_diag_full("pf-lambda-capacity-provider-arn-region", "ERR
 	some name in _pf_lam_fn
 	cpc := _pf_lam_obj(_pf_lam_props(name), "CapacityProviderConfig")
 	lmi := _pf_lam_obj(cpc, "LambdaManagedInstancesCapacityProviderConfig")
-	parts := _pf_lam_arn(object.get(lmi, "CapacityProviderArn", ""))
+	parts := _pf_lam_arn(_pf_oval(lmi, "CapacityProviderArn"))
 	parts[2] == "lambda"
 	parts[3] != region
 }

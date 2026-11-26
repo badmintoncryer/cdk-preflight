@@ -16,13 +16,13 @@ violation contains make_diag_full("pf-codepipeline-action-type-id-combination", 
 	some ai, a in _pf_cplib_actions(st)
 	_pf_cplib_plain(a)
 	tid := _pf_cplib_tid(a)
-	object.get(tid, "Owner", "AWS") == "AWS"
-	prov := object.get(tid, "Provider", "")
+	_pf_oval(tid, "Owner") == "AWS"
+	prov := _pf_oval(tid, "Provider")
 	cats := _pf_cplib_aws_providers[prov]
 	cat := _pf_cplib_category(a)
 	not cat in cats
 	ok := concat(", ", sort(cats))
-	an := object.get(a, "Name", "")
+	an := _pf_oval(a, "Name")
 }
 
 # The mirror case: an AWS provider name declared under Owner ThirdParty.
@@ -37,8 +37,8 @@ violation contains make_diag_full("pf-codepipeline-action-type-id-combination", 
 	_pf_cplib_plain(a)
 	tid := _pf_cplib_tid(a)
 	object.get(tid, "Owner", "AWS") == "ThirdParty"
-	prov := object.get(tid, "Provider", "")
+	prov := _pf_oval(tid, "Provider")
 	_pf_cplib_aws_providers[prov]
 	cat := _pf_cplib_category(a)
-	an := object.get(a, "Name", "")
+	an := _pf_oval(a, "Name")
 }

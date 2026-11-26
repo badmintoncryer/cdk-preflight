@@ -15,7 +15,7 @@ violation contains make_diag_full("pf-s3-encryption-kms-key-with-aes256", "ERROR
 	is_object(c.value)
 	d := object.get(c.value, "ServerSideEncryptionByDefault", {})
 	is_object(d)
-	alg := object.get(d, "SSEAlgorithm", "")
+	alg := _pf_oval(d, "SSEAlgorithm")
 	not alg in {"aws:kms", "aws:kms:dsse"}
 	object.get(d, "KMSMasterKeyID", "__pf_absent") != "__pf_absent"
 }

@@ -14,6 +14,6 @@ violation contains make_diag_full("pf-elbv2-action-forward-stickiness-tls", "ERR
 	name := a.name
 	fc := _pf_elb_oget(a.value, "ForwardConfig")
 	sc := _pf_elb_oget(fc, "TargetGroupStickinessConfig")
-	object.get(sc, "Enabled", false) in _pf_elb_true
+	_pf_oval(sc, "Enabled") in _pf_elb_true
 	_pf_elb_listener_proto(name) == "TLS"
 }

@@ -12,7 +12,7 @@ violation contains make_diag_full("pf-cognito-schema-custom-name-length", "ERROR
 	some name in resources_of_type("AWS::Cognito::UserPool")
 	some a in flatten_list(name, "Properties.Schema")
 	is_object(a.value)
-	n := object.get(a.value, "Name", "")
+	n := _pf_oval(a.value, "Name")
 	is_string(n)
 	count(n) > 20
 }

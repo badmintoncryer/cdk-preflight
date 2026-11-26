@@ -16,5 +16,5 @@ violation contains make_diag_full("pf-cloudfront-rhp-xss-protection-report-uri-r
 	xs := object.get(sh, "XSSProtection", null)
 	is_object(xs)
 	object.get(xs, "ReportUri", "__pf_absent") != "__pf_absent"
-	object.get(xs, "Protection", false) == false
+	_pf_oval(xs, "Protection") == false
 }

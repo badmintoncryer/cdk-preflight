@@ -15,7 +15,7 @@ violation contains make_diag_full("pf-s3express-kms-key-alias", "ERROR", name,
 	is_object(c.value)
 	d := object.get(c.value, "ServerSideEncryptionByDefault", {})
 	is_object(d)
-	kid := object.get(d, "KMSMasterKeyID", "")
+	kid := _pf_oval(d, "KMSMasterKeyID")
 	is_string(kid)
 	startswith(kid, "alias/")
 }

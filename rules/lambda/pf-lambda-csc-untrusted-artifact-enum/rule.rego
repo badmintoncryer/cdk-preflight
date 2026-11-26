@@ -12,7 +12,7 @@ violation contains make_diag_full("pf-lambda-csc-untrusted-artifact-enum", "ERRO
 	_pf_lcsue_fix, _pf_lcsue_url) if {
 	some name in _pf_lam_csc
 	pol := _pf_lam_obj(_pf_lam_props(name), "CodeSigningPolicies")
-	v := object.get(pol, "UntrustedArtifactOnDeployment", "Warn")
+	v := _pf_oval(pol, "UntrustedArtifactOnDeployment")
 	is_string(v)
 	not v in {"Warn", "Enforce"}
 }

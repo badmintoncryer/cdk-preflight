@@ -211,7 +211,7 @@ violation contains make_diag_full("pf-ssm-document-content", "ERROR", name,
 	some name in resources_of_type("AWS::SSM::Document")
 	some pn, def in _pf_ssmdc_params(name)
 	is_object(def)
-	t := object.get(def, "type", "")
+	t := _pf_oval(def, "type")
 	d := object.get(def, "default", null)
 	d != null
 	not _pf_ssmdc_default_ok(t, d)
@@ -270,7 +270,7 @@ violation contains make_diag_full("pf-ssm-document-content", "ERROR", name,
 	some name in resources_of_type("AWS::SSM::Document")
 	some i, s in _pf_ssmdc_steps(name)
 	is_object(s)
-	object.get(s, "isEnd", false) in {true, "true"}
+	_pf_oval(s, "isEnd") in {true, "true"}
 	object.get(s, "nextStep", "__pf_absent") != "__pf_absent"
 }
 

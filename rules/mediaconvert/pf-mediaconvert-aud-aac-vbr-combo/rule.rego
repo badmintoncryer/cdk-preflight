@@ -20,7 +20,7 @@ violation contains make_diag_full("pf-mediaconvert-aud-aac-vbr-combo", "ERROR", 
 	sprintf("AacSettings.RateControlMode is VBR but CodecProfile is %s; VBR is only available with the LC profile", [p]),
 	"Set CodecProfile to LC, or use RateControlMode CBR", _pf_mc_aud_aac_vbr_combo_url) if {
 	some a in _pf_mcav_vbr
-	p := object.get(a.aac, "CodecProfile", "LC")
+	p := _pf_oval(a.aac, "CodecProfile")
 	is_string(p)
 	p != "LC"
 }

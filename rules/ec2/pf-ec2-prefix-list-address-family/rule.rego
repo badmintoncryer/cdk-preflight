@@ -14,7 +14,7 @@ violation contains make_diag_full("pf-ec2-prefix-list-address-family", "ERROR", 
 	some name in resources_of_type("AWS::EC2::PrefixList")
 	fam := resolve(name, "Properties.AddressFamily")
 	some e in flatten_list(name, "Properties.Entries")
-	cidr := object.get(e.value, "Cidr", "")
+	cidr := _pf_oval(e.value, "Cidr")
 	is_string(cidr)
 	_pf_ec2plaf_bad(fam, cidr)
 }

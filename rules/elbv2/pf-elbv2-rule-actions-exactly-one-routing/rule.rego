@@ -14,7 +14,7 @@ violation contains make_diag_full("pf-elbv2-rule-actions-exactly-one-routing", "
 	every a in _pf_elb_actions(name, "Actions") { is_string(object.get(a.value, "Type", null)) }
 	n := count([a |
 		some a in _pf_elb_actions(name, "Actions")
-		object.get(a.value, "Type", "") in _pf_elb_routing_actions
+		_pf_oval(a.value, "Type") in _pf_elb_routing_actions
 	])
 	n != 1
 }

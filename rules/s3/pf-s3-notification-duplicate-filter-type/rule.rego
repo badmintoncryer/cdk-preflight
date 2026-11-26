@@ -24,7 +24,7 @@ violation contains make_diag_full("pf-s3-notification-duplicate-filter-type", "E
 	i < j
 	is_object(rules[i])
 	is_object(rules[j])
-	n := lower(object.get(rules[i], "Name", ""))
+	n := lower(_pf_oval(rules[i], "Name"))
 	n != ""
-	n == lower(object.get(rules[j], "Name", ""))
+	n == lower(_pf_oval(rules[j], "Name"))
 }

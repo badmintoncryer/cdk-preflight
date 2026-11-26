@@ -13,7 +13,7 @@ violation contains make_diag_full("pf-lambda-durable-kms-key-region", "ERROR", n
 	region := data.cdk_preflight.deploy_region
 	some name in _pf_lam_fn
 	dc := _pf_lam_obj(_pf_lam_props(name), "DurableConfig")
-	parts := _pf_lam_arn(object.get(dc, "KMSKeyArn", ""))
+	parts := _pf_lam_arn(_pf_oval(dc, "KMSKeyArn"))
 	parts[2] == "kms"
 	parts[3] != region
 }

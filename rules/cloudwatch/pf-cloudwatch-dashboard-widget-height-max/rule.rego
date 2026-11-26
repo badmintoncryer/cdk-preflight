@@ -10,7 +10,7 @@ violation contains make_diag_full("pf-cloudwatch-dashboard-widget-height-max", "
 	some name in resources_of_type("AWS::CloudWatch::Dashboard")
 	some i, w in _pf_cwlib_widgets(name)
 	is_object(w)
-	h := object.get(w, "height", 0)
+	h := _pf_oval(w, "height")
 	is_number(h)
 	h > 1000
 }

@@ -25,5 +25,5 @@ violation contains make_diag_full("pf-sfn-asl-next-end", "ERROR", name,
 	some [name, p, s, sname, st] in _pf_sfnlib_states
 	object.get(st, "Type", null) in _pf_sfnne_types
 	not _pf_sfnlib_has(st, "Next")
-	object.get(st, "End", false) != true
+	_pf_oval(st, "End") != true
 }
