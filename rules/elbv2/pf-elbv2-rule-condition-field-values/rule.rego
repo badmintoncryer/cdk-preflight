@@ -13,5 +13,6 @@ violation contains make_diag_full("pf-elbv2-rule-condition-field-values", "ERROR
 	some name in _pf_elb_rules
 	some c in _pf_elb_conditions(name)
 	f := _pf_elb_oget(c.value, "Field")
+	is_string(f)
 	not f in object.keys(_pf_elb_cond_config)
 }

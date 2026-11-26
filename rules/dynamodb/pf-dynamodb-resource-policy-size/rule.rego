@@ -13,6 +13,6 @@ violation contains make_diag_full("pf-dynamodb-resource-policy-size", "ERROR", n
 	some name in resources_of_type("AWS::DynamoDB::Table")
 	doc := resolve(name, "Properties.ResourcePolicy.PolicyDocument")
 	is_object(doc)
-	n := count(json.marshal(doc))
+	n := _pf_json_size_min(doc)
 	n > 20480
 }

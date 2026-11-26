@@ -19,6 +19,7 @@ violation contains make_diag_full("pf-elbv2-action-redirect-port-value", "ERROR"
 	name := a.name
 	rc := _pf_elb_oget(a.value, "RedirectConfig")
 	p := _pf_elb_oget(rc, "Port")
+	is_string(p)
 	p != "#{port}"
 	not _pf_elbarpv_ok(p)
 }

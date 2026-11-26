@@ -32,6 +32,7 @@ _pf_ssmdc_type(name) := "Command" if {
 
 _pf_ssmdc_schema(name) := sprintf("%v", [v]) if {
 	v := object.get(_pf_ssmdc_content(name), "schemaVersion", null)
+	not is_object(v)
 	v != null
 }
 
@@ -199,6 +200,7 @@ violation contains make_diag_full("pf-ssm-document-content", "ERROR", name,
 	some pn, def in _pf_ssmdc_params(name)
 	is_object(def)
 	t := object.get(def, "type", "(missing)")
+	is_string(t)
 	not t in _pf_ssmdc_ptypes
 }
 

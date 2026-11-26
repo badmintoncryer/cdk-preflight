@@ -11,6 +11,7 @@ violation contains make_diag_full("pf-elbv2-rule-actions-exactly-one-routing", "
 	sprintf("The rule holds %d routing actions (forward, redirect, fixed-response); a rule ends on exactly one of them", [n]),
 	_pf_elbraor_fix, _pf_elbraor_url) if {
 	some name in _pf_elb_rules
+	every a in _pf_elb_actions(name, "Actions") { is_string(object.get(a.value, "Type", null)) }
 	n := count([a |
 		some a in _pf_elb_actions(name, "Actions")
 		object.get(a.value, "Type", "") in _pf_elb_routing_actions

@@ -17,5 +17,6 @@ violation contains make_diag_full("pf-elbv2-listener-tg-protocol-match", "ERROR"
 	_pf_unconditional_items(allowed)
 	count(allowed) > 0
 	tproto := _pf_elb_oget(_pf_elb_props(p.tg), "Protocol")
+	is_string(tproto)
 	not tproto in allowed
 }

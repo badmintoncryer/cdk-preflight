@@ -12,6 +12,7 @@ violation contains make_diag_full("pf-kinesis-record-distribution-on-demand-only
 	resolve(name, "Properties.RecordDistributionStrategy") != null
 	mode := _pf_kinrd_mode(name)
 	is_string(mode)
+	_pf_is_lit(mode)
 	mode != "ON_DEMAND"
 }
 

@@ -12,4 +12,5 @@ violation contains make_diag_full("pf-config-recorder-exclusion-requires-strateg
 	some name in resources_of_type("AWS::Config::ConfigurationRecorder")
 	_pf_cfglib_obj(_pf_cfglib_group(name), "ExclusionByResourceTypes")
 	not _pf_cfglib_uses_only(name, "EXCLUSION_BY_RESOURCE_TYPES")
+	not _pf_unknown(name, "Properties.RecordingGroup.RecordingStrategy.UseOnly")
 }

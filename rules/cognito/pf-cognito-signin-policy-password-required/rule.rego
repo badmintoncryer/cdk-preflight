@@ -15,5 +15,6 @@ violation contains make_diag_full("pf-cognito-signin-policy-password-required", 
 	some name in resources_of_type("AWS::Cognito::UserPool")
 	fs := flatten_list(name, "Properties.Policies.SignInPolicy.AllowedFirstAuthFactors")
 	count(fs) > 0
+	not _pf_list_unknown(name, "Properties.Policies.SignInPolicy.AllowedFirstAuthFactors")
 	not _pf_cgsppr_has_password(fs)
 }

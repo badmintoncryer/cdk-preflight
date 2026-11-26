@@ -15,5 +15,6 @@ violation contains make_diag_full("pf-elbv2-listener-nlb-action-forward-only", "
 	lbt != "application"
 	some a in _pf_elb_actions(name, "DefaultActions")
 	t := object.get(a.value, "Type", "")
+	is_string(t)
 	t != "forward"
 }

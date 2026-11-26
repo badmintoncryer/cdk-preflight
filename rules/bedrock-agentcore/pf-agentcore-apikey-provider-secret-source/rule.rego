@@ -23,6 +23,7 @@ violation contains make_diag_full("pf-agentcore-apikey-provider-secret-source", 
 	_pf_akpsrc_url) if {
 	some name in resources_of_type("AWS::BedrockAgentCore::ApiKeyCredentialProvider")
 	not _pf_akpsrc_external(name)
+	not _pf_unknown(name, "Properties.ApiKeySecretSource")
 	not _pf_akpsrc_has(name, "ApiKey")
 }
 
@@ -33,6 +34,7 @@ violation contains make_diag_full("pf-agentcore-apikey-provider-secret-source", 
 	_pf_akpsrc_url) if {
 	some name in resources_of_type("AWS::BedrockAgentCore::ApiKeyCredentialProvider")
 	not _pf_akpsrc_external(name)
+	not _pf_unknown(name, "Properties.ApiKeySecretSource")
 	_pf_akpsrc_has(name, "ApiKeySecretConfig")
 }
 

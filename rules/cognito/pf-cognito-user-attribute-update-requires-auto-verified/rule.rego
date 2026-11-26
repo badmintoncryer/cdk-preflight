@@ -16,5 +16,6 @@ violation contains make_diag_full("pf-cognito-user-attribute-update-requires-aut
 	some a in flatten_list(name, "Properties.UserAttributeUpdateSettings.AttributesRequireVerificationBeforeUpdate")
 	v := a.value
 	is_string(v)
+	not _pf_list_unknown(name, "Properties.AutoVerifiedAttributes")
 	not _pf_cguaurav_auto_verified(name, v)
 }

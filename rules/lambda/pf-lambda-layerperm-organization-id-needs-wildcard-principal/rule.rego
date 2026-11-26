@@ -12,6 +12,6 @@ violation contains make_diag_full("pf-lambda-layerperm-organization-id-needs-wil
 	_pf_llpo_fix, _pf_llpo_url) if {
 	some name in _pf_lam_layerperm
 	_pf_lam_has_key(_pf_lam_props(name), "OrganizationId")
-	p := resolve(name, "Properties.Principal")
+	p := _pf_lit(name, "Properties.Principal")
 	p != "*"
 }

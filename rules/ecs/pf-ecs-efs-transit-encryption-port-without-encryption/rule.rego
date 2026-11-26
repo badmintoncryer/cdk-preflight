@@ -12,4 +12,5 @@ violation contains make_diag_full("pf-ecs-efs-transit-encryption-port-without-en
 	e := _pf_ecs_oget(v.value, "EFSVolumeConfiguration")
 	_pf_ecs_ohas(e, "TransitEncryptionPort")
 	not _pf_ecs_oget(e, "TransitEncryption") == "ENABLED"
+	not _pf_unknown(name, sprintf("Properties.Volumes.%d.EFSVolumeConfiguration.TransitEncryption", [v.index]))
 }

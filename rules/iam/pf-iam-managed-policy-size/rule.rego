@@ -10,6 +10,6 @@ violation contains make_diag_full("pf-iam-managed-policy-size", "ERROR", name,
 	some name in resources_of_type("AWS::IAM::ManagedPolicy")
 	doc := resolve(name, "Properties.PolicyDocument")
 	is_object(doc)
-	size := count(json.marshal(doc))
+	size := _pf_json_size_min(doc)
 	size > 6144
 }

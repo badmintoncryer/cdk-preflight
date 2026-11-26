@@ -15,5 +15,6 @@ violation contains make_diag_full("pf-lambda-loglevel-requires-json", "ERROR", n
 	some key in ["ApplicationLogLevel", "SystemLogLevel"]
 	_pf_lam_has_key(lc, key)
 	fmt := object.get(lc, "LogFormat", "Text")
+	is_string(fmt)
 	fmt != "JSON"
 }

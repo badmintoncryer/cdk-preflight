@@ -38,14 +38,14 @@ export interface ReferenceHit {
   readonly evalError: boolean;
 }
 
-/** 差し替えてよい文字列の葉のパス。配列は先頭要素だけ、組み込み関数の中と "." を含むキーは見ない。 */
+/** 差し替えてよいスカラー（文字列・数値・真偽値）の葉のパス。配列は先頭要素だけ、組み込み関数の中と "." を含むキーは見ない。 */
 function stringPaths(o: unknown, prefix: string[] = [], depth = 4): string[][] {
   if (depth === 0 || !o || typeof o !== 'object') return [];
   const out: string[][] = [];
   const entries: [string, unknown][] = Array.isArray(o) ? o.slice(0, 1).map((v, i) => [String(i), v]) : Object.entries(o);
   for (const [k, v] of entries) {
     if (k.startsWith('Fn::') || k === 'Ref' || k.includes('.')) continue;
-    if (typeof v === 'string') out.push([...prefix, k]);
+    if (typeof v === 'string' || typeof v === 'number' || typeof v === 'boolean') out.push([...prefix, k]);
     else out.push(...stringPaths(v, [...prefix, k], depth - 1));
   }
   return out;

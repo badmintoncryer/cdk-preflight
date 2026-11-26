@@ -18,6 +18,7 @@ violation contains make_diag_full("pf-aps-ad-query-aggregation-operator", "ERROR
 	_pf_aps_adq_fix, _pf_aps_adq_url) if {
 	some name in resources_of_type("AWS::APS::AnomalyDetector")
 	q := _pf_aps_str(name, "Properties.Configuration.RandomCutForest.Query")
+	not input.resources[q]
 	not regex.match(`^\s*(avg|count|group|max|min|quantile|stddev|stdvar|sum)\s*\(.*\)\s*$`, q)
 }
 
@@ -32,5 +33,6 @@ violation contains make_diag_full("pf-aps-ad-query-aggregation-operator", "ERROR
 	_pf_aps_adq_fix, _pf_aps_adq_url) if {
 	some name in resources_of_type("AWS::APS::AnomalyDetector")
 	q := _pf_aps_str(name, "Properties.Configuration.RandomCutForest.Query")
+	not input.resources[q]
 	regex.match(`\)\s*(by|without)\s*\([^()]*\)\s*$`, q)
 }

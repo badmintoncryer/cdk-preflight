@@ -16,4 +16,5 @@ violation contains make_diag_full("pf-apigw-vpc-endpoint-ids-private-only", "ERR
 	_pf_unconditional_list(name, "Properties.EndpointConfiguration.VpcEndpointIds")
 	count(flatten_list(name, "Properties.EndpointConfiguration.VpcEndpointIds")) > 0
 	not _pf_apgveip_private(name)
+	not _pf_list_unknown(name, "Properties.EndpointConfiguration.Types")
 }

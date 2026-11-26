@@ -13,7 +13,7 @@ violation contains make_diag_full("pf-lambda-perm-url-auth-action", "ERROR", nam
 	some name in _pf_lam_perm
 	props := _pf_lam_props(name)
 	_pf_lam_has_key(props, "FunctionUrlAuthType")
-	a := resolve(name, "Properties.Action")
+	a := _pf_lit(name, "Properties.Action")
 	a != "lambda:InvokeFunctionUrl"
 	not _pf_lam_has_key(props, "InvokedViaFunctionUrl")
 }

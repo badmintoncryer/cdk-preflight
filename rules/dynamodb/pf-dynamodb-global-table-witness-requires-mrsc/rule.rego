@@ -13,4 +13,5 @@ violation contains make_diag_full("pf-dynamodb-global-table-witness-requires-mrs
 	_pf_unconditional_list(name, "Properties.GlobalTableWitnesses")
 	count(flatten_list(name, "Properties.GlobalTableWitnesses")) > 0
 	not _pf_ddb_mrsc(name)
+	not _pf_unknown(name, "Properties.MultiRegionConsistency")
 }

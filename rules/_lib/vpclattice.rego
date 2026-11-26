@@ -9,6 +9,7 @@ _pf_vpcl_tgs := resources_of_type("AWS::VpcLattice::TargetGroup")
 _pf_vpcl_tgtype(name) := t if {
 	t := resolve(name, "Properties.Type")
 	is_string(t)
+	not input.resources[t]
 }
 
 _pf_vpcl_tgs_of(t) := {n |

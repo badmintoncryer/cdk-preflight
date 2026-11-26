@@ -18,5 +18,6 @@ violation contains make_diag_full("pf-cognito-default-redirect-uri-member", "ERR
 	not input.resources[d]
 	cbs := flatten_list(name, "Properties.CallbackURLs")
 	count(cbs) > 0
+	not _pf_list_unknown(name, "Properties.CallbackURLs")
 	not _pf_cgdrum_member(cbs, d)
 }

@@ -13,5 +13,7 @@ violation contains make_diag_full("pf-appsync-ev-subscribe-auth-mode-in-provider
 	"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-appsync-api.html") if {
 	some name in resources_of_type("AWS::AppSync::Api")
 	some m in flatten_list(name, "Properties.EventConfig.DefaultSubscribeAuthModes")
+	is_string(m.value.AuthType)
+	every p in flatten_list(name, "Properties.EventConfig.AuthProviders") { is_string(p.value.AuthType) }
 	not m.value.AuthType in _pf_evsubscribeauthmodeinproviders_providers(name)
 }

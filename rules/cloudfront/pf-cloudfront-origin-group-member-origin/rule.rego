@@ -14,6 +14,7 @@ violation contains make_diag_full("pf-cloudfront-origin-group-member-origin", "E
 	"Point every origin group member at the Id of an origin declared in Origins",
 	"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-cloudfront-distribution-origingroup.html") if {
 	some name in resources_of_type("AWS::CloudFront::Distribution")
+	every it in flatten_list(name, "Properties.DistributionConfig.Origins") { _pf_is_lit(object.get(it.value, "Id", null)) }
 	some g in flatten_list(name, "Properties.DistributionConfig.OriginGroups.Items")
 	members := object.get(object.get(g.value, "Members", {}), "Items", [])
 	some m in members

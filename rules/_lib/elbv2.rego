@@ -45,6 +45,7 @@ _pf_elb_has(name, k) if {
 _pf_elb_str(name, k) := v if {
 	v := resolve(name, sprintf("Properties.%s", [k]))
 	is_string(v)
+	not input.resources[v]
 }
 
 # Attribute values are strings; ordinary properties are numbers.

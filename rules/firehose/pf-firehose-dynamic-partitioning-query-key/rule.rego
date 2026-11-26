@@ -32,7 +32,8 @@ _pf_fhdpq_bad contains [name, path, k] if {
 	some q in _pf_fhlib_params(pr, "MetadataExtractionQuery")
 	_pf_fhlib_lit(q)
 	some k in _pf_fhdpk_keys(q)
-	not k in _pf_fhdpq_prefix_keys(c)
+	ks := _pf_fhdpq_prefix_keys(c)
+	not k in ks
 }
 
 violation contains make_diag_full("pf-firehose-dynamic-partitioning-query-key", "ERROR", name,

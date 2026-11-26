@@ -11,7 +11,7 @@ _pf_ssmmg_props(name) := props if {
 	is_object(props)
 }
 
-_pf_ssmmg_keys(name) := [k | some e in flatten_list(name, "Properties.Targets"); k := resolve(name, sprintf("Properties.Targets.%d.Key", [e.index])); is_string(k)]
+_pf_ssmmg_keys(name) := [k | some e in flatten_list(name, "Properties.Targets"); k := resolve(name, sprintf("Properties.Targets.%d.Key", [e.index])); is_string(k); not input.resources[k]]
 
 _pf_ssmmg_instance_key(k) if k == "InstanceIds"
 

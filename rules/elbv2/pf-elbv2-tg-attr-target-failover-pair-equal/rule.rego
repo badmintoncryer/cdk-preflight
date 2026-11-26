@@ -19,5 +19,7 @@ violation contains make_diag_full("pf-elbv2-tg-attr-target-failover-pair-equal",
 	some name in _pf_elb_tgs
 	d := _pf_elbgtfp_v(name, "target_failover.on_deregistration")
 	u := _pf_elbgtfp_v(name, "target_failover.on_unhealthy")
+	is_string(d)
+	is_string(u)
 	d != u
 }

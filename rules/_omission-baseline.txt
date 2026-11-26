@@ -113,7 +113,6 @@ pf-batch-jd-eks-containers-required AWS::Batch::JobDefinition.EksProperties.PodP
 pf-batch-jd-eks-volume-mount-name-exists AWS::Batch::JobDefinition.EksProperties.PodProperties.Volumes
 pf-batch-jd-node-range-payload-required AWS::Batch::JobDefinition.NodeProperties.NodeRangeProperties.*.Container
 pf-batch-jd-resource-requirements-required AWS::Batch::JobDefinition.ContainerProperties.ResourceRequirements
-pf-batch-jd-resource-requirements-required AWS::Batch::JobDefinition.ContainerProperties.ResourceRequirements.*.Type
 pf-batch-managed-compute-resources AWS::Batch::ComputeEnvironment.ComputeResources
 pf-bedrock-automated-reasoning-policy-variable-type AWS::Bedrock::AutomatedReasoningPolicy.PolicyDefinition.Types
 pf-bedrock-bda-blueprint-schema AWS::Bedrock::Blueprint.Schema.class
@@ -164,7 +163,6 @@ pf-codebuild-secondary-sources-identifier-required AWS::CodeBuild::Project.Secon
 pf-codebuild-source-location-required AWS::CodeBuild::Project.SecondarySources.*.Location
 pf-codebuild-source-location-required AWS::CodeBuild::Project.Source.Location
 pf-codebuild-source-version-identifier-must-match-source AWS::CodeBuild::Project.SecondarySources
-pf-codebuild-source-version-identifier-must-match-source AWS::CodeBuild::Project.SecondarySources.*.SourceIdentifier
 pf-codedeploy-config-lambda-requires-traffic-routing AWS::CodeDeploy::DeploymentConfig.TrafficRoutingConfig
 pf-codedeploy-config-server-requires-minimum-healthy-hosts AWS::CodeDeploy::DeploymentConfig.MinimumHealthyHosts
 pf-codedeploy-config-traffic-routing-block-matches-type AWS::CodeDeploy::DeploymentConfig.TrafficRoutingConfig.TimeBasedCanary
@@ -240,7 +238,6 @@ pf-ecs-container-memory-required AWS::ECS::TaskDefinition.ContainerDefinitions.*
 pf-ecs-efs-iam-without-transit-encryption AWS::ECS::TaskDefinition.Volumes.*.EFSVolumeConfiguration.TransitEncryption
 pf-ecs-efs-transit-encryption-port-without-encryption AWS::ECS::TaskDefinition.Volumes.*.EFSVolumeConfiguration.TransitEncryption
 pf-ecs-mountpoint-source-volume-missing AWS::ECS::TaskDefinition.Volumes
-pf-ecs-mountpoint-source-volume-missing AWS::ECS::TaskDefinition.Volumes.*.Name
 pf-ecs-proxy-configuration-container-missing AWS::ECS::TaskDefinition.ContainerDefinitions
 pf-ecs-service-codedeploy-lb AWS::ECS::Service.LoadBalancers
 pf-ecs-svc-connect-without-namespace AWS::ECS::Service.ServiceConnectConfiguration.Namespace
@@ -279,7 +276,6 @@ pf-elasticbeanstalk-opt-sched-resource-name AWS::ElasticBeanstalk::Configuration
 pf-elasticbeanstalk-tmpl-source-required AWS::ElasticBeanstalk::ConfigurationTemplate.PlatformArn
 pf-elbv2-listener-port-required AWS::ElasticLoadBalancingV2::Listener.Port
 pf-elbv2-tcp-health-check-path AWS::ElasticLoadBalancingV2::TargetGroup.HealthCheckProtocol
-pf-elbv2-tg-attr-target-failover-pair-equal AWS::ElasticLoadBalancingV2::TargetGroup.TargetGroupAttributes.*.Value
 pf-elbv2-tg-protocol-required-non-lambda AWS::ElasticLoadBalancingV2::TargetGroup.Port
 pf-elbv2-tg-protocol-required-non-lambda AWS::ElasticLoadBalancingV2::TargetGroup.Protocol
 pf-elbv2-tg-vpc-required-non-lambda AWS::ElasticLoadBalancingV2::TargetGroup.VpcId

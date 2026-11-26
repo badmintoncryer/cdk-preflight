@@ -16,5 +16,6 @@ violation contains make_diag_full("pf-elbv2-action-fixed-response-content-type",
 	name := a.name
 	fr := _pf_elb_oget(a.value, "FixedResponseConfig")
 	ct := _pf_elb_oget(fr, "ContentType")
+	is_string(ct)
 	not ct in _pf_elbafct_types
 }

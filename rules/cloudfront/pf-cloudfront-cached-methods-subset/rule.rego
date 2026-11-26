@@ -27,6 +27,8 @@ violation contains make_diag_full("pf-cloudfront-cached-methods-subset", "ERROR"
 	is_array(cached)
 	allowed := _pf_cf_methods_allowed(b)
 	is_array(allowed)
+	every a in allowed { is_string(a) }
 	some method in cached
+	is_string(method)
 	not method in allowed
 }

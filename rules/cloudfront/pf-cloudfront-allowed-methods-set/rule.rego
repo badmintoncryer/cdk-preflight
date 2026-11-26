@@ -13,6 +13,7 @@ violation contains make_diag_full("pf-cloudfront-allowed-methods-set", "ERROR", 
 	some b in _pf_cflib_behaviors(name)
 	am := object.get(b.value, "AllowedMethods", null)
 	is_array(am)
+	every m in am { is_string(m) }
 	ms := {m | some m in am}
 	ms != {"GET", "HEAD"}
 	ms != {"GET", "HEAD", "OPTIONS"}
