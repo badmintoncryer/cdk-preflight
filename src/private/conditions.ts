@@ -4,18 +4,19 @@
  * defaults and the stack's pseudo parameters).
  *
  * The engine resolves a property through a parameter default, but hands every
- * resource to the rules whatever its `Condition` says (issue #408). A resource
- * whose condition is false under those defaults is never created, so a finding
- * on it is a false positive by construction. Rules cannot see the raw condition
- * expressions (`input.conditions` only carries a lossy summary such as
- * `Not(Equals(?, ""))`), so the enforce plugin evaluates them here, on the raw
- * template, and drops the findings whose resource is switched off.
+ * resource to the rules whatever its `Condition` says (issue #408), and walks both
+ * branches of every `Fn::If`. A resource whose condition is false under those
+ * defaults is never created, and a branch that is never taken is never deployed, so
+ * a finding on either is a false positive by construction. Rules cannot see the raw
+ * condition expressions (`input.conditions` only carries a lossy summary such as
+ * `Not(Equals(?, ""))`), so the plugins evaluate them here, on the raw template, and
+ * hand the engine the template specialized to what is proven (`specializeTemplate`).
  *
  * The evaluation is three-valued. Anything it cannot evaluate (a parameter
  * without a default, an unknown pseudo parameter, an intrinsic it does not
- * model) is `undefined`, and an undefined condition keeps the resource — the
- * behaviour before this module existed. Only a condition proven false removes
- * anything.
+ * model) is `undefined`, and an undefined condition keeps the resource and the whole
+ * `Fn::If` — the behaviour before this module existed. Only a proven condition
+ * changes anything.
  */
 
 /** What the stack's own environment says about the pseudo parameters. */
@@ -217,13 +218,129 @@ export function inactiveResources(template: unknown, pseudo: PseudoValues = {}):
   return out;
 }
 
-/** The same, reading the template from disk. Unreadable or non-JSON templates give an empty set. */
-export function inactiveResourcesInFile(templatePath: string, pseudo: PseudoValues = {}): Set<string> {
+const NO_VALUE = Symbol('no-value');
+
+/**
+ * The template as it is deployed under the defaults, as far as that is proven:
+ *
+ *   - resources (and outputs) whose `Condition` is proven false are removed, and so are
+ *     `DependsOn` entries that point at a removed resource;
+ *   - an `Fn::If` whose condition is proven is replaced by the branch that is taken, and a taken
+ *     `{"Ref": "AWS::NoValue"}` removes the property (or list element) altogether;
+ *   - a parameter of an SSM type loses its `Default` (the parameter name, not its value).
+ *
+ * The engine walks both branches of an `Fn::If` (a value in the branch that is never taken still
+ * fires a rule), and it hands every resource to the rules whatever its `Condition` says (#408). A
+ * reference from a live resource to a removed one can only sit in a branch that is not taken
+ * (CloudFormation rejects it anywhere else), so it goes away with the branch.
+ *
+ * Anything undecided is left exactly as it was. Returns undefined when nothing changes.
+ */
+export function specializeTemplate(template: unknown, pseudo: PseudoValues = {}): unknown | undefined {
+  const t = template as any;
+  if (!t || typeof t !== 'object' || !t.Resources || typeof t.Resources !== 'object') return undefined;
+  const ev = new Evaluator(t, pseudo);
+  let changed = false;
+  const walk = (node: any): any => {
+    if (Array.isArray(node)) {
+      const out: any[] = [];
+      for (const e of node) {
+        const v = walk(e);
+        if (v !== NO_VALUE) out.push(v);
+      }
+      return out;
+    }
+    if (!node || typeof node !== 'object') return node;
+    const keys = Object.keys(node);
+    if (keys.length === 1 && keys[0] === 'Fn::If' && Array.isArray(node['Fn::If']) && node['Fn::If'].length === 3
+      && typeof node['Fn::If'][0] === 'string') {
+      const c = ev.condition(node['Fn::If'][0]);
+      if (c !== UNKNOWN) {
+        changed = true;
+        const taken = node['Fn::If'][c ? 1 : 2];
+        if (taken && typeof taken === 'object' && !Array.isArray(taken) && Object.keys(taken).length === 1 && taken.Ref === 'AWS::NoValue') return NO_VALUE;
+        return walk(taken);
+      }
+    }
+    const out: Record<string, unknown> = {};
+    for (const k of keys) {
+      const v = walk(node[k]);
+      if (v !== NO_VALUE) out[k] = v;
+    }
+    return out;
+  };
+  const off = (x: any) => typeof x?.Condition === 'string' && ev.condition(x.Condition) === false;
+  const resources: Record<string, unknown> = {};
+  const removed = new Set<string>();
+  for (const [id, r] of Object.entries<any>(t.Resources)) {
+    if (off(r)) removed.add(id);
+  }
+  if (removed.size) changed = true;
+  for (const [id, r] of Object.entries<any>(t.Resources)) {
+    if (removed.has(id)) continue;
+    let res = r && typeof r === 'object' ? { ...r } : r;
+    if (res && typeof res === 'object') {
+      for (const k of ['Properties', 'Metadata', 'UpdatePolicy', 'CreationPolicy']) {
+        if (k in res) {
+          const v = walk(res[k]);
+          if (v === NO_VALUE) delete res[k];
+          else res[k] = v;
+        }
+      }
+      const dep = res.DependsOn;
+      if (typeof dep === 'string' && removed.has(dep)) delete res.DependsOn;
+      else if (Array.isArray(dep) && dep.some((d) => removed.has(d))) res.DependsOn = dep.filter((d) => !removed.has(d));
+    }
+    resources[id] = res;
+  }
+  const out: any = { ...t, Resources: resources };
+  // A parameter of an SSM type resolves to the value stored under that name, but the engine
+  // resolves its Default, which is the parameter *name* ("/aws/service/ami-..."): rules then judge
+  // a path as if it were the value. Without the Default the reference stays unresolved.
+  if (t.Parameters && typeof t.Parameters === 'object') {
+    const params: Record<string, unknown> = {};
+    for (const [id, p] of Object.entries<any>(t.Parameters)) {
+      if (p && typeof p === 'object' && typeof p.Type === 'string' && p.Type.startsWith('AWS::SSM::Parameter::Value<') && 'Default' in p) {
+        const { Default: _drop, ...rest } = p;
+        params[id] = rest;
+        changed = true;
+      } else {
+        params[id] = p;
+      }
+    }
+    out.Parameters = params;
+  }
+  if (t.Outputs && typeof t.Outputs === 'object') {
+    const outputs: Record<string, unknown> = {};
+    for (const [id, o] of Object.entries<any>(t.Outputs)) {
+      if (off(o)) {
+        changed = true;
+        continue;
+      }
+      const v = walk(o);
+      if (v !== NO_VALUE) outputs[id] = v;
+    }
+    out.Outputs = outputs;
+  }
+  return changed ? out : undefined;
+}
+
+/**
+ * specializeTemplate on a file. Writes the specialized template next to a temp dir and returns its
+ * path, or undefined when the template is unreadable or nothing changes (then validate the original).
+ */
+export function specializeTemplateFile(templatePath: string, pseudo: PseudoValues, tmpDir: string): string | undefined {
   try {
     // eslint-disable-next-line @typescript-eslint/no-require-imports
     const fs = require('fs') as typeof import('fs');
-    return inactiveResources(JSON.parse(fs.readFileSync(templatePath, 'utf8')), pseudo);
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const path = require('path') as typeof import('path');
+    const out = specializeTemplate(JSON.parse(fs.readFileSync(templatePath, 'utf8')), pseudo);
+    if (out === undefined) return undefined;
+    const file = path.join(tmpDir, `${fs.readdirSync(tmpDir).length}-${path.basename(templatePath)}`);
+    fs.writeFileSync(file, JSON.stringify(out));
+    return file;
   } catch {
-    return new Set();
+    return undefined;
   }
 }

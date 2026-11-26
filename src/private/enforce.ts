@@ -1,4 +1,5 @@
 import * as fs from 'fs';
+import * as os from 'os';
 import * as path from 'path';
 import {
   App,
@@ -9,7 +10,7 @@ import {
   type PolicyViolation,
 } from 'aws-cdk-lib';
 import type { IConstruct } from 'constructs';
-import { inactiveResourcesInFile } from './conditions';
+import { specializeTemplateFile } from './conditions';
 import { checkQuotas, type QuotaCheckOptions } from './quota';
 import { BUNDLED_LIBS, type BundledRuleData } from '../rules.generated';
 
@@ -144,53 +145,66 @@ export class PreflightEnforcePlugin implements IPolicyValidationPlugin {
     ours: Set<string>,
   ): PolicyViolation[] {
     const violations: PolicyViolation[] = [];
-    for (const st of stacks) {
-      let report: any;
-      try {
-        report = validateTemplate(eng, new engine.TemplateFile(st.templatePath), {
-          // CDK 組み込みの CloudFormationValidatePlugin と同じく、スタック自身の値を渡す
-          pseudoParameterOverrides: {
-            accountId: st.accountId,
-            region: st.region,
-          },
-          // 組み込みルールは CDK 組み込みの CloudFormationValidatePlugin が同じテンプレートに
-          // 対して既に走らせている。strict でなければ結果も使わず捨てているので、丸ごと切る
-          // （実測 70 リソース 1 枚で初回 3.27s -> 0.22s）。strict のときだけ必要になる。
-          disableBuiltinRules: !this.strict,
-        });
-      } catch (e) {
-        // throw を外に出すと CDK はこの呼び出しを plugin failure（violation ゼロ）として
-        // 記録するだけになり、ここまでに集めた違反も後続テンプレートの違反も丸ごと消え、
-        // 残るのは `failed: undefined` だけになる（issue #151）。
-        // synth を止めるのは installEnforceGate の役目。ここは「どのスタックで何が
-        // 起きたか」をレポートに残し、他スタックのルールを走らせ続けるためのもの。
-        violations.push(engineErrorViolation(st, e));
-        continue;
-      }
-      // Condition が既定値で false と決まるリソースは作られない（issue #408）。
-      // そこに立った自前ルールの findings は構造上すべて誤検知なので捨てる。
-      const inactive = inactiveResourcesInFile(st.templatePath, { region: st.region, accountId: st.accountId });
-      for (const d of (report.diagnostics ?? []) as EngineDiagnostic[]) {
-        const isOurs = d.source === 'CUSTOM' && ours.has(d.ruleId)
-          && !(d.entity?.logicalId !== undefined && inactive.has(d.entity.logicalId));
-        const isStrictHit = this.strict
-          && d.source !== 'CUSTOM'
-          && (d.severity === 'ERROR' || d.severity === 'FATAL');
-        if (!isOurs && !isStrictHit) continue;
-        violations.push({
-          ruleName: d.ruleId,
-          description: d.message,
-          severity: mapSeverity(d.severity),
-          violatingResources: [{
-            resourceLogicalId: d.entity?.logicalId ?? '(unknown)',
-            templatePath: st.templatePath,
-            locations: [d.propertyPath ?? '(template)'],
-          }],
-          ...(d.documentationUrl ? { ruleMetadata: { DocumentationUrl: d.documentationUrl } } : {}),
-        });
-      }
+    const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'cdkpf-spec-'));
+    try {
+      for (const st of stacks) this.validateStack(engine, eng, st, ours, tmp, violations);
+    } finally {
+      fs.rmSync(tmp, { recursive: true, force: true });
     }
     return violations;
+  }
+
+  private validateStack(
+    engine: any,
+    eng: any,
+    st: IPolicyValidationContext['stackTemplates'][number],
+    ours: Set<string>,
+    tmp: string,
+    violations: PolicyViolation[],
+  ): void {
+    // Condition / Fn::If を既定値で決まる分だけ畳んだテンプレートを検査する（issue #408）。
+    // 作られないリソースと通らない分岐に立つ findings は構造上すべて誤検知。
+    const checked = specializeTemplateFile(st.templatePath, { region: st.region, accountId: st.accountId }, tmp) ?? st.templatePath;
+    let report: any;
+    try {
+      report = validateTemplate(eng, new engine.TemplateFile(checked), {
+        // CDK 組み込みの CloudFormationValidatePlugin と同じく、スタック自身の値を渡す
+        pseudoParameterOverrides: {
+          accountId: st.accountId,
+          region: st.region,
+        },
+        // 組み込みルールは CDK 組み込みの CloudFormationValidatePlugin が同じテンプレートに
+        // 対して既に走らせている。strict でなければ結果も使わず捨てているので、丸ごと切る
+        // （実測 70 リソース 1 枚で初回 3.27s -> 0.22s）。strict のときだけ必要になる。
+        disableBuiltinRules: !this.strict,
+      });
+    } catch (e) {
+      // throw を外に出すと CDK はこの呼び出しを plugin failure（violation ゼロ）として
+      // 記録するだけになり、ここまでに集めた違反も後続テンプレートの違反も丸ごと消え、
+      // 残るのは `failed: undefined` だけになる（issue #151）。
+      // synth を止めるのは installEnforceGate の役目。ここは「どのスタックで何が
+      // 起きたか」をレポートに残し、他スタックのルールを走らせ続けるためのもの。
+      violations.push(engineErrorViolation(st, e));
+      return;
+    }
+    for (const d of (report.diagnostics ?? []) as EngineDiagnostic[]) {
+      const isOurs = d.source === 'CUSTOM' && ours.has(d.ruleId);
+      const isStrictHit = this.strict
+        && d.source !== 'CUSTOM'
+        && (d.severity === 'ERROR' || d.severity === 'FATAL');
+      if (!isOurs && !isStrictHit) continue;
+      violations.push({
+        ruleName: d.ruleId,
+        description: d.message,
+        severity: mapSeverity(d.severity),
+        violatingResources: [{
+          resourceLogicalId: d.entity?.logicalId ?? '(unknown)',
+          templatePath: st.templatePath,
+          locations: [d.propertyPath ?? '(template)'],
+        }],
+        ...(d.documentationUrl ? { ruleMetadata: { DocumentationUrl: d.documentationUrl } } : {}),
+      });
+    }
   }
 }
 
@@ -457,21 +471,68 @@ function regoEngineCached(engineModule: any, rules: BundledRuleData[], region?: 
 // private フィールドで、触るには内部実装に手を入れることになる）。設定違いの Stage が
 // N 個あれば N 個積むが、実アプリでは 1〜2 個。積み上がりが問題になるなら、そのときに
 // アップストリームへ free/dispose を入れてもらう。
-let cachedObservePlugin: { key: string; plugin: CloudFormationValidatePlugin } | undefined;
-export function observePluginCached(rules: BundledRuleData[]): CloudFormationValidatePlugin {
+let cachedObservePlugin: { key: string; plugin: ConditionAwarePlugin } | undefined;
+export function observePluginCached(rules: BundledRuleData[]): ConditionAwarePlugin {
   const key = rules.map((r) => r.id).join(',');
   if (cachedObservePlugin?.key !== key) {
     cachedObservePlugin = {
       key,
-      plugin: new CloudFormationValidatePlugin({
+      plugin: new ConditionAwarePlugin(new CloudFormationValidatePlugin({
         regoRules: [
           ...BUNDLED_LIBS.map((l) => ({ name: l.name, content: l.rego })),
           ...mergeRuleModules(rules),
         ],
-      }),
+      })),
     };
   }
   return cachedObservePlugin.plugin;
+}
+
+/**
+ * 観測モードでも enforce と同じく、Condition / Fn::If を既定値で決まる分だけ畳んだテンプレートを
+ * 検査させる（issue #408）。中身は CDK 組み込みのプラグインのままで、渡すテンプレートだけ差し替え、
+ * 報告のパスは元のテンプレートに戻す。
+ */
+export class ConditionAwarePlugin implements IPolicyValidationPlugin {
+  public readonly name: string;
+  constructor(public readonly inner: CloudFormationValidatePlugin) {
+    this.name = inner.name;
+  }
+  public get version(): string | undefined {
+    return this.inner.version;
+  }
+  public get ruleIds(): string[] | undefined {
+    return this.inner.ruleIds;
+  }
+  public validate(context: IPolicyValidationContext): PolicyValidationPluginReport {
+    const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'cdkpf-spec-'));
+    try {
+      const back = new Map<string, string>();
+      const stackTemplates = context.stackTemplates.map((st) => {
+        const spec = specializeTemplateFile(st.templatePath, { region: st.region, accountId: st.accountId }, tmp);
+        if (spec === undefined) return st;
+        back.set(spec, st.templatePath);
+        return { ...st, templatePath: spec };
+      });
+      if (back.size === 0) return this.inner.validate(context);
+      const fwd = new Map([...back].map(([k, v]) => [v, k]));
+      const report = this.inner.validate({
+        ...context,
+        templatePaths: context.templatePaths.map((p) => fwd.get(p) ?? p),
+        stackTemplates,
+      });
+      return {
+        ...report,
+        violations: report.violations.map((v) => ({
+          ...v,
+          violatingResources: v.violatingResources.map((r) => (r.templatePath && back.has(r.templatePath)
+            ? { ...r, templatePath: back.get(r.templatePath)! } : r)),
+        })),
+      };
+    } finally {
+      fs.rmSync(tmp, { recursive: true, force: true });
+    }
+  }
 }
 
 /** 全ルールに共通の rego ヘッダ。bundle-rules が package 名と import を 1 種類に強制している。 */
