@@ -11,5 +11,6 @@ violation contains make_diag_full("pf-dynamodb-table-class", "ERROR", name,
 	some name in resources_of_type("AWS::DynamoDB::Table")
 	tc := resolve(name, "Properties.TableClass")
 	is_string(tc)
+	not input.resources[tc]
 	not tc in {"STANDARD", "STANDARD_INFREQUENT_ACCESS"}
 }

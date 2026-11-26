@@ -30,6 +30,7 @@
     "post-compile": "projen post-compile",
     "pre-compile": "projen pre-compile",
     "redundancy-scan": "projen redundancy-scan",
+    "reference-sweep": "projen reference-sweep",
     "release": "projen release",
     "smoke": "projen smoke",
     "test": "projen test",

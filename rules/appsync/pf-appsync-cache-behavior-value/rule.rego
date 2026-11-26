@@ -12,5 +12,6 @@ violation contains make_diag_full("pf-appsync-cache-behavior-value", "ERROR", na
 	some name in resources_of_type("AWS::AppSync::ApiCache")
 	v := resolve(name, "Properties.ApiCachingBehavior")
 	is_string(v)
+	not input.resources[v]
 	not v in {"FULL_REQUEST_CACHING", "PER_RESOLVER_CACHING", "OPERATION_LEVEL_CACHING"}
 }

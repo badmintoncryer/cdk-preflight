@@ -13,6 +13,7 @@ violation contains make_diag_full("pf-rds-parameter-group-family-engine", "ERROR
 	input.resources[pg].resourceType == "AWS::RDS::DBParameterGroup"
 	f0 := resolve(pg, "Properties.Family")
 	is_string(f0)
+	not input.resources[f0]
 	fam := lower(f0)
 	e := _pf_rds_engine(name)
 	not startswith(fam, e)

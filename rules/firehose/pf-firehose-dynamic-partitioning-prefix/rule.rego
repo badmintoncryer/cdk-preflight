@@ -13,5 +13,6 @@ violation contains make_diag_full("pf-firehose-dynamic-partitioning-prefix", "ER
 	coerce_to_bool(resolve(name, "Properties.ExtendedS3DestinationConfiguration.DynamicPartitioningConfiguration.Enabled")) == true
 	p := resolve(name, "Properties.ExtendedS3DestinationConfiguration.Prefix")
 	is_string(p)
+	not input.resources[p]
 	not contains(p, "!{partitionKey")
 }

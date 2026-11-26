@@ -15,5 +15,6 @@ violation contains make_diag_full("pf-ec2-placement-group-spread-level", "ERROR"
 	not _pf_ec2lib_absent(name, "SpreadLevel")
 	s := resolve(name, "Properties.Strategy")
 	is_string(s)
+	not input.resources[s]
 	not s in {"spread", "partition"}
 }

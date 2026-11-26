@@ -25,6 +25,7 @@ _pf_snsftp_sub contains [name, path, sub, name] if {
 _pf_snsftp_proto(name, path) := p if {
 	p := resolve(name, sprintf("%s.Protocol", [path]))
 	is_string(p)
+	not input.resources[p]
 }
 
 # topic is FIFO: an in-template topic with FifoTopic true, or a literal ARN ending in .fifo

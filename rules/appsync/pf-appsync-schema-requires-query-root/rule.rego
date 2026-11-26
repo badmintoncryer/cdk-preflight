@@ -16,6 +16,7 @@ violation contains make_diag_full("pf-appsync-schema-requires-query-root", "ERRO
 	some name in resources_of_type("AWS::AppSync::GraphQLSchema")
 	sdl := resolve(name, "Properties.Definition")
 	is_string(sdl)
+	not input.resources[sdl]
 	s := _pf_schemarequiresqueryroot_clean(sdl)
 	count(regex.find_n(`type\s+Query\b`, s, -1)) == 0
 	count(regex.find_n(`schema\s*\{[^}]*\bquery\s*:`, s, -1)) == 0

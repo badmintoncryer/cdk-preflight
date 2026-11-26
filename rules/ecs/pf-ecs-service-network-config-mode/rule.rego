@@ -18,5 +18,6 @@ violation contains make_diag_full("pf-ecs-service-network-config-mode", "ERROR",
 	td in resources_of_type("AWS::ECS::TaskDefinition")
 	nm := resolve(td, "Properties.NetworkMode")
 	is_string(nm)
+	not input.resources[nm]
 	nm != "awsvpc"
 }

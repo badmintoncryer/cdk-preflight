@@ -20,5 +20,6 @@ violation contains make_diag_full("pf-apigwv2-aws-proxy-payload-version", "ERROR
 	_pf_agv2app_http_api(name)
 	pv := resolve(name, "Properties.PayloadFormatVersion")
 	is_string(pv)
+	not input.resources[pv]
 	not pv in {"1.0", "2.0"}
 }

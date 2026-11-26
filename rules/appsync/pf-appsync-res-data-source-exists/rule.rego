@@ -20,5 +20,6 @@ violation contains make_diag_full("pf-appsync-res-data-source-exists", "ERROR", 
 	api in resources_of_type("AWS::AppSync::GraphQLApi")
 	dsn := resolve(name, "Properties.DataSourceName")
 	is_string(dsn)
+	not input.resources[dsn]
 	not _pf_resdatasourceexists_has(api, dsn)
 }

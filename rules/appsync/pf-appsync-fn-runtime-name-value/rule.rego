@@ -12,5 +12,6 @@ violation contains make_diag_full("pf-appsync-fn-runtime-name-value", "ERROR", n
 	some name in resources_of_type("AWS::AppSync::FunctionConfiguration")
 	v := resolve(name, "Properties.Runtime.Name")
 	is_string(v)
+	not input.resources[v]
 	not v in {"APPSYNC_JS"}
 }

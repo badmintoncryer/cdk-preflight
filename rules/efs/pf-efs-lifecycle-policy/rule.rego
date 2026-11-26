@@ -79,6 +79,7 @@ violation contains make_diag_full("pf-efs-lifecycle-policy", "ERROR", name,
 _pf_efslc_mode(name) := m if {
 	m := resolve(name, "Properties.ThroughputMode")
 	is_string(m)
+	not input.resources[m]
 }
 
 _pf_efslc_mode(name) := "bursting" if _pf_efslib_absent(name, "ThroughputMode")

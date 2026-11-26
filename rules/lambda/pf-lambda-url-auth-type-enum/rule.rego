@@ -13,5 +13,6 @@ violation contains make_diag_full("pf-lambda-url-auth-type-enum", "ERROR", name,
 	some name in _pf_lam_url
 	v := resolve(name, "Properties.AuthType")
 	is_string(v)
+	not input.resources[v]
 	not v in {"AWS_IAM", "NONE"}
 }

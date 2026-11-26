@@ -42,6 +42,7 @@ violation contains make_diag_full("pf-ssm-association-targets", "ERROR", name,
 	some i, _ in _pf_ssmat_targets(name)
 	k := resolve(name, sprintf("Properties.Targets.%d.Key", [i]))
 	is_string(k)
+	not input.resources[k]
 	not _pf_ssmat_key_ok(k)
 }
 

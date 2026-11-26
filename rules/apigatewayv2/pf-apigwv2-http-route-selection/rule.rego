@@ -16,5 +16,6 @@ violation contains make_diag_full("pf-apigwv2-http-route-selection", "ERROR", na
 	resolve(name, "Properties.ProtocolType") == "HTTP"
 	rse := resolve(name, "Properties.RouteSelectionExpression")
 	is_string(rse)
+	not input.resources[rse]
 	not rse in _pf_agv2hrs_allowed
 }

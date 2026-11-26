@@ -79,6 +79,7 @@ violation contains make_diag_full("pf-ssm-maintenance-window-task", "ERROR", nam
 	some i, _ in _pf_ssmmt_targets(name)
 	k := resolve(name, sprintf("Properties.Targets.%d.Key", [i]))
 	is_string(k)
+	not input.resources[k]
 	not k in ["WindowTargetIds", "InstanceIds"]
 }
 

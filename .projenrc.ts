@@ -179,6 +179,14 @@ corpus.spawn(bundleRules);
 corpus.exec('bash scripts/fetch-corpus.sh .corpus');
 corpus.exec('ts-node --project test/tsconfig.json scripts/corpus-sweep.ts --check .corpus/packages');
 project.gitignore.addPatterns('/.corpus/');
+
+// 参照の差し替え回帰（scripts/reference-sweep.ts）。各ルールの pass テンプレートの文字列を 1 つずつ
+// Ref / GetAtt に替えて、参照をリテラルと読んで鳴るルールと、参照で実行時エラーになるルールを落とす。
+const referenceSweep = project.addTask('reference-sweep', {
+  description: 'Replace each string a rule reads with a Ref / GetAtt and compare the firings with rules/_reference-baseline.txt',
+});
+referenceSweep.spawn(bundleRules);
+referenceSweep.exec('ts-node --project test/tsconfig.json scripts/reference-sweep.ts --check');
 project.github!.tryFindWorkflow('build')!.addJob('corpus', {
   runsOn: ['ubuntu-latest'],
   permissions: { contents: github.workflows.JobPermission.READ },
@@ -196,6 +204,7 @@ project.github!.tryFindWorkflow('build')!.addJob('corpus', {
     },
     { name: 'Install dependencies', run: 'yarn install --check-files --frozen-lockfile' },
     { name: 'Rules over the aws-cdk integ snapshots', run: 'npx projen corpus' },
+    { name: 'Rules over references in place of literals', run: 'npx projen reference-sweep' },
   ],
 });
 

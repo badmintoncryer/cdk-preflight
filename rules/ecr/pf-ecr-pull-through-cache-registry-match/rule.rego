@@ -20,5 +20,6 @@ violation contains make_diag_full("pf-ecr-pull-through-cache-registry-match", "E
 	actual := _pf_ecrlib_ptc_registry(url)
 	declared := resolve(name, "Properties.UpstreamRegistry")
 	is_string(declared)
+	not input.resources[declared]
 	declared != actual
 }

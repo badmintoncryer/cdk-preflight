@@ -15,5 +15,6 @@ violation contains make_diag_full("pf-cognito-idp-social-provider-name-fixed", "
 	t in _pf_coglib_social_idps
 	n := resolve(name, "Properties.ProviderName")
 	is_string(n)
+	not input.resources[n]
 	n != t
 }

@@ -14,5 +14,6 @@ violation contains make_diag_full("pf-cognito-invite-message-username-placeholde
 	some name in resources_of_type("AWS::Cognito::UserPool")
 	m := resolve(name, "Properties.AdminCreateUserConfig.InviteMessageTemplate.EmailMessage")
 	is_string(m)
+	not input.resources[m]
 	_pf_cgimup_bad(m)
 }

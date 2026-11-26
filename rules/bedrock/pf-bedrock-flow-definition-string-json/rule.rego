@@ -13,5 +13,6 @@ violation contains make_diag_full("pf-bedrock-flow-definition-string-json", "ERR
 	some name in resources_of_type("AWS::Bedrock::Flow")
 	s := resolve(name, "Properties.DefinitionString")
 	is_string(s)
+	not input.resources[s]
 	not json.is_valid(s)
 }

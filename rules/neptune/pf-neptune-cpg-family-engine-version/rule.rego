@@ -26,6 +26,7 @@ violation contains make_diag_full("pf-neptune-cpg-family-engine-version", "ERROR
 	input.resources[pg].resourceType == "AWS::Neptune::DBClusterParameterGroup"
 	f0 := resolve(pg, "Properties.Family")
 	is_string(f0)
+	not input.resources[f0]
 	fam := lower(f0)
 	v := resolve(name, "Properties.EngineVersion")
 	want := _pf_nepcpg_want(v)

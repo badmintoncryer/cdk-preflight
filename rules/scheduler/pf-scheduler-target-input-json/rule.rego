@@ -14,6 +14,7 @@ _pf_sti_text_target(name) if {
 _pf_sti_text_target(name) if {
 	t := resolve(name, "Properties.Target.Arn")
 	is_string(t)
+	not input.resources[t]
 	regex.match(`^arn:[^:]+:(sqs|sns):`, t)
 }
 
@@ -25,6 +26,7 @@ violation contains make_diag_full("pf-scheduler-target-input-json", "ERROR", nam
 	some name in resources_of_type("AWS::Scheduler::Schedule")
 	inp := resolve(name, "Properties.Target.Input")
 	is_string(inp)
+	not input.resources[inp]
 	not json.is_valid(inp)
 	# an SQS or SNS target takes the Input as the message body, so any text deploys
 	# (aws-cdk integ.schedule-with-dlq: "testing dlq" to a queue)

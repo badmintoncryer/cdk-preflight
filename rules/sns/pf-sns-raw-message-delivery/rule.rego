@@ -25,6 +25,7 @@ _pf_snsraw_sub contains [name, path, sub, name] if {
 _pf_snsraw_proto(name, path) := p if {
 	p := resolve(name, sprintf("%s.Protocol", [path]))
 	is_string(p)
+	not input.resources[p]
 }
 
 violation contains make_diag_full("pf-sns-raw-message-delivery", "ERROR", name,

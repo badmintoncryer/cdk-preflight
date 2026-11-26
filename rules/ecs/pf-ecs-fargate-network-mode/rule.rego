@@ -24,6 +24,7 @@ violation contains make_diag_full("pf-ecs-fargate-network-mode", "ERROR", name,
 	"FARGATE" in rc
 	nm := resolve(name, "Properties.NetworkMode")
 	is_string(nm)
+	not input.resources[nm]
 	nm != "awsvpc"
 }
 

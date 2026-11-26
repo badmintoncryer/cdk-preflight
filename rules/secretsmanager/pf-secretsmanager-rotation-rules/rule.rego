@@ -19,6 +19,7 @@ _pf_smrot_rules(name) := r if {
 _pf_smrot_expr(name) := e if {
 	e := resolve(name, "Properties.RotationRules.ScheduleExpression")
 	is_string(e)
+	not input.resources[e]
 }
 
 _pf_smrot_days(name) := n if {
@@ -166,6 +167,7 @@ violation contains make_diag_full("pf-secretsmanager-rotation-rules", "ERROR", n
 _pf_smrot_duration(name) := d if {
 	d := resolve(name, "Properties.RotationRules.Duration")
 	is_string(d)
+	not input.resources[d]
 }
 
 _pf_smrot_dur_hours(d) := _pf_tonum(m[0][1]) if {

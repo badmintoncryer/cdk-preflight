@@ -14,5 +14,6 @@ violation contains make_diag_full("pf-msk-public-access-not-at-create", "ERROR",
 	some name in resources_of_type("AWS::MSK::Cluster")
 	t := resolve(name, "Properties.BrokerNodeGroupInfo.ConnectivityInfo.PublicAccess.Type")
 	is_string(t)
+	not input.resources[t]
 	t != "DISABLED"
 }

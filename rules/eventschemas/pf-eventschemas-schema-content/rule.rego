@@ -13,6 +13,7 @@ _pf_schcontent_url := "https://docs.aws.amazon.com/eventbridge/latest/userguide/
 _pf_schcontent_raw(name) := c if {
 	c := resolve(name, "Properties.Content")
 	is_string(c)
+	not input.resources[c]
 }
 
 _pf_schcontent_openapi(name) := obj if {

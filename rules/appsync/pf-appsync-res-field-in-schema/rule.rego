@@ -9,6 +9,7 @@ _pf_resfieldinschema_sdl(api) := s if {
 	resolve(g, "Properties.ApiId") == api
 	s := resolve(g, "Properties.Definition")
 	is_string(s)
+	not input.resources[s]
 }
 
 violation contains make_diag_full("pf-appsync-res-field-in-schema", "ERROR", name,
@@ -21,8 +22,10 @@ violation contains make_diag_full("pf-appsync-res-field-in-schema", "ERROR", nam
 	sdl := _pf_resfieldinschema_sdl(api)
 	t := resolve(name, "Properties.TypeName")
 	is_string(t)
+	not input.resources[t]
 	f := resolve(name, "Properties.FieldName")
 	is_string(f)
+	not input.resources[f]
 	some b in regex.find_all_string_submatch_n(sprintf(`type\s+%s\b[^{]*\{([^}]*)\}`, [t]), sdl, -1)
 	count(regex.find_n(sprintf(`\b%s\s*[(:]`, [f]), b[1], -1)) == 0
 }

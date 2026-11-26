@@ -13,5 +13,6 @@ violation contains make_diag_full("pf-lambda-url-invoke-mode-enum", "ERROR", nam
 	some name in _pf_lam_url
 	v := resolve(name, "Properties.InvokeMode")
 	is_string(v)
+	not input.resources[v]
 	not v in {"BUFFERED", "RESPONSE_STREAM"}
 }

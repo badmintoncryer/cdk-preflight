@@ -9,6 +9,9 @@ import rego.v1
 # Fn::GetAtt Arn both do — the GetAtt of a bucket is its bucket ARN). Fires
 # only when every resource in the statement is provably bucket-level, so
 # unresolvable entries (e.g. Fn::Sub "${B.Arn}/*") mute the statement.
+# The list clauses exclude a value that resolves to one string (a Ref), which
+# the single-value clauses already cover: two outputs for one key is an
+# evaluation error that stops every s3 rule on the template.
 
 _pf_s3bpar_object_action(a) if startswith(lower(a), "s3:getobject")
 
@@ -34,6 +37,7 @@ _pf_s3bpar_actions(name, i) := [a] if {
 }
 
 _pf_s3bpar_actions(name, i) := acts if {
+	not is_string(resolve(name, sprintf("Properties.PolicyDocument.Statement.%d.Action", [i])))
 	items := [it | some it in flatten_list(name, sprintf("Properties.PolicyDocument.Statement.%d.Action", [i]))]
 	count(items) > 0
 	acts := [v | some it in items; v := it.value; is_string(v)]
@@ -45,6 +49,7 @@ _pf_s3bpar_resources(name, i) := [r] if {
 }
 
 _pf_s3bpar_resources(name, i) := rs if {
+	not is_string(resolve(name, sprintf("Properties.PolicyDocument.Statement.%d.Resource", [i])))
 	items := [it | some it in flatten_list(name, sprintf("Properties.PolicyDocument.Statement.%d.Resource", [i]))]
 	count(items) > 0
 	rs := [v | some it in items; v := resolve(name, sprintf("Properties.PolicyDocument.Statement.%d.Resource.%d", [i, it.index])); is_string(v)]

@@ -11,5 +11,6 @@ violation contains make_diag_full("pf-appsync-res-runtime-version-value", "ERROR
 	resolve(name, "Properties.Runtime.Name") == "APPSYNC_JS"
 	v := resolve(name, "Properties.Runtime.RuntimeVersion")
 	is_string(v)
+	not input.resources[v]
 	v != "1.0.0"
 }

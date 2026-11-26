@@ -11,5 +11,6 @@ violation contains make_diag_full("pf-transfer-sftp-ports-public-only", "ERROR",
 	count(flatten_list(name, "Properties.ProtocolDetails.SftpPorts")) > 0
 	et := resolve(name, "Properties.EndpointType")
 	is_string(et)
+	not input.resources[et]
 	upper(et) != "PUBLIC"
 }

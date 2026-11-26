@@ -9,6 +9,7 @@ _pf_ssmms_fix := "Fix the schedule expression (see message), drop ScheduleOffset
 _pf_ssmms_sched(name) := s if {
 	s := resolve(name, "Properties.Schedule")
 	is_string(s)
+	not input.resources[s]
 }
 
 _pf_ssmms_kind(s) := "rate" if startswith(lower(s), "rate(")
@@ -156,6 +157,7 @@ _pf_ssmms_offset_ok(s) if {
 _pf_ssmms_date(name, k) := d if {
 	d := resolve(name, sprintf("Properties.%s", [k]))
 	is_string(d)
+	not input.resources[d]
 }
 
 _pf_ssmms_iso(d) if regex.match("^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}(:[0-9]{2}(\\.[0-9]+)?)?(Z|[+-][0-9]{2}:[0-9]{2})$", d)
@@ -794,6 +796,7 @@ violation contains make_diag_full("pf-ssm-maintenance-window-schedule", "ERROR",
 	some name in resources_of_type("AWS::SSM::MaintenanceWindow")
 	tz := resolve(name, "Properties.ScheduleTimezone")
 	is_string(tz)
+	not input.resources[tz]
 	not tz in _pf_ssmms_zones
 	not regex.match("^[+-][0-9]{2}:?[0-9]{2}$", tz)
 }

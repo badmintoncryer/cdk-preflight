@@ -10,12 +10,14 @@ _pf_ssmap_items(name) := split(v, ",") if {
 	resolve(name, "Properties.Type") == "StringList"
 	v := resolve(name, "Properties.Value")
 	is_string(v)
+	not input.resources[v]
 }
 
 _pf_ssmap_items(name) := [v] if {
 	resolve(name, "Properties.Type") != "StringList"
 	v := resolve(name, "Properties.Value")
 	is_string(v)
+	not input.resources[v]
 }
 
 # ponytail: only patterns the Rust regex engine accepts are checked (Java-only syntax such as
@@ -27,6 +29,7 @@ violation contains make_diag_full("pf-ssm-parameter-allowed-pattern", "ERROR", n
 	some name in resources_of_type("AWS::SSM::Parameter")
 	pat := resolve(name, "Properties.AllowedPattern")
 	is_string(pat)
+	not input.resources[pat]
 	regex.is_valid(pat)
 	some item in _pf_ssmap_items(name)
 	not regex.match(pat, item)

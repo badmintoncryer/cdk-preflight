@@ -18,5 +18,6 @@ violation contains make_diag_full("pf-agentcore-gateway-target-caller-iam-author
 	gw := _pf_bedrocklib_ref_target(resolve(name, "Properties.GatewayIdentifier"), "AWS::BedrockAgentCore::Gateway")
 	auth := resolve(gw, "Properties.AuthorizerType")
 	is_string(auth)
+	not input.resources[auth]
 	not auth in {"AWS_IAM", "AUTHENTICATE_ONLY"}
 }

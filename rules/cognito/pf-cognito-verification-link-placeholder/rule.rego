@@ -11,5 +11,6 @@ violation contains make_diag_full("pf-cognito-verification-link-placeholder", "E
 	resolve(name, "Properties.VerificationMessageTemplate.DefaultEmailOption") == "CONFIRM_WITH_LINK"
 	m := resolve(name, "Properties.VerificationMessageTemplate.EmailMessageByLink")
 	is_string(m)
+	not input.resources[m]
 	not regex.match(`\{##.*##\}`, m)
 }

@@ -13,6 +13,7 @@ violation contains make_diag_full("pf-logs-field-selection-criteria-syntax", "ER
 	some name in resources_of_type("AWS::Logs::MetricFilter")
 	c := resolve(name, "Properties.FieldSelectionCriteria")
 	is_string(c)
+	not input.resources[c]
 	c != ""
 	not contains(c, "@aws.")
 }

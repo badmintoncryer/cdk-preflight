@@ -14,8 +14,10 @@ violation contains make_diag_full("pf-route53-alias-cloudfront-zone-id", "ERROR"
 	some name in resources_of_type("AWS::Route53::RecordSet")
 	dns := resolve(name, "Properties.AliasTarget.DNSName")
 	is_string(dns)
+	not input.resources[dns]
 	endswith(trim_suffix(lower(dns), "."), ".cloudfront.net")
 	zid := resolve(name, "Properties.AliasTarget.HostedZoneId")
 	is_string(zid)
+	not input.resources[zid]
 	zid != "Z2FDTNDATAQYW2"
 }

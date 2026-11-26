@@ -13,5 +13,6 @@ violation contains make_diag_full("pf-ec2-volume-throughput-type", "ERROR", name
 	not _pf_ec2lib_absent(name, "Throughput")
 	vt := resolve(name, "Properties.VolumeType")
 	is_string(vt)
+	not input.resources[vt]
 	vt != "gp3"
 }

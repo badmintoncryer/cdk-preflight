@@ -14,5 +14,6 @@ violation contains make_diag_full("pf-logs-account-policy-selection-criteria-pre
 	policy_type in _pf_lgapp_types
 	c := resolve(name, "Properties.SelectionCriteria")
 	is_string(c)
+	not input.resources[c]
 	not regex.match(`(?i)^\s*LogGroupNamePrefix\s`, c)
 }

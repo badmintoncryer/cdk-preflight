@@ -12,6 +12,7 @@ violation contains make_diag_full("pf-bedrock-prompt-default-variant", "ERROR", 
 	some name in resources_of_type("AWS::Bedrock::Prompt")
 	dv := resolve(name, "Properties.DefaultVariant")
 	is_string(dv)
+	not input.resources[dv]
 	vs := object.get(_pf_bedrocklib_props(name), "Variants", [])
 	is_array(vs)
 	_pf_unconditional_items(vs)

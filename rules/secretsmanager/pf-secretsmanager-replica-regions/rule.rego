@@ -30,5 +30,6 @@ violation contains make_diag_full("pf-secretsmanager-replica-regions", "ERROR", 
 	some [name, i] in _pf_smrr_entries
 	r := resolve(name, sprintf("Properties.ReplicaRegions.%d.Region", [i]))
 	is_string(r)
+	not input.resources[r]
 	not regex.match("^[a-z]{2}(-gov)?(-iso[a-z]?)?-[a-z]+-[0-9]$", r)
 }

@@ -13,5 +13,6 @@ violation contains make_diag_full("pf-ec2-credit-specification-burstable", "ERRO
 	not _pf_ec2lib_absent(name, "CreditSpecification")
 	it := resolve(name, "Properties.InstanceType")
 	is_string(it)
+	not input.resources[it]
 	not regex.match(`^t[0-9]`, it)
 }

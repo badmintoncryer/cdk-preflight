@@ -16,6 +16,7 @@ violation contains make_diag_full("pf-agentcore-runtime-byo-filesystem-vpc", "ER
 	some name in resources_of_type("AWS::BedrockAgentCore::Runtime")
 	mode := resolve(name, "Properties.NetworkConfiguration.NetworkMode")
 	is_string(mode)
+	not input.resources[mode]
 	mode != "VPC"
 	some e in _pf_acrt_fs(name)
 	some k in _pf_acbyo_kinds

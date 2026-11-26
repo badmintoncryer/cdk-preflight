@@ -11,11 +11,13 @@ violation contains make_diag_full("pf-elasticache-serverless-public-valkey-only"
 	_pf_ecpub_vo(name)
 	eng := resolve(name, "Properties.Engine")
 	is_string(eng)
+	not input.resources[eng]
 	lower(eng) != "valkey"
 }
 
 _pf_ecpub_vo(name) if {
 	ct := resolve(name, "Properties.ConnectionType")
 	is_string(ct)
+	not input.resources[ct]
 	lower(ct) == "public"
 }

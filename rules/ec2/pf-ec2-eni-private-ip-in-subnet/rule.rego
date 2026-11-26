@@ -10,10 +10,12 @@ violation contains make_diag_full("pf-ec2-eni-private-ip-in-subnet", "ERROR", na
 	some name in resources_of_type("AWS::EC2::NetworkInterface")
 	ip := resolve(name, "Properties.PrivateIpAddress")
 	is_string(ip)
+	not input.resources[ip]
 	sref := resolve(name, "Properties.SubnetId")
 	is_string(sref)
 	sref in resources_of_type("AWS::EC2::Subnet")
 	cidr := resolve(sref, "Properties.CidrBlock")
 	is_string(cidr)
+	not input.resources[cidr]
 	not _pf_ec2lib_cidr_has_ip(cidr, ip)
 }

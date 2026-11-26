@@ -11,5 +11,6 @@ violation contains make_diag_full("pf-logs-account-policy-selection-criteria-sub
 	resolve(name, "Properties.PolicyType") == "SUBSCRIPTION_FILTER_POLICY"
 	c := resolve(name, "Properties.SelectionCriteria")
 	is_string(c)
+	not input.resources[c]
 	not regex.match(`(?i)^\s*LogGroupName\s+NOT\s+IN\s*\[`, c)
 }

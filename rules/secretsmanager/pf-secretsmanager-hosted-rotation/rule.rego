@@ -48,6 +48,7 @@ violation contains make_diag_full("pf-secretsmanager-hosted-rotation", "WARN", n
 	some name in resources_of_type("AWS::SecretsManager::RotationSchedule")
 	t := resolve(name, "Properties.HostedRotationLambda.RotationType")
 	is_string(t)
+	not input.resources[t]
 	not t in _pf_smhr_types
 }
 
@@ -59,6 +60,7 @@ violation contains make_diag_full("pf-secretsmanager-hosted-rotation", "ERROR", 
 	h := _pf_smhr_hosted(name)
 	t := resolve(name, "Properties.HostedRotationLambda.RotationType")
 	is_string(t)
+	not input.resources[t]
 	not endswith(t, "MultiUser")
 	some k in ["MasterSecretArn", "SuperuserSecretArn"]
 	object.get(h, k, "__pf_absent") != "__pf_absent"

@@ -62,6 +62,7 @@ violation contains make_diag_full("pf-events-endpoint-buses", "ERROR", name,
 	count(arns) == 2
 	route := resolve(name, "Properties.RoutingConfig.FailoverConfig.Secondary.Route")
 	is_string(route)
+	not input.resources[route]
 	regions := {r | some a in arns; r := _pf_evep_part(a, 3)}
 	not route in regions
 }

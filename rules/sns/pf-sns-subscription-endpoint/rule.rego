@@ -25,6 +25,7 @@ _pf_snsep_sub contains [name, path, sub, name] if {
 _pf_snsep_proto(name, path) := p if {
 	p := resolve(name, sprintf("%s.Protocol", [path]))
 	is_string(p)
+	not input.resources[p]
 }
 
 _pf_snsep_protocols := {"http", "https", "email", "email-json", "sms", "sqs", "application", "lambda", "firehose"}
@@ -69,6 +70,7 @@ violation contains make_diag_full("pf-sns-subscription-endpoint", "ERROR", name,
 	p2 == proto
 	ep := resolve(name, sprintf("%s.Endpoint", [path]))
 	is_string(ep)
+	not input.resources[ep]
 	not ep in object.keys(input.resources)
 	not contains(ep, "${")
 	not regex.match(pattern, ep)

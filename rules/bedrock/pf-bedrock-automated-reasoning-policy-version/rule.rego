@@ -12,5 +12,6 @@ violation contains make_diag_full("pf-bedrock-automated-reasoning-policy-version
 	some name in resources_of_type("AWS::Bedrock::AutomatedReasoningPolicy")
 	v := resolve(name, "Properties.PolicyDefinition.Version")
 	is_string(v)
+	not input.resources[v]
 	v != "1.0"
 }

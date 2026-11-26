@@ -23,6 +23,7 @@ _pf_ssmds_content(name) := c if {
 _pf_ssmds_type(name) := t if {
 	t := resolve(name, "Properties.DocumentType")
 	is_string(t)
+	not input.resources[t]
 }
 
 _pf_ssmds_type(name) := "Command" if {
@@ -71,6 +72,7 @@ _pf_ssmds_absent22(name, sv) if {
 _pf_ssmds_format(name) := f if {
 	f := resolve(name, "Properties.DocumentFormat")
 	is_string(f)
+	not input.resources[f]
 }
 
 _pf_ssmds_format(name) := "JSON" if {

@@ -128,7 +128,9 @@ WARNING idle_timeout.timeout_seconds is 5000 but must be between 1 and 4000 seco
 > does not compile, an engine bug), enforce mode reports it as a violation named `pf-engine-error` and fails
 > synthesis for that stack instead of passing green with no rule having run. The other stacks keep their rules.
 > `pf-engine-error` is not a bundled rule and cannot be `exclude`d; `enforce: false` unblocks the build if you
-> need one.
+> need one. A rule that errors at run time on a template (a bug in that rule, not a problem in the template)
+> costs only the rules of its service: they are skipped for that template, every other rule still runs, and
+> `pf-engine-error` is reported as a warning naming the skipped service.
 
 | Option | Default | Effect |
 |---|---|---|
