@@ -4,8 +4,10 @@ resourceTypes: [AWS::CloudFront::Distribution]
 severity: WARN
 title: CloudFront viewer certificates must live in us-east-1
 constraintSource: https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/cnames-and-https-requirements.html#https-requirements-certificate-issuer
+benchRegion: us-east-1
 upstream: none
 repro:
-  method: doc-only
-  evidence: cannot reproduce without a validated ACM certificate; constraint documented and widely observed
+  method: real-deploy
+  evidence: "bench 2026-11-26 us-east-1: the fail template with its AcmCertificateArn swapped for a real ISSUED certificate (cdkpf-ap.appnao.com, DNS-validated in ap-northeast-1, deleted in-session) and that name as the alias -> CREATE_FAILED about a second after create with \"Invalid request provided: AWS::CloudFront::Distribution: The specified SSL certificate doesn't exist, isn't in us-east-1 region, isn't valid, or doesn't include a valid certificate chain.\" The sentence lists four causes, so the committed placeholder ARN (another account) draws it too; the run with a real, valid ap-northeast-1 certificate is what pins the region as the cause. Kept at WARN in this change; promotion is a separate decision."
+  expect: "isn't in us-east-1 region"
 addedOn: 2026-09-01

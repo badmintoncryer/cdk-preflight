@@ -7,6 +7,7 @@ constraintSource: https://docs.aws.amazon.com/lambda/latest/dg/configuration-sel
 benchRegion: us-east-1
 upstream: none
 repro:
-  method: doc-only
-  evidence: 'REFERENCE content needs a bucket policy granting lambda.amazonaws.com s3:GetObject. Not benched: same in-template-bucket problem as pf-lambda-layer-reference-needs-versioning (2026-09-07).'
+  method: real-deploy
+  evidence: "bench 2026-11-26 us-east-1: a REFERENCE LayerVersion over an existing versioned bucket with no bucket policy (object present, with and without S3ObjectVersion) -> CREATE_FAILED with \"Lambda is unable to access the specified S3 object. Verify that your bucket policy grants the Lambda service principal s3:GetObjectVersion on the object, with aws:SourceAccount scoped to your account. If the object does not exist, also grant s3:ListBucket so Lambda can report a missing object accurately.\"; the same bucket with a policy granting lambda.amazonaws.com s3:GetObject and s3:GetObjectVersion -> CREATE_COMPLETE, and a function using that layer invoked fine. The check repeats at CreateFunction: once the policy was removed, a new function using the published layer was refused with \"Lambda is unable to access the source S3 object for layer ...\", while an existing function kept working. The policy check runs before the versioning check (an unversioned bucket without a policy gets this sentence, not the versioning one)."
+  expect: "Verify that your bucket policy grants the Lambda service principal s3:GetObjectVersion"
 addedOn: 2026-09-07
