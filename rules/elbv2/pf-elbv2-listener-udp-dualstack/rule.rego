@@ -15,4 +15,6 @@ violation contains make_diag_full("pf-elbv2-listener-udp-dualstack", "ERROR", na
 	proto in {"UDP", "TCP_UDP", "QUIC", "TCP_QUIC"}
 	lb := _pf_elb_lb_of(name)
 	object.get(_pf_elb_props(lb), "IpAddressType", "ipv4") == "dualstack"
+	# with IPv6 source NAT prefixes on, a dualstack NLB takes UDP listeners
+	not object.get(_pf_elb_props(lb), "EnablePrefixForIpv6SourceNat", null) == "on"
 }

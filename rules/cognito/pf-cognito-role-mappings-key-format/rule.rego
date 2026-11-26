@@ -5,6 +5,11 @@ import rego.v1
 # The key is <provider>:<client id> for a user pool provider, or the provider
 # domain for a social one - always a dotted name.
 
+_pf_crmk_has_idp(m) if {
+	is_object(m)
+	object.get(m, "IdentityProvider", "__pf_absent") != "__pf_absent"
+}
+
 violation contains make_diag_full("pf-cognito-role-mappings-key-format", "ERROR", name,
 	sprintf("Properties.RoleMappings.%s", [k]),
 	sprintf("RoleMappings key '%s' is not a provider name; the roles call fails with \"(%s) is not a valid RoleMapping ProviderName or is not a configured provider.\"", [k, k]),
@@ -13,7 +18,9 @@ violation contains make_diag_full("pf-cognito-role-mappings-key-format", "ERROR"
 	some name in resources_of_type("AWS::Cognito::IdentityPoolRoleAttachment")
 	rm := resolve(name, "Properties.RoleMappings")
 	is_object(rm)
-	some k, _ in rm
+	some k, m in rm
 	is_string(k)
+	# with IdentityProvider set, the key is only a label (the CloudFormation reference)
+	not _pf_crmk_has_idp(m)
 	not contains(k, ".")
 }

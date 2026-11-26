@@ -12,6 +12,7 @@ _pf_fhhtf_bad contains [name, path, f] if {
 	is_array(fs)
 	some f in fs
 	_pf_fhlib_lit(f)
+	f != "millis" # the documented special value for epoch milliseconds
 	unquoted := regex.replace(f, `'[^']*'`, "")
 	some i in numbers.range(0, count(unquoted) - 1)
 	substring(unquoted, i, 1) in _pf_fhlib_ts_bad

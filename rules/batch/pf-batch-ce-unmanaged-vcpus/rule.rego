@@ -11,5 +11,5 @@ violation contains make_diag_full("pf-batch-ce-unmanaged-vcpus", "ERROR", name,
 	_pf_batch_has(name, "UnmanagedvCpus")
 	t := _pf_batch_get(name, "Type")
 	_pf_batch_lit(t)
-	t != "UNMANAGED"
+	upper(t) != "UNMANAGED"
 }

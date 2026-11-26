@@ -15,7 +15,8 @@ violation contains make_diag_full("pf-s3-replication-rtc-needs-metrics", "ERROR"
 	is_object(rule.value)
 	d := object.get(rule.value, "Destination", {})
 	is_object(d)
-	some pair in [["ReplicationTime", "Metrics"], ["Metrics", "ReplicationTime"]]
+	# Metrics alone is replication metrics without RTC, which S3 accepts; only RTC needs both
+	some pair in [["ReplicationTime", "Metrics"]]
 	present := pair[0]
 	missing := pair[1]
 	object.get(d, present, "__pf_absent") != "__pf_absent"

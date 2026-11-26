@@ -4,7 +4,7 @@ import rego.v1
 
 _pf_rdsclogs := {
 	"aurora-postgresql": {"postgresql", "instance", "iam-db-auth-error"},
-	"aurora-mysql": {"audit", "error", "general", "slowquery", "iam-db-auth-error"},
+	"aurora-mysql": {"audit", "error", "general", "slowquery", "iam-db-auth-error", "instance"},
 	"postgres": {"postgresql", "upgrade", "iam-db-auth-error"},
 	"mysql": {"audit", "error", "general", "slowquery", "iam-db-auth-error"},
 }

@@ -113,5 +113,6 @@ violation contains make_diag_full("pf-sfn-asl-jsonpath-syntax", "ERROR", name,
 	a := object.get(st, "Assign", null)
 	is_object(a)
 	some k, _ in a
-	not regex.match("^[A-Za-z][A-Za-z0-9_]*$", k)
+	# JSONPath states write `name.$` to evaluate the value; the variable is `name`
+	not regex.match("^[A-Za-z][A-Za-z0-9_]*$", trim_suffix(k, ".$"))
 }

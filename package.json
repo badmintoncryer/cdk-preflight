@@ -18,6 +18,7 @@
     "clobber": "projen clobber",
     "compat": "projen compat",
     "compile": "projen compile",
+    "corpus": "projen corpus",
     "default": "projen default",
     "docgen": "projen docgen",
     "eject": "projen eject",

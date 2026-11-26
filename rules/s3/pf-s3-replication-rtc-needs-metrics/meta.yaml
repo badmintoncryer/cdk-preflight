@@ -3,7 +3,7 @@ service: s3
 benchRegion: us-east-1
 resourceTypes: [AWS::S3::Bucket]
 severity: ERROR
-title: "Replication Time Control needs Metrics, and Metrics needs ReplicationTime"
+title: "Replication Time Control (ReplicationTime) needs Metrics"
 constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-s3-bucket-replicationtime.html
 upstream: none
 repro:

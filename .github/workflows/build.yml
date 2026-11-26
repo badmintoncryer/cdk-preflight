@@ -216,3 +216,25 @@ jobs:
       - name: Smoke test the packed tarball
         id: smoke_test_the_packed_tarball
         run: bash .repo/scripts/smoke.sh dist/js/*.jsii.tgz
+  corpus:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        id: checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
+      - name: Setup Node.js
+        id: setup_node_js
+        uses: actions/setup-node@v7.0.0
+        with:
+          node-version: "24"
+      - name: Install dependencies
+        id: install_dependencies
+        run: yarn install --check-files --frozen-lockfile
+      - name: Rules over the aws-cdk integ snapshots
+        id: rules_over_the_aws-cdk_integ_snapshots
+        run: npx projen corpus

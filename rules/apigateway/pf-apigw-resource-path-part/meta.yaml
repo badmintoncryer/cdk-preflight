@@ -1,7 +1,7 @@
 id: pf-apigw-resource-path-part
 service: apigateway
 resourceTypes: [AWS::ApiGateway::Resource]
-severity: ERROR
+severity: WARN
 title: "PathPart allows a-zA-Z0-9._-: or one curly-brace variable"
 constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-apigateway-resource.html
 upstream: none

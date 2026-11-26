@@ -3,7 +3,7 @@ service: apigatewayv2
 benchRegion: us-east-1
 resourceTypes: [AWS::ApiGatewayV2::DomainName]
 severity: ERROR
-title: "Custom domain names are lower case"
+title: "Custom domain names cannot contain an underscore"
 constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-apigatewayv2-domainname.html
 upstream: none
 repro:

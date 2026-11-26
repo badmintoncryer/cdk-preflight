@@ -154,6 +154,21 @@
         }
       ]
     },
+    "corpus": {
+      "name": "corpus",
+      "description": "Run every rule over the aws-cdk integ snapshots and compare with rules/_corpus-accepted.txt",
+      "steps": [
+        {
+          "spawn": "bundle-rules"
+        },
+        {
+          "exec": "bash scripts/fetch-corpus.sh .corpus"
+        },
+        {
+          "exec": "ts-node --project test/tsconfig.json scripts/corpus-sweep.ts --check .corpus/packages"
+        }
+      ]
+    },
     "default": {
       "name": "default",
       "description": "Synthesize project files",

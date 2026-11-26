@@ -11,6 +11,8 @@ violation contains make_diag_full("pf-lambda-esm-sqs-maximum-pollers-min", "ERRO
 	sprintf("MaximumPollers is %v; provisioned mode needs at least 2 pollers", [n]),
 	_pf_lespm_fix, _pf_lespm_url) if {
 	some name in _pf_lam_esm
+	# Kafka mappings take a single poller; the floor of 2 is SQS-only
+	_pf_lam_is(name, "sqs")
 	n := _pf_onum(_pf_lam_obj(_pf_lam_props(name), "ProvisionedPollerConfig"), "MaximumPollers")
 	n < 2
 }
