@@ -53,36 +53,6 @@ cert() { # <domain> <SSM の名前>
 cert '*.appnao.com' /cdkpf/fixtures/acm/wildcard-appnao-com
 cert cdkpf.appnao.com /cdkpf/fixtures/acm/cdkpf-appnao-com
 
-# CloudFront の field-level encryption: CloudFormation に型が無い（公開鍵だけある）ので外に置き、設定の ID を
-# SSM に置く。無い ID を指すと制約より先に "The specified field level encryption config does not exist" で倒れる
-# （2026-11-26、pf-cloudfront-field-level-encryption-requires-post の fail も省略の写しもこれだった）。秘密鍵は要らない
-fle() {
-  local pk prof id pem
-  id=$(aws cloudfront list-field-level-encryption-configs --query \
-    "FieldLevelEncryptionList.Items[?Comment=='cdkpf-fixtures'].Id | [0]" --output text)
-  if [ "$id" = None ]; then
-    pk=$(aws cloudfront list-public-keys --query "PublicKeyList.Items[?Name=='cdkpf-fle'].Id | [0]" --output text)
-    if [ "$pk" = None ]; then
-      pem=$(openssl genrsa 2048 2>/dev/null | openssl rsa -pubout 2>/dev/null)
-      pk=$(aws cloudfront create-public-key --query PublicKey.Id --output text --public-key-config \
-        "$(python3 -c 'import json, sys; print(json.dumps({"CallerReference": "cdkpf-fle", "Name": "cdkpf-fle", "EncodedKey": sys.argv[1]}))' "$pem")")
-    fi
-    prof=$(aws cloudfront list-field-level-encryption-profiles --query \
-      "FieldLevelEncryptionProfileList.Items[?Name=='cdkpf-fle'].Id | [0]" --output text)
-    if [ "$prof" = None ]; then
-      prof=$(aws cloudfront create-field-level-encryption-profile --query FieldLevelEncryptionProfile.Id --output text \
-        --field-level-encryption-profile-config "$(python3 -c 'import json, sys; print(json.dumps({"Name": "cdkpf-fle", "CallerReference": "cdkpf-fle", "Comment": "cdkpf-fixtures",
-          "EncryptionEntities": {"Quantity": 1, "Items": [{"PublicKeyId": sys.argv[1], "ProviderId": "cdkpf", "FieldPatterns": {"Quantity": 1, "Items": ["secret"]}}]}}))' "$pk")")
-    fi
-    id=$(aws cloudfront create-field-level-encryption-config --query FieldLevelEncryption.Id --output text \
-      --field-level-encryption-config "$(python3 -c 'import json, sys; print(json.dumps({"CallerReference": "cdkpf-fle", "Comment": "cdkpf-fixtures",
-        "ContentTypeProfileConfig": {"ForwardWhenContentTypeIsUnknown": True, "ContentTypeProfiles": {"Quantity": 1,
-          "Items": [{"Format": "URLEncoded", "ProfileId": sys.argv[1], "ContentType": "application/x-www-form-urlencoded"}]}}}))' "$prof")")
-  fi
-  put /cdkpf/fixtures/cloudfront/fle-config-id "$id"
-}
-fle || echo "!! cloudfront: could not set up the field-level encryption config in $A — pf-cloudfront-field-level-encryption-requires-post will be INCONCLUSIVE"
-
 # 既定 VPC: bench の既定 VPC を直書きしたフィクスチャは、verify-rule.sh がここの ID に読み替える
 [ "$(aws ec2 describe-vpcs --region $R --filters Name=is-default,Values=true \
     --query 'Vpcs[0].VpcId' --output text)" != None ] ||

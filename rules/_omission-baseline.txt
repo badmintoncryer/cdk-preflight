@@ -10,8 +10,6 @@ pf-agentcore-gateway-rate-limit-entry-dimensions AWS::BedrockAgentCore::GatewayR
 pf-apigw-vpc-endpoint-ids-private-only AWS::ApiGateway::RestApi.EndpointConfiguration.Types
 pf-athena-dc-lambda-record-requires-metadata AWS::Athena::DataCatalog.Parameters.record-function
 pf-cloudfront-continuous-deployment-traffic-config-match AWS::CloudFront::ContinuousDeploymentPolicy.ContinuousDeploymentPolicyConfig.TrafficConfig.SingleWeightConfig
-pf-cloudfront-field-level-encryption-requires-post AWS::CloudFront::Distribution.DistributionConfig.DefaultCacheBehavior.AllowedMethods
-pf-cloudfront-vpc-origin-ssl-protocols-required AWS::CloudFront::VpcOrigin.VpcOriginEndpointConfig.OriginSSLProtocols
 pf-ec2-route-target-exactly-one AWS::EC2::Route.GatewayId
 pf-ec2-volume-iops-required AWS::EC2::Volume.Iops
 pf-eks-cluster-automode-all-three AWS::EKS::Cluster.ComputeConfig.Enabled
@@ -23,8 +21,6 @@ pf-firehose-dfcc-required-configs AWS::KinesisFirehose::DeliveryStream.ExtendedS
 pf-firehose-dfcc-required-configs AWS::KinesisFirehose::DeliveryStream.ExtendedS3DestinationConfiguration.DataFormatConversionConfiguration.OutputFormatConfiguration
 pf-lambda-code-s3-pair AWS::Lambda::Function.Code.S3Bucket
 pf-lambda-code-s3-pair AWS::Lambda::Function.Code.S3Key
-pf-lambda-scaling-min-max-pair AWS::Lambda::Function.FunctionScalingConfig.MaxExecutionEnvironments
-pf-lambda-scaling-min-max-pair AWS::Lambda::Function.FunctionScalingConfig.MinExecutionEnvironments
 pf-networkfirewall-policy-rule-order-match AWS::NetworkFirewall::FirewallPolicy.FirewallPolicy.StatefulEngineOptions
 pf-networkfirewall-policy-rule-order-match AWS::NetworkFirewall::FirewallPolicy.FirewallPolicy.StatefulEngineOptions.RuleOrder
 pf-networkfirewall-policy-rule-order-match AWS::NetworkFirewall::RuleGroup.RuleGroup.StatefulRuleOptions.RuleOrder

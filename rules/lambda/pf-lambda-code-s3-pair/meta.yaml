@@ -1,5 +1,6 @@
 id: pf-lambda-code-s3-pair
 service: lambda
+benchRegion: us-east-1
 resourceTypes: [AWS::Lambda::Function]
 severity: ERROR
 title: S3-based Code needs both S3Bucket and S3Key

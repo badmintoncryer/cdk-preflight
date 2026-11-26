@@ -12,7 +12,7 @@
   <a href="https://github.com/badmintoncryer/cdk-preflight/actions/workflows/monthly-verify.yml"><img src="https://github.com/badmintoncryer/cdk-preflight/actions/workflows/monthly-verify.yml/badge.svg" alt="monthly real-deploy verification"></a>
   <a href="https://www.npmjs.com/package/cdk-preflight"><img src="https://img.shields.io/npm/v/cdk-preflight.svg" alt="npm version"></a>
   <a href="https://www.npmjs.com/package/cdk-preflight"><img src="https://img.shields.io/npm/dt/cdk-preflight.svg" alt="npm total downloads"></a>
-  <a href="docs/rules.md"><img src="https://img.shields.io/badge/rules-3398-blue" alt="3398 bundled rules"></a>
+  <a href="docs/rules.md"><img src="https://img.shields.io/badge/rules-3395-blue" alt="3395 bundled rules"></a>
 </p>
 
 Some CloudFormation constraints are not expressed in resource provider schemas — they live only in documentation, in service API validation, or across multiple properties. Templates that violate them pass `cdk synth`, pass CloudFormation pre-deployment validation, and then fail minutes into a deployment, burning a rollback cycle.
@@ -279,7 +279,7 @@ Resource names are relative to `AWS::<Service>::`; the number in parentheses is 
 | **Cassandra** | `Keyspace` (2), `Table` (21), `Type` (12) |
 | **CertificateManager** | `Certificate` (4) |
 | **CloudFormation** | `GuardHook` (1), `Stack` (2), `StackSet` (6) |
-| **CloudFront** | `AnycastIpList` (1), `CachePolicy` (7), `ContinuousDeploymentPolicy` (5), `Distribution` (55), `Function` (4), `KeyGroup` (1), `KeyValueStore` (2), `OriginRequestPolicy` (5), `PublicKey` (1), `RealtimeLogConfig` (3), `ResponseHeadersPolicy` (8), `VpcOrigin` (3) |
+| **CloudFront** | `AnycastIpList` (1), `CachePolicy` (7), `ContinuousDeploymentPolicy` (5), `Distribution` (54), `Function` (4), `KeyGroup` (1), `KeyValueStore` (2), `OriginRequestPolicy` (5), `PublicKey` (1), `RealtimeLogConfig` (3), `ResponseHeadersPolicy` (8), `VpcOrigin` (2) |
 | **CloudTrail** | `EventDataStore` (1), `Trail` (19) |
 | **CloudWatch** | `Alarm` (23), `AnomalyDetector` (6), `CompositeAlarm` (7), `Dashboard` (14), `InsightRule` (7), `MetricStream` (6) |
 | **CodeBuild** | `Project` (37), `ReportGroup` (2), `SourceCredential` (4) |
@@ -312,7 +312,7 @@ Resource names are relative to `AWS::<Service>::`; the number in parentheses is 
 | **KinesisAnalyticsV2** | `Application` (20), `ApplicationCloudWatchLoggingOption` (1), `ApplicationOutput` (1), `ApplicationReferenceDataSource` (1) |
 | **KinesisFirehose** | `DeliveryStream` (68) |
 | **KMS** | `Alias` (2), `Key` (12), `ReplicaKey` (4) |
-| **Lambda** | `Alias` (7), `CodeSigningConfig` (1), `EventInvokeConfig` (5), `EventSourceMapping` (54), `Function` (51), `LayerVersion` (7), `LayerVersionPermission` (3), `Permission` (8), `Url` (8), `Version` (1) |
+| **Lambda** | `Alias` (7), `CodeSigningConfig` (1), `EventInvokeConfig` (5), `EventSourceMapping` (54), `Function` (50), `LayerVersion` (7), `LayerVersionPermission` (3), `Permission` (8), `Url` (8), `Version` (1) |
 | **Logs** | `AccountPolicy` (6), `DeliveryDestination` (3), `Destination` (1), `LogAnomalyDetector` (2), `LogGroup` (10), `MetricFilter` (7), `QueryDefinition` (1), `ResourcePolicy` (1), `SubscriptionFilter` (6), `Transformer` (3) |
 | **MediaConvert** | `JobTemplate` (9), `Preset` (32), `Queue` (2) |
 | **MemoryDB** | `Cluster` (8), `User` (1) |
