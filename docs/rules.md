@@ -2330,7 +2330,6 @@
 | `pf-lambda-runtime-version-arn-region` | AWS::Lambda::Function | A runtime version ARN names the deploy region | ERROR | none |
 | `pf-lambda-s3-storage-mode-zip-only` | AWS::Lambda::Function | S3ObjectStorageMode belongs to .zip functions | ERROR | none |
 | `pf-lambda-s3files-config-requires-s3files-arn` | AWS::Lambda::Function | FileSystemConfigs S3FilesConfig needs an S3 Files file system, not EFS | ERROR | none |
-| `pf-lambda-scaling-min-zero-requires-max-zero` | AWS::Lambda::Function | Scaling to zero means both bounds are zero | WARN | none |
 | `pf-lambda-system-log-level-enum` | AWS::Lambda::Function | SystemLogLevel takes DEBUG, INFO or WARN | ERROR | pending-engine |
 | `pf-lambda-tenancy-no-function-url` | AWS::Lambda::Function | A tenant-isolated function cannot have a function URL | ERROR | none |
 | `pf-lambda-tenancy-no-provisioned-concurrency` | AWS::Lambda::Function | A tenant-isolated function cannot use provisioned concurrency | ERROR | none |

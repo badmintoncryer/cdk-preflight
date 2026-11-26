@@ -5,37 +5,4 @@
 #
 # 書式: <rule-id> <ResourceType.Property.Path>
 
-pf-acm-domain-validation-option-known-domain AWS::CertificateManager::Certificate.SubjectAlternativeNames
-pf-agentcore-gateway-rate-limit-entry-dimensions AWS::BedrockAgentCore::GatewayRateLimit.Entries.*.Dimensions.toolName
-pf-apigw-vpc-endpoint-ids-private-only AWS::ApiGateway::RestApi.EndpointConfiguration.Types
-pf-athena-dc-lambda-record-requires-metadata AWS::Athena::DataCatalog.Parameters.record-function
-pf-cloudfront-continuous-deployment-traffic-config-match AWS::CloudFront::ContinuousDeploymentPolicy.ContinuousDeploymentPolicyConfig.TrafficConfig.SingleWeightConfig
-pf-ec2-route-target-exactly-one AWS::EC2::Route.GatewayId
-pf-ec2-volume-iops-required AWS::EC2::Volume.Iops
-pf-eks-cluster-automode-all-three AWS::EKS::Cluster.ComputeConfig.Enabled
-pf-eks-cluster-automode-all-three AWS::EKS::Cluster.KubernetesNetworkConfig
-pf-eks-cluster-automode-all-three AWS::EKS::Cluster.StorageConfig.BlockStorage.Enabled
-pf-eks-nodegroup-custom-ami-type-needs-lt AWS::EKS::Nodegroup.LaunchTemplate
-pf-elbv2-tcp-health-check-path AWS::ElasticLoadBalancingV2::TargetGroup.HealthCheckProtocol
-pf-firehose-dfcc-required-configs AWS::KinesisFirehose::DeliveryStream.ExtendedS3DestinationConfiguration.DataFormatConversionConfiguration.InputFormatConfiguration
-pf-firehose-dfcc-required-configs AWS::KinesisFirehose::DeliveryStream.ExtendedS3DestinationConfiguration.DataFormatConversionConfiguration.OutputFormatConfiguration
-pf-lambda-code-s3-pair AWS::Lambda::Function.Code.S3Bucket
-pf-lambda-code-s3-pair AWS::Lambda::Function.Code.S3Key
-pf-networkfirewall-policy-rule-order-match AWS::NetworkFirewall::FirewallPolicy.FirewallPolicy.StatefulEngineOptions
-pf-networkfirewall-policy-rule-order-match AWS::NetworkFirewall::FirewallPolicy.FirewallPolicy.StatefulEngineOptions.RuleOrder
-pf-networkfirewall-policy-rule-order-match AWS::NetworkFirewall::RuleGroup.RuleGroup.StatefulRuleOptions.RuleOrder
-pf-opensearch-custom-endpoint-requires-name-and-cert AWS::OpenSearchService::Domain.DomainEndpointOptions.CustomEndpointCertificateArn
-pf-opensearch-fgac-internal-db-requires-name-password AWS::OpenSearchService::Domain.AdvancedSecurityOptions.MasterUserOptions.MasterUserName
-pf-opensearch-fgac-requires-enforce-https AWS::OpenSearchService::Domain.DomainEndpointOptions.EnforceHTTPS
-pf-opensearch-fgac-requires-master-user AWS::OpenSearchService::Domain.AdvancedSecurityOptions.MasterUserOptions.MasterUserARN
-pf-opensearch-fgac-requires-node-to-node AWS::OpenSearchService::Domain.NodeToNodeEncryptionOptions.Enabled
-pf-opensearch-or1-requires-encryption-at-rest AWS::OpenSearchService::Domain.EncryptionAtRestOptions.Enabled
-pf-redshift-master-password-secret-kms-requires-manage AWS::Redshift::Cluster.ManageMasterPassword
-pf-route53-record-value-source AWS::Route53::RecordSet.ResourceRecords
-pf-route53-record-value-source AWS::Route53::RecordSet.TTL
-pf-route53resolver-firewallrule-block-requires-blockresponse AWS::Route53Resolver::FirewallRuleGroup.FirewallRules.*.BlockResponse
-pf-route53resolver-firewallrule-override-requires-all-three AWS::Route53Resolver::FirewallRuleGroup.FirewallRules.*.BlockOverrideDnsType
-pf-route53resolver-firewallrule-override-requires-all-three AWS::Route53Resolver::FirewallRuleGroup.FirewallRules.*.BlockOverrideDomain
-pf-route53resolver-firewallrule-override-requires-all-three AWS::Route53Resolver::FirewallRuleGroup.FirewallRules.*.BlockOverrideTtl
 pf-s3express-lifecycle-rule-no-action AWS::S3Express::DirectoryBucket.LifecycleConfiguration.Rules.*.ExpirationInDays
-pf-sfn-logging-destination AWS::StepFunctions::StateMachine.LoggingConfiguration.Destinations.*.CloudWatchLogsLogGroup

@@ -28,7 +28,19 @@ violation contains make_diag_full("pf-acm-domain-validation-option-known-domain"
 	not _pf_acmdvo_opaque(name)
 	names := _pf_acm_names(name)
 	some o in _pf_acm_dvos(name)
+	_pf_acmdvo_forwarded(o)
 	d := object.get(o, "DomainName", null)
 	_pf_acm_lit(d)
 	not d in names
+}
+
+# CloudFormation hands an entry to RequestCertificate only when it carries ValidationDomain. An entry
+# with only HostedZoneId is the handler's own instruction for where to write the validation record, and
+# one that names a domain the certificate does not ask for is simply unused: bench 2026-11-26 us-east-1,
+# DomainName cdkpf-dvo-diag.appnao.com with a second HostedZoneId-only entry for other-dvo-diag.appnao.com
+# -> CREATE_COMPLETE. An entry with both is rejected for that reason instead ("You can only have value for
+# validationDomain or HostedZoneId but not both."), and one with neither for a null ValidationDomain.
+_pf_acmdvo_forwarded(o) if {
+	object.get(o, "ValidationDomain", "__pf_absent") != "__pf_absent"
+	object.get(o, "HostedZoneId", "__pf_absent") == "__pf_absent"
 }

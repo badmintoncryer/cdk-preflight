@@ -8,5 +8,8 @@ constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateR
 upstream: none
 repro:
   method: real-deploy
-  evidence: "bench 2026-09-03 ap-northeast-1: Code with S3Bucket and no S3Key (cd02) -> \"S3 Bucket and Key are required for uploading with S3 parameters.\" ROLLBACK_COMPLETE. The key-without-bucket direction is inferred from the same symmetric error text (unbenched)."
+  evidence: "bench 2026-09-03 ap-northeast-1: Code with S3Bucket and no S3Key (cd02) -> \"S3 Bucket and Key are required for uploading with S3 parameters.\" ROLLBACK_COMPLETE. The key-without-bucket direction is inferred from the same symmetric error text (unbenched).; omission bench 2026-11-26 us-east-1: pass template without AWS::Lambda::Function.Code.S3Bucket -> ROLLBACK_COMPLETE with \"S3 Bucket and Key are required for uploading with S3 parameters.\"; omission bench 2026-11-26 us-east-1: pass template without AWS::Lambda::Function.Code.S3Key -> ROLLBACK_COMPLETE with \"S3 Bucket and Key are required for uploading with S3 parameters.\""
 addedOn: 2026-09-03
+omissionFails:
+  - "AWS::Lambda::Function.Code.S3Bucket"
+  - "AWS::Lambda::Function.Code.S3Key"

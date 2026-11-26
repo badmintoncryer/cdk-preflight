@@ -1,4 +1,0 @@
-id: acm-dvo-vd-and-hz
-service: acm
-benchRegion: us-east-1
-resourceTypes: [AWS::CertificateManager::Certificate]
