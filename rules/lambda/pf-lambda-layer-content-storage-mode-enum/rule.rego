@@ -12,7 +12,7 @@ violation contains make_diag_full("pf-lambda-layer-content-storage-mode-enum", "
 	_pf_llsm_fix, _pf_llsm_url) if {
 	some name in _pf_lam_layer
 	c := _pf_lam_obj(_pf_lam_props(name), "Content")
-	v := object.get(c, "S3ObjectStorageMode", "COPY")
+	v := _pf_oval(c, "S3ObjectStorageMode")
 	is_string(v)
 	not v in {"COPY", "REFERENCE"}
 }

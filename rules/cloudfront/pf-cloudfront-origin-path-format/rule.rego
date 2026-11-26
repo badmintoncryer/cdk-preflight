@@ -12,7 +12,7 @@ violation contains make_diag_full("pf-cloudfront-origin-path-format", "ERROR", n
 	some name in resources_of_type("AWS::CloudFront::Distribution")
 	some o in _pf_cflib_origins(name)
 	is_object(o.value)
-	op := object.get(o.value, "OriginPath", "")
+	op := _pf_oval(o.value, "OriginPath")
 	is_string(op)
 	op != ""
 	not startswith(op, "/")
@@ -24,7 +24,7 @@ violation contains make_diag_full("pf-cloudfront-origin-path-format", "ERROR", n
 	some name in resources_of_type("AWS::CloudFront::Distribution")
 	some o in _pf_cflib_origins(name)
 	is_object(o.value)
-	op := object.get(o.value, "OriginPath", "")
+	op := _pf_oval(o.value, "OriginPath")
 	is_string(op)
 	op != "/"
 	endswith(op, "/")

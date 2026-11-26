@@ -78,7 +78,7 @@ violation contains make_diag_full("pf-secretsmanager-generate-secret-string", "E
 	_pf_smgss_fix, _pf_smgss_url) if {
 	some name in resources_of_type("AWS::SecretsManager::Secret")
 	g := _pf_smgss_gen(name)
-	ex := object.get(g, "ExcludeCharacters", "")
+	ex := _pf_oval(g, "ExcludeCharacters")
 	is_string(ex)
 	count(ex) > 4096
 }
@@ -98,7 +98,7 @@ violation contains make_diag_full("pf-secretsmanager-generate-secret-string", "E
 	some name in resources_of_type("AWS::SecretsManager::Secret")
 	g := _pf_smgss_gen(name)
 	_pf_smgss_require(g)
-	ex := object.get(g, "ExcludeCharacters", "")
+	ex := _pf_oval(g, "ExcludeCharacters")
 	is_string(ex)
 	some flag, spec in _pf_smgss_alphabet
 	not _pf_smgss_flag(g, flag)

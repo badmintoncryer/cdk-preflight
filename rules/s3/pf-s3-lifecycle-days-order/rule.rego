@@ -18,14 +18,14 @@ violation contains make_diag_full("pf-s3-lifecycle-days-order", "ERROR", name,
 	is_array(trans)
 	some t1 in trans
 	is_object(t1)
-	sc1 := object.get(t1, "StorageClass", "")
+	sc1 := _pf_oval(t1, "StorageClass")
 	sc1 in {"STANDARD_IA", "ONEZONE_IA"}
 	raw1 := object.get(t1, "TransitionInDays", null)
 	raw1 != null # to_number(null) は 0 になる
 	d1 := _pf_tonum(raw1)
 	some t2 in trans
 	is_object(t2)
-	sc2 := object.get(t2, "StorageClass", "")
+	sc2 := _pf_oval(t2, "StorageClass")
 	sc2 in {"GLACIER", "DEEP_ARCHIVE"}
 	raw2 := object.get(t2, "TransitionInDays", null)
 	raw2 != null

@@ -10,7 +10,7 @@ violation contains make_diag_full("pf-codecommit-trigger-destination-service", "
 	some name in resources_of_type("AWS::CodeCommit::Repository")
 	some i, t in _pf_cclib_triggers(name)
 	is_object(t)
-	parts := _pf_cclib_arn(object.get(t, "DestinationArn", ""))
+	parts := _pf_cclib_arn(_pf_oval(t, "DestinationArn"))
 	svc := parts[2]
 	not svc in {"sns", "lambda"}
 }

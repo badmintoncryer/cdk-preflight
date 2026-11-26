@@ -18,7 +18,7 @@ violation contains make_diag_full("pf-s3-lifecycle-rule-id-duplicate", "ERROR", 
 	r1.index < r2.index
 	is_object(r1.value)
 	is_object(r2.value)
-	id := object.get(r1.value, "Id", "")
+	id := _pf_oval(r1.value, "Id")
 	id != ""
-	id == object.get(r2.value, "Id", "")
+	id == _pf_oval(r2.value, "Id")
 }

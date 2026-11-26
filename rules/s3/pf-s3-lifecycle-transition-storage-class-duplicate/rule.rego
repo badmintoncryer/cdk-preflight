@@ -22,7 +22,7 @@ violation contains make_diag_full("pf-s3-lifecycle-transition-storage-class-dupl
 	i < j
 	is_object(trans[i])
 	is_object(trans[j])
-	sc := object.get(trans[i], "StorageClass", "")
+	sc := _pf_oval(trans[i], "StorageClass")
 	sc != ""
-	sc == object.get(trans[j], "StorageClass", "")
+	sc == _pf_oval(trans[j], "StorageClass")
 }

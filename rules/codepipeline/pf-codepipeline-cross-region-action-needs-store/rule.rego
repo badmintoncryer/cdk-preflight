@@ -24,5 +24,5 @@ violation contains make_diag_full("pf-codepipeline-cross-region-action-needs-sto
 	r := _pf_cplib_get(a, "Region")
 	_pf_cplib_lit(r)
 	r != region
-	an := object.get(a, "Name", "")
+	an := _pf_oval(a, "Name")
 }

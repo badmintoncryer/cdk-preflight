@@ -12,7 +12,7 @@ violation contains make_diag_full("pf-elbv2-tg-target-control-port-scope", "ERRO
 	_pf_elbtcp_fix, _pf_elbtcp_url) if {
 	some name in _pf_elb_tgs
 	_pf_elb_has(name, "TargetControlPort")
-	p := object.get(_pf_elb_props(name), "Protocol", "none")
+	p := _pf_oval(_pf_elb_props(name), "Protocol")
 	t := _pf_elb_tgtype(name)
 	not _pf_elbtcp_ok(p, t)
 }

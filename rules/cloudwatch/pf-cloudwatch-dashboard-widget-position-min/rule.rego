@@ -13,7 +13,7 @@ violation contains make_diag_full("pf-cloudwatch-dashboard-widget-position-min",
 	some i, w in _pf_cwlib_widgets(name)
 	is_object(w)
 	some key in _pf_cwpm_keys
-	v := object.get(w, key, 0)
+	v := _pf_oval(w, key)
 	is_number(v)
 	v < 0
 }

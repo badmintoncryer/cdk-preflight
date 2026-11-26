@@ -10,7 +10,7 @@ violation contains make_diag_full("pf-cognito-resource-server-scope-name-charset
 	some name in resources_of_type("AWS::Cognito::UserPoolResourceServer")
 	some s in flatten_list(name, "Properties.Scopes")
 	is_object(s.value)
-	n := object.get(s.value, "ScopeName", "")
+	n := _pf_oval(s.value, "ScopeName")
 	is_string(n)
 	n != ""
 	not regex.match(`^[\x21\x23-\x2E\x30-\x5B\x5D-\x7E]+$`, n)

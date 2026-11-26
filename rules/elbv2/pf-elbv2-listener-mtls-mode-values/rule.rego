@@ -12,7 +12,7 @@ violation contains make_diag_full("pf-elbv2-listener-mtls-mode-values", "ERROR",
 	_pf_elblmm_fix, _pf_elblmm_url) if {	some name in _pf_elb_listeners
 	ma := resolve(name, "Properties.MutualAuthentication")
 	is_object(ma)
-	mode := object.get(ma, "Mode", "off")
+	mode := _pf_oval(ma, "Mode")
 	is_string(mode)
 	not mode in {"off", "passthrough", "verify"}
 }

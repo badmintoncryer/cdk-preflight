@@ -10,6 +10,6 @@ violation contains make_diag_full("pf-route53-cidrcollection-cidrlist-required",
 	some name in resources_of_type("AWS::Route53::CidrCollection")
 	some l in flatten_list(name, "Properties.Locations")
 	is_object(l.value)
-	ln := object.get(l.value, "LocationName", "")
+	ln := _pf_oval(l.value, "LocationName")
 	count(object.get(l.value, "CidrList", [])) == 0
 }

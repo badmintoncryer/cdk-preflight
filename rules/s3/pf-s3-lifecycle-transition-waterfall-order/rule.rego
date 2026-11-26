@@ -20,8 +20,8 @@ violation contains make_diag_full("pf-s3-lifecycle-transition-waterfall-order", 
 	some t2 in trans
 	is_object(t1)
 	is_object(t2)
-	sc1 := object.get(t1, "StorageClass", "")
-	sc2 := object.get(t2, "StorageClass", "")
+	sc1 := _pf_oval(t1, "StorageClass")
+	sc2 := _pf_oval(t2, "StorageClass")
 	raw1 := object.get(t1, "TransitionInDays", null)
 	raw1 != null
 	raw2 := object.get(t2, "TransitionInDays", null)

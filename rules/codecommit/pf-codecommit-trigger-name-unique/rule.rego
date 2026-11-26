@@ -14,8 +14,8 @@ violation contains make_diag_full("pf-codecommit-trigger-name-unique", "ERROR", 
 	i < j
 	is_object(t)
 	is_object(u)
-	n := object.get(t, "Name", "")
+	n := _pf_oval(t, "Name")
 	_pf_cclib_lit(n)
 	n != ""
-	n == object.get(u, "Name", "")
+	n == _pf_oval(u, "Name")
 }

@@ -10,8 +10,8 @@ violation contains make_diag_full("pf-cassandra-encryption-kms-key-symmetric", "
 	k := resolve(name, "Properties.EncryptionSpecification.KmsKeyIdentifier")
 	k in resources_of_type("AWS::KMS::Key")
 	p := input.resources[k].properties
-	ks := object.get(p, "KeySpec", "SYMMETRIC_DEFAULT")
-	ku := object.get(p, "KeyUsage", "ENCRYPT_DECRYPT")
+	ks := _pf_oval(p, "KeySpec")
+	ku := _pf_oval(p, "KeyUsage")
 	is_string(ks)
 	is_string(ku)
 	_pf_casskms_bad(ks, ku)

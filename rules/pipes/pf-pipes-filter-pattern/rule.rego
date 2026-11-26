@@ -55,7 +55,7 @@ violation contains make_diag_full("pf-pipes-filter-pattern", "ERROR", name,
 	_pf_pipefp_url) if {
 	some name in resources_of_type("AWS::Pipes::Pipe")
 	some f in _pf_pipefp_patterns(name)
-	raw := object.get(f.value, "Pattern", "")
+	raw := _pf_oval(f.value, "Pattern")
 	json.is_valid(raw)
 	obj := json.unmarshal(raw)
 	is_object(obj)
@@ -69,7 +69,7 @@ violation contains make_diag_full("pf-pipes-filter-pattern", "ERROR", name,
 	_pf_pipefp_url) if {
 	some name in resources_of_type("AWS::Pipes::Pipe")
 	some f in _pf_pipefp_patterns(name)
-	raw := object.get(f.value, "Pattern", "")
+	raw := _pf_oval(f.value, "Pattern")
 	json.is_valid(raw)
 	obj := json.unmarshal(raw)
 	is_object(obj)

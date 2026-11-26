@@ -13,6 +13,6 @@ violation contains make_diag_full("pf-lambda-zip-no-imageuri", "ERROR", name,
 	some name in _pf_lam_fn
 	props := _pf_lam_props(name)
 	code := _pf_lam_obj(props, "Code")
-	object.get(props, "PackageType", "Zip") != "Image"
+	_pf_oval(props, "PackageType") != "Image"
 	_pf_lam_has_key(code, "ImageUri")
 }

@@ -13,6 +13,6 @@ violation contains make_diag_full("pf-elbv2-listener-mtls-truststore-verify-only
 	ma := resolve(name, "Properties.MutualAuthentication")
 	is_object(ma)
 	_pf_elb_ohas(ma, "TrustStoreArn")
-	mode := object.get(ma, "Mode", "off")
+	mode := _pf_oval(ma, "Mode")
 	mode != "verify"
 }

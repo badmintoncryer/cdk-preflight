@@ -16,7 +16,7 @@ violation contains make_diag_full("pf-elbv2-action-forward-same-protocol", "ERRO
 	vals := {v |
 		some tg in tgs
 		g := _pf_elb_tuple_tg(tg)
-		v := object.get(_pf_elb_props(g), "Protocol", "")
+		v := _pf_oval(_pf_elb_props(g), "Protocol")
 	}
 	count(vals) > 1
 	seen := concat(", ", sort(vals))

@@ -17,6 +17,6 @@ violation contains make_diag_full("pf-cloudfront-oac-excludes-origin-access-iden
 	oac != ""
 	s3 := object.get(o.value, "S3OriginConfig", null)
 	is_object(s3)
-	oai := object.get(s3, "OriginAccessIdentity", "")
+	oai := _pf_oval(s3, "OriginAccessIdentity")
 	oai != ""
 }

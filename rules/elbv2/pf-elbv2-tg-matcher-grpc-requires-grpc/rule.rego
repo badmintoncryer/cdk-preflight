@@ -11,7 +11,7 @@ violation contains make_diag_full("pf-elbv2-tg-matcher-grpc-requires-grpc", "ERR
 	sprintf("Matcher.GrpcCode is set with ProtocolVersion '%s'; gRPC status codes are only matched on a GRPC target group", [pv]),
 	_pf_elbtmgr_fix, _pf_elbtmgr_url) if {
 	some name in _pf_elb_tgs
-	pv := object.get(_pf_elb_props(name), "ProtocolVersion", "HTTP1")
+	pv := _pf_oval(_pf_elb_props(name), "ProtocolVersion")
 	pv != "GRPC"
 	is_string(resolve(name, "Properties.Matcher.GrpcCode"))
 }

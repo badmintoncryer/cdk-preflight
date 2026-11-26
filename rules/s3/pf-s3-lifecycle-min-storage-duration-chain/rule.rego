@@ -20,8 +20,8 @@ violation contains make_diag_full("pf-s3-lifecycle-min-storage-duration-chain", 
 	some t2 in trans
 	is_object(t1)
 	is_object(t2)
-	sc1 := object.get(t1, "StorageClass", "")
-	sc2 := object.get(t2, "StorageClass", "")
+	sc1 := _pf_oval(t1, "StorageClass")
+	sc2 := _pf_oval(t2, "StorageClass")
 	mind := _pf_s3lib_mindur[sc1]
 	_pf_s3lib_rank[sc2] > _pf_s3lib_rank[sc1]
 	raw1 := object.get(t1, "TransitionInDays", null)

@@ -9,7 +9,7 @@ violation contains make_diag_full("pf-athena-wg-spark-requires-execution-role", 
 	"https://docs.aws.amazon.com/athena/latest/APIReference/API_WorkGroupConfiguration.html") if {
 	some name in resources_of_type("AWS::Athena::WorkGroup")
 	cfg := _pf_athlib_wgcfg(name)
-	ev := object.get(_pf_athlib_obj(cfg, "EngineVersion"), "SelectedEngineVersion", "")
+	ev := _pf_oval(_pf_athlib_obj(cfg, "EngineVersion"), "SelectedEngineVersion")
 	is_string(ev)
 	startswith(ev, "PySpark")
 	not _pf_athlib_has(cfg, "ExecutionRole")

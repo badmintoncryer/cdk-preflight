@@ -13,7 +13,7 @@ violation contains make_diag_full("pf-cognito-identity-pool-provider-name-format
 	some name in resources_of_type("AWS::Cognito::IdentityPool")
 	some p in flatten_list(name, "Properties.CognitoIdentityProviders")
 	is_object(p.value)
-	n := object.get(p.value, "ProviderName", "")
+	n := _pf_oval(p.value, "ProviderName")
 	is_string(n)
 	n != ""
 	not regex.match(`^cognito-idp\.[a-z0-9-]+\.amazonaws\.com/[a-z]{2}(-[a-z]+)+-[0-9]+_[A-Za-z0-9]+$`, n)

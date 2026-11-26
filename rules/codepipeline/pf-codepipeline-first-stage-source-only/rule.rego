@@ -15,5 +15,5 @@ violation contains make_diag_full("pf-codepipeline-first-stage-source-only", "ER
 	_pf_cplib_plain(a)
 	cat := _pf_cplib_category(a)
 	cat != "Source"
-	an := object.get(a, "Name", "")
+	an := _pf_oval(a, "Name")
 }

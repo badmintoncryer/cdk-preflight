@@ -10,7 +10,7 @@ violation contains make_diag_full("pf-cognito-schema-custom-required", "ERROR", 
 	some name in resources_of_type("AWS::Cognito::UserPool")
 	some a in flatten_list(name, "Properties.Schema")
 	is_object(a.value)
-	n := object.get(a.value, "Name", "")
+	n := _pf_oval(a.value, "Name")
 	not n in _pf_coglib_std_attrs
 	object.get(a.value, "Required", false) == true
 }

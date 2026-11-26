@@ -20,5 +20,5 @@ violation contains make_diag_full("pf-lambda-layer-reference-glacier-storage-cla
 	lc := object.get(bp, "LifecycleConfiguration", {})
 	some rule in _pf_lam_list(object.get(lc, "Rules", []))
 	some t in _pf_lam_list(object.get(rule, "Transitions", []))
-	object.get(t, "StorageClass", "") in _pf_llrg_glacier
+	_pf_oval(t, "StorageClass") in _pf_llrg_glacier
 }

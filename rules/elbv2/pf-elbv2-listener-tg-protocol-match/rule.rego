@@ -12,7 +12,7 @@ violation contains make_diag_full("pf-elbv2-listener-tg-protocol-match", "ERROR"
 	_pf_elbltpm_fix, _pf_elbltpm_url) if {
 	some p in _pf_elb_listener_tgs
 	_pf_elb_tgtype(p.tg) != "alb"
-	lproto := object.get(_pf_elb_props(p.listener), "Protocol", "")
+	lproto := _pf_oval(_pf_elb_props(p.listener), "Protocol")
 	allowed := object.get(_pf_elb_lproto_tgproto, lproto, set())
 	_pf_unconditional_items(allowed)
 	count(allowed) > 0

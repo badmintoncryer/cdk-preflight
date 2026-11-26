@@ -22,7 +22,7 @@ violation contains make_diag_full("pf-s3-intelligent-tiering-duplicate-tier", "E
 	i < j
 	is_object(tiers[i])
 	is_object(tiers[j])
-	tier := object.get(tiers[i], "AccessTier", "")
+	tier := _pf_oval(tiers[i], "AccessTier")
 	tier != ""
-	tier == object.get(tiers[j], "AccessTier", "")
+	tier == _pf_oval(tiers[j], "AccessTier")
 }

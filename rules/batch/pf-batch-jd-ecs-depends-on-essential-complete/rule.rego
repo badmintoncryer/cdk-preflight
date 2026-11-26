@@ -17,5 +17,5 @@ violation contains make_diag_full("pf-batch-jd-ecs-depends-on-essential-complete
 	_pf_batch_lit(dep)
 	some target in object.get(t.value, "Containers", [])
 	object.get(target, "Name", null) == dep
-	object.get(target, "Essential", true) == true
+	_pf_oval(target, "Essential") == true
 }

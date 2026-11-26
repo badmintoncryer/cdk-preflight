@@ -12,7 +12,7 @@ violation contains make_diag_full("pf-elbv2-rule-value-length-128", "ERROR", nam
 	_pf_elbrvl_fix, _pf_elbrvl_url) if {
 	some name in _pf_elb_rules
 	some c in _pf_elb_conditions(name)
-	f := object.get(c.value, "Field", "")
+	f := _pf_oval(c.value, "Field")
 	some v in _pf_elb_cond_values(c.value)
 	is_string(v)
 	count(v) > 128

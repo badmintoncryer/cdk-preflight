@@ -13,7 +13,7 @@ violation contains make_diag_full("pf-lambda-runtime-version-arn-region", "ERROR
 	region := data.cdk_preflight.deploy_region
 	some name in _pf_lam_fn
 	rmc := _pf_lam_obj(_pf_lam_props(name), "RuntimeManagementConfig")
-	parts := _pf_lam_arn(object.get(rmc, "RuntimeVersionArn", ""))
+	parts := _pf_lam_arn(_pf_oval(rmc, "RuntimeVersionArn"))
 	parts[2] == "lambda"
 	parts[3] != region
 }

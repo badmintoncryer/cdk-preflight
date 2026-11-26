@@ -13,7 +13,7 @@ violation contains make_diag_full("pf-cognito-schema-number-min-max-order", "ERR
 	_pf_static_list(name, "Properties.Schema")
 	some a in flatten_list(name, "Properties.Schema")
 	is_object(a.value)
-	n := object.get(a.value, "Name", "")
+	n := _pf_oval(a.value, "Name")
 	nac := _pf_coglib_at(a.value, "NumberAttributeConstraints")
 	is_object(nac)
 	mn_raw := object.get(nac, "MinValue", "__pf_absent")

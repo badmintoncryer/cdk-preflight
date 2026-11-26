@@ -16,7 +16,7 @@ violation contains make_diag_full("pf-logs-metric-dimension-selector", "ERROR", 
 	is_array(dims)
 	some d in dims
 	is_object(d)
-	key := object.get(d, "Key", "")
+	key := _pf_oval(d, "Key")
 	v := object.get(d, "Value", null)
 	is_string(v)
 	not startswith(v, "$")

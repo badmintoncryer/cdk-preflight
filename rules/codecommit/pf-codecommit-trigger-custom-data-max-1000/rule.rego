@@ -10,7 +10,7 @@ violation contains make_diag_full("pf-codecommit-trigger-custom-data-max-1000", 
 	some name in resources_of_type("AWS::CodeCommit::Repository")
 	some i, t in _pf_cclib_triggers(name)
 	is_object(t)
-	cd := object.get(t, "CustomData", "")
+	cd := _pf_oval(t, "CustomData")
 	_pf_cclib_lit(cd)
 	count(cd) > 1000
 }

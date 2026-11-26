@@ -13,7 +13,7 @@ violation contains make_diag_full("pf-cloudfront-cache-policy-accept-encoding-co
 	pk := object.get(_pf_cflib_props(name, "CachePolicyConfig"), "ParametersInCacheKeyAndForwardedToOrigin", null)
 	is_object(pk)
 	some k in ["EnableAcceptEncodingGzip", "EnableAcceptEncodingBrotli"]
-	object.get(pk, k, false) == true
+	_pf_oval(pk, k) == true
 	hc := object.get(pk, "HeadersConfig", null)
 	is_object(hc)
 	some h in object.get(hc, "Headers", [])

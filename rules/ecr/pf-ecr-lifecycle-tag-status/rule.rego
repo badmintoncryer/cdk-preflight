@@ -40,7 +40,7 @@ violation contains make_diag_full("pf-ecr-lifecycle-tag-status", "ERROR", name,
 	_pf_ecrlts_fix, _pf_ecrlts_url) if {
 	some [name, i, rule] in _pf_ecrlib_rules
 	sel := _pf_ecrlib_selection(rule)
-	st := object.get(sel, "tagStatus", "")
+	st := _pf_oval(sel, "tagStatus")
 	st in {"untagged", "any"}
 	some key in ["tagPrefixList", "tagPatternList"]
 	_pf_ecrlts_has(sel, key)

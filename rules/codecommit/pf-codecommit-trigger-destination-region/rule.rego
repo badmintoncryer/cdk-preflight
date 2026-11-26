@@ -12,7 +12,7 @@ violation contains make_diag_full("pf-codecommit-trigger-destination-region", "E
 	is_string(region)
 	some i, t in _pf_cclib_triggers(name)
 	is_object(t)
-	parts := _pf_cclib_arn(object.get(t, "DestinationArn", ""))
+	parts := _pf_cclib_arn(_pf_oval(t, "DestinationArn"))
 	dr := parts[3]
 	dr != ""
 	dr != region
