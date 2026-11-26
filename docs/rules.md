@@ -73,7 +73,7 @@
 | `pf-apigw-regional-certificate-property` | AWS::ApiGateway::DomainName | REGIONAL domain names read RegionalCertificateArn, not CertificateArn | ERROR | none |
 | `pf-apigw-regional-certificate-region` | AWS::ApiGateway::DomainName | A REGIONAL domain name needs a certificate from the deployment region | ERROR | none |
 | `pf-apigw-request-authorizer-identity-source` | AWS::ApiGateway::Authorizer | REQUEST authorizer identity sources are mapping expressions | ERROR | none |
-| `pf-apigw-resource-path-part` | AWS::ApiGateway::Resource | PathPart allows a-zA-Z0-9._-: or one curly-brace variable | ERROR | none |
+| `pf-apigw-resource-path-part` | AWS::ApiGateway::Resource | PathPart allows a-zA-Z0-9._-: or one curly-brace variable | WARN | none |
 | `pf-apigw-rest-api-policy-document` | AWS::ApiGateway::RestApi | A REST API policy must be a policy document | ERROR | none |
 | `pf-apigw-stage-access-log-destination-arn` | AWS::ApiGateway::Stage | Access logs go to CloudWatch Logs or Firehose only | ERROR | none |
 | `pf-apigw-stage-access-log-firehose-prefix` | AWS::ApiGateway::Stage | An access log delivery stream is named amazon-apigateway-* | ERROR | none |
@@ -100,7 +100,7 @@
 | `pf-apigwv2-cors-credentials-wildcard` | AWS::ApiGatewayV2::Api | CORS AllowCredentials cannot pair with a wildcard origin | ERROR | none |
 | `pf-apigwv2-domain-certificate-region` | AWS::ApiGatewayV2::DomainName | A custom domain needs a certificate from the deployment region | ERROR | none |
 | `pf-apigwv2-domain-endpoint-type-regional` | AWS::ApiGatewayV2::DomainName | HTTP/WebSocket custom domains are REGIONAL only | ERROR | none |
-| `pf-apigwv2-domain-name-charset` | AWS::ApiGatewayV2::DomainName | Custom domain names are lower case | ERROR | none |
+| `pf-apigwv2-domain-name-charset` | AWS::ApiGatewayV2::DomainName | Custom domain names cannot contain an underscore | ERROR | none |
 | `pf-apigwv2-http-identity-source-expression` | AWS::ApiGatewayV2::Authorizer | HTTP API identity sources are $-prefixed selection expressions | ERROR | none |
 | `pf-apigwv2-http-proxy-integration-method` | AWS::ApiGatewayV2::Integration | An HTTP_PROXY integration needs an IntegrationMethod | ERROR | none |
 | `pf-apigwv2-http-proxy-payload-version` | AWS::ApiGatewayV2::Integration | HTTP_PROXY integrations only take PayloadFormatVersion 1.0 | ERROR | none |
@@ -2783,7 +2783,7 @@
 | `pf-route53-geolocation-duplicate-location` | AWS::Route53::RecordSetGroup | Two geolocation record sets cannot claim the same location | ERROR | none |
 | `pf-route53-geolocation-exclusive` | AWS::Route53::RecordSet | GeoLocation cannot specify both ContinentCode and CountryCode | ERROR | retired: engine F3018 covers it from aws-cdk-lib 2.269.0 |
 | `pf-route53-geolocation-subdivision-code-value` | AWS::Route53::RecordSet<br>AWS::Route53::RecordSetGroup | GeoLocation.SubdivisionCode must be a US state or territory code | ERROR | none |
-| `pf-route53-geolocation-subdivision-requires-us` | AWS::Route53::RecordSet<br>AWS::Route53::RecordSetGroup | GeoLocation.SubdivisionCode is only valid with CountryCode US | ERROR | none |
+| `pf-route53-geolocation-subdivision-requires-us` | AWS::Route53::RecordSet<br>AWS::Route53::RecordSetGroup | GeoLocation.SubdivisionCode is only valid with CountryCode US or UA | WARN | none |
 | `pf-route53-geolocation-unsupported-country` | AWS::Route53::RecordSet<br>AWS::Route53::RecordSetGroup | Four ISO country codes have no Route 53 geolocation coverage | ERROR | none |
 | `pf-route53-geoproximity-awsregion-value` | AWS::Route53::RecordSet<br>AWS::Route53::RecordSetGroup | GeoProximityLocation.AWSRegion must be an existing AWS Region | WARN | none |
 | `pf-route53-geoproximity-bias-range` | AWS::Route53::RecordSet<br>AWS::Route53::RecordSetGroup | GeoProximityLocation.Bias must be -99 to 99 | ERROR | retired: engine F3034 covers it from aws-cdk-lib 2.269.0 |
@@ -3009,7 +3009,7 @@
 | `pf-s3-replication-priority-duplicate` | AWS::S3::Bucket | Replication rule priorities must be unique | ERROR | none |
 | `pf-s3-replication-requires-versioning` | AWS::S3::Bucket | ReplicationConfiguration requires versioning to be enabled on the source bucket | ERROR | none |
 | `pf-s3-replication-rtc-minutes-15` | AWS::S3::Bucket | Replication Time Control accepts only 15 minutes | ERROR | none |
-| `pf-s3-replication-rtc-needs-metrics` | AWS::S3::Bucket | Replication Time Control needs Metrics, and Metrics needs ReplicationTime | ERROR | none |
+| `pf-s3-replication-rtc-needs-metrics` | AWS::S3::Bucket | Replication Time Control (ReplicationTime) needs Metrics | ERROR | none |
 | `pf-s3-replication-sse-kms-needs-replica-key` | AWS::S3::Bucket | Replicating SSE-KMS objects requires a replica KMS key | ERROR | none |
 | `pf-s3-replication-tag-filter-delete-marker` | AWS::S3::Bucket | A tag-filtered replication rule must disable delete marker replication | ERROR | none |
 | `pf-s3-replication-v1-v2-mixed` | AWS::S3::Bucket | A replication rule must not mix the V1 Prefix with the V2 Filter | ERROR | none |
