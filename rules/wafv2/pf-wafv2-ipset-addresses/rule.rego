@@ -60,6 +60,7 @@ violation contains make_diag_full("pf-wafv2-ipset-addresses", "ERROR", name, _pf
 	[ip, p] := _pf_wafip_split(a)
 	kind := _pf_wafip_kind(ip)
 	kind != ver
+	_pf_is_lit(ver)
 }
 
 _pf_wafip_octets(ip) := [_pf_tonum(o) | some j; o := split(ip, ".")[j]]

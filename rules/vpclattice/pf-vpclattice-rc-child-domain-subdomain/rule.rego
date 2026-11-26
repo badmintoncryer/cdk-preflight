@@ -15,8 +15,8 @@ violation contains make_diag_full("pf-vpclattice-rc-child-domain-subdomain", "ER
 	resolve(name, "Properties.ResourceConfigurationType") == "CHILD"
 	g := resolve(name, "Properties.ResourceConfigurationGroupId")
 	g in resources_of_type("AWS::VpcLattice::ResourceConfiguration")
-	gd := lower(resolve(g, "Properties.GroupDomain"))
-	cd := lower(resolve(name, "Properties.CustomDomainName"))
+	gd := lower(_pf_lit(g, "Properties.GroupDomain"))
+	cd := lower(_pf_lit(name, "Properties.CustomDomainName"))
 	cd != gd
 	not endswith(cd, concat("", [".", gd]))
 }

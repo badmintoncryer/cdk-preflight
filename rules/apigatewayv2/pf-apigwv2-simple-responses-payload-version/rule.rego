@@ -12,4 +12,5 @@ violation contains make_diag_full("pf-apigwv2-simple-responses-payload-version",
 	some name in resources_of_type("AWS::ApiGatewayV2::Authorizer")
 	resolve(name, "Properties.EnableSimpleResponses") == true
 	not _pf_agvsrpv_v2(name)
+	not _pf_unknown(name, "Properties.AuthorizerPayloadFormatVersion")
 }

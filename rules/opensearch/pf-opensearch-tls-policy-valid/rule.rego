@@ -14,6 +14,6 @@ violation contains make_diag_full("pf-opensearch-tls-policy-valid", "WARN", name
 	"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-opensearchservice-domain-domainendpointoptions.html") if {
 	some name in _pf_os_domains
 	p := _pf_os_opt(name, "DomainEndpointOptions", "TLSSecurityPolicy")
-	is_string(p)
+	_pf_is_lit(p)
 	not p in _pf_ostls_known
 }

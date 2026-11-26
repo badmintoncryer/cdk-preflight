@@ -12,9 +12,11 @@ violation contains make_diag_full("pf-bedrock-automated-reasoning-policy-variabl
 	some name in resources_of_type("AWS::Bedrock::AutomatedReasoningPolicy")
 	pd := object.get(_pf_bedrocklib_props(name), "PolicyDefinition", {})
 	types := {x.Name | some x in object.get(pd, "Types", []); is_object(x); is_string(x.Name)}
+	every x in object.get(pd, "Types", []) { _pf_is_lit(x.Name) }
 	some i, v in object.get(pd, "Variables", [])
 	is_object(v)
 	t := v.Type
 	is_string(t)
+	_pf_is_lit(t)
 	not types[t]
 }

@@ -14,5 +14,6 @@ violation contains make_diag_full("pf-ecs-mountpoint-source-volume-missing", "ER
 	some mp in mps
 	sv := object.get(mp, "SourceVolume", null)
 	_pf_ecs_lit(sv)
+	every vol in flatten_list(name, "Properties.Volumes") { _pf_ecs_lit(object.get(vol.value, "Name", null)) }
 	not sv in _pf_ecs_volnames(name)
 }

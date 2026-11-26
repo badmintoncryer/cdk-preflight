@@ -19,4 +19,5 @@ violation contains make_diag_full("pf-lambda-esm-docdb-basic-auth-required", "ER
 	some name in _pf_lam_esm
 	_pf_lam_is(name, "docdb")
 	not _pf_ledba_basic(name)
+	every c in flatten_list(name, "Properties.SourceAccessConfigurations") { not is_object(object.get(c.value, "Type", null)) }
 }

@@ -26,6 +26,7 @@ _pf_waflib_rules(name) := rules if {
 _pf_waflib_scope(name) := s if {
 	s := resolve(name, "Properties.Scope")
 	is_string(s)
+	not input.resources[s]
 }
 
 # Region a container's entities live in: CLOUDFRONT scope pins us-east-1.

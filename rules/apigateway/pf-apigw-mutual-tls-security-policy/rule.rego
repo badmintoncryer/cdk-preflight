@@ -14,4 +14,5 @@ violation contains make_diag_full("pf-apigw-mutual-tls-security-policy", "ERROR"
 	some name in resources_of_type("AWS::ApiGateway::DomainName")
 	is_object(resolve(name, "Properties.MutualTlsAuthentication"))
 	not _pf_apgmtsp_tls12(name)
+	not _pf_unknown(name, "Properties.SecurityPolicy")
 }

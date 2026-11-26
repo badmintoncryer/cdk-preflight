@@ -11,6 +11,7 @@ violation contains make_diag_full("pf-bedrock-flow-connection-nodes", "ERROR", n
 	"https://docs.aws.amazon.com/bedrock/latest/APIReference/API_agent_FlowConnection.html") if {
 	some name in resources_of_type("AWS::Bedrock::Flow")
 	names := _pf_bedrocklib_flow_node_names(name)
+	every x in _pf_bedrocklib_flow_nodes(name) { _pf_is_lit(x.Name) }
 	some i, c in _pf_bedrocklib_flow_conns(name)
 	some end in ["Source", "Target"]
 	nn := c[end]

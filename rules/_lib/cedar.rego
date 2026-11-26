@@ -21,6 +21,7 @@ _pf_cedarlib_static contains [name, "Properties.Definition.Static.Statement", s]
 	some name in resources_of_type("AWS::VerifiedPermissions::Policy")
 	s := resolve(name, "Properties.Definition.Static.Statement")
 	is_string(s)
+	not input.resources[s]
 }
 
 # Policy template statements. Verified Permissions runs the same Cedar parser
@@ -31,6 +32,7 @@ _pf_cedarlib_template contains [name, "Properties.Statement", s] if {
 	some name in resources_of_type("AWS::VerifiedPermissions::PolicyTemplate")
 	s := resolve(name, "Properties.Statement")
 	is_string(s)
+	not input.resources[s]
 }
 
 _pf_cedarlib_all := _pf_cedarlib_static | _pf_cedarlib_template

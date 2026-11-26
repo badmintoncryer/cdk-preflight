@@ -8,6 +8,7 @@ _pf_r53_zdot_msg(zn) := sprintf("HostedZoneName '%s' is missing the trailing dot
 
 _pf_r53_zdot_bad(zn) if {
 	is_string(zn)
+	not input.resources[zn]
 	zn != ""
 	not endswith(zn, ".")
 }

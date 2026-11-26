@@ -19,4 +19,5 @@ violation contains make_diag_full("pf-lambda-esm-mq-auth-secret-required", "ERRO
 	some name in _pf_lam_esm
 	_pf_lam_is(name, "mq")
 	not _pf_lemas_basic(name)
+	every c in flatten_list(name, "Properties.SourceAccessConfigurations") { not is_object(object.get(c.value, "Type", null)) }
 }

@@ -10,6 +10,7 @@ violation contains make_diag_full("pf-ecs-cluster-default-strategy-provider-not-
 	some name in resources_of_type("AWS::ECS::Cluster")
 	listed := _pf_ecs_get(name, "CapacityProviders")
 	is_array(listed)
+	every x in listed { _pf_ecs_lit(x) }
 	some s in flatten_list(name, "Properties.DefaultCapacityProviderStrategy")
 	cp := object.get(s.value, "CapacityProvider", null)
 	_pf_ecs_lit(cp)

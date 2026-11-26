@@ -9,6 +9,7 @@ violation contains make_diag_full("pf-batch-jd-resource-requirements-required", 
 	"https://docs.aws.amazon.com/batch/latest/APIReference/API_ResourceRequirement.html") if {
 	some name in resources_of_type("AWS::Batch::JobDefinition")
 	cp := _pf_batch_cp(name)
+	every e in object.get(cp, "ResourceRequirements", []) { is_string(object.get(e, "Type", null)) }
 	not _pf_batch_ohas(cp, "Vcpus")
 	not _pf_batch_rr(cp, "VCPU")
 }

@@ -14,12 +14,14 @@ _pf_ecrlib_text(name) := s if {
 	name in resources_of_type("AWS::ECR::Repository")
 	s := resolve(name, "Properties.LifecyclePolicy.LifecyclePolicyText")
 	is_string(s)
+	not input.resources[s]
 }
 
 _pf_ecrlib_text(name) := s if {
 	name in resources_of_type("AWS::ECR::RepositoryCreationTemplate")
 	s := resolve(name, "Properties.LifecyclePolicy")
 	is_string(s)
+	not input.resources[s]
 }
 
 _pf_ecrlib_prop(name) := "Properties.LifecyclePolicy.LifecyclePolicyText" if {

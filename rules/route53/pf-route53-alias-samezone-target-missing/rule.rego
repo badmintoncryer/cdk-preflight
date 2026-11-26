@@ -15,6 +15,7 @@ violation contains make_diag_full("pf-route53-alias-samezone-target-missing", "E
 	_pf_r53lib_within(dns, zn)
 	dns != zn
 	not dns in _pf_r53lib_names
+	not _pf_r53lib_names_unknown
 }
 
 violation contains make_diag_full("pf-route53-alias-samezone-target-missing", "ERROR", name,
@@ -33,4 +34,5 @@ violation contains make_diag_full("pf-route53-alias-samezone-target-missing", "E
 	_pf_r53lib_within(dns, zn)
 	dns != zn
 	not dns in _pf_r53lib_names
+	not _pf_r53lib_names_unknown
 }

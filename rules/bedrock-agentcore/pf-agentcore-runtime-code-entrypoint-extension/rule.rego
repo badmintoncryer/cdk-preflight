@@ -19,7 +19,7 @@ violation contains make_diag_full("pf-agentcore-runtime-code-entrypoint-extensio
 	is_array(entries)
 	count(entries) > 0
 	every e in entries {
-		is_string(e)
+		_pf_is_lit(e)
 		not endswith(e, ".py")
 	}
 }

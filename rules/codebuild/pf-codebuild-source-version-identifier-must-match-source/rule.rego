@@ -13,6 +13,7 @@ violation contains make_diag_full("pf-codebuild-source-version-identifier-must-m
 	some item in flatten_list(name, "Properties.SecondarySourceVersions")
 	id := item.value.SourceIdentifier
 	is_string(id)
+	every s in flatten_list(name, "Properties.SecondarySources") { _pf_is_lit(s.value.SourceIdentifier) }
 	declared := {i |
 		some s in flatten_list(name, "Properties.SecondarySources")
 		i := s.value.SourceIdentifier

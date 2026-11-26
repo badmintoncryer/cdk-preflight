@@ -66,6 +66,21 @@ _pf_aaslib_steps(name) := a if {
 	is_object(cfg)
 	a := object.get(cfg, "StepAdjustments", [])
 	is_array(a)
+	not _pf_aaslib_bound_unknown(a)
+}
+
+# 区間の端が数値として読めない（参照など）調整が 1 つでもあれば、区間の代数は成り立たない。
+_pf_aaslib_bound_unknown(adjs) if {
+	some adj in adjs
+	some key in ["MetricIntervalLowerBound", "MetricIntervalUpperBound"]
+	v := object.get(adj, key, "__pf_absent")
+	v != "__pf_absent"
+	v != null
+	not _pf_aaslib_num_ok(v)
+}
+
+_pf_aaslib_num_ok(v) if {
+	_ := _pf_tonum(v)
 }
 
 # A bound the template leaves out is minus/plus infinity, so both accessors stay

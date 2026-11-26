@@ -27,7 +27,10 @@ violation contains make_diag_full("pf-sns-topic-attribute-values", "ERROR", name
 	not sprintf("%v", [v]) in {"1", "2"}
 }
 
-_pf_snstav_scalar(v) if is_string(v)
+_pf_snstav_scalar(v) if {
+	is_string(v)
+	not input.resources[v]
+}
 
 _pf_snstav_scalar(v) if is_number(v)
 

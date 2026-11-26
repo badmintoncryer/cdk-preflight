@@ -12,6 +12,7 @@ violation contains make_diag_full("pf-bedrock-flow-input-node", "ERROR", name,
 	"https://docs.aws.amazon.com/bedrock/latest/userguide/flows-nodes.html") if {
 	some name in resources_of_type("AWS::Bedrock::Flow")
 	nodes := _pf_bedrocklib_flow_nodes(name)
+	every x in nodes { _pf_is_lit(x.Type) }
 	n := count([x | some x in nodes; x.Type == "Input"])
 	n != 1
 }

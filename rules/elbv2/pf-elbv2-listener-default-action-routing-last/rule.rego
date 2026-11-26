@@ -30,5 +30,6 @@ violation contains make_diag_full("pf-elbv2-listener-default-action-routing-last
 	acts := _pf_elb_actions(name, "DefaultActions")
 	count(acts) > 0
 	t := _pf_elbldal_last(acts)
+	is_string(t)
 	not t in _pf_elb_routing_actions
 }

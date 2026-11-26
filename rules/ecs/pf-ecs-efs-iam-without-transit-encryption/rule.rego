@@ -13,4 +13,5 @@ violation contains make_diag_full("pf-ecs-efs-iam-without-transit-encryption", "
 	ac := _pf_ecs_oget(e, "AuthorizationConfig")
 	_pf_ecs_oget(ac, "IAM") == "ENABLED"
 	not _pf_ecs_oget(e, "TransitEncryption") == "ENABLED"
+	not _pf_unknown(name, sprintf("Properties.Volumes.%d.EFSVolumeConfiguration.TransitEncryption", [v.index]))
 }

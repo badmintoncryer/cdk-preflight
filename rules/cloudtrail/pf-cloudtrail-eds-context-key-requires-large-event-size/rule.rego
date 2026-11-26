@@ -10,4 +10,5 @@ violation contains make_diag_full("pf-cloudtrail-eds-context-key-requires-large-
 	some name in resources_of_type("AWS::CloudTrail::EventDataStore")
 	count(_pf_ctlib_context_key_selectors(name)) > 0
 	object.get(_pf_ctlib_props(name), "MaxEventSize", null) != "Large"
+	not _pf_unknown(name, "Properties.MaxEventSize")
 }

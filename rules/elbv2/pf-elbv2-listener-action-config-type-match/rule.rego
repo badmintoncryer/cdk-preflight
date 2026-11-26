@@ -22,5 +22,6 @@ violation contains make_diag_full("pf-elbv2-listener-action-config-type-match", 
 	some cfg, want in _pf_elb_action_config
 	_pf_elb_ohas(a.value, cfg)
 	t := object.get(a.value, "Type", "")
+	is_string(t)
 	t != want
 }

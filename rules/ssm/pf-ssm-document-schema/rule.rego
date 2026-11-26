@@ -32,6 +32,7 @@ _pf_ssmds_type(name) := "Command" if {
 
 _pf_ssmds_schema(name) := sprintf("%v", [v]) if {
 	v := object.get(_pf_ssmds_content(name), "schemaVersion", null)
+	not is_object(v)
 	v != null
 }
 

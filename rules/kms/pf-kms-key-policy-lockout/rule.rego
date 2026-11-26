@@ -82,6 +82,15 @@ _pf_kmslock_grants(s) if {
 	object.get(s, "NotPrincipal", "__pf_absent") != "__pf_absent"
 }
 
+# Effect の値が参照などで読めない文は Allow でありうるので、許可しうる側に数える。
+_pf_kmslock_grants(s) if {
+	is_object(s)
+	not is_string(object.get(s, "Effect", "__pf_absent"))
+	pr := object.get(s, "Principal", null)
+	_pf_kmslock_principal_ours(pr)
+	_pf_kmslock_action_covers(s)
+}
+
 _pf_kmslock_principal_ours(pr) if pr == "*"
 
 _pf_kmslock_principal_ours(pr) if {

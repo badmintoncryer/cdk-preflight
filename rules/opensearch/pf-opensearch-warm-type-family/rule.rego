@@ -14,6 +14,6 @@ violation contains make_diag_full("pf-opensearch-warm-type-family", "WARN", name
 	"https://docs.aws.amazon.com/opensearch-service/latest/developerguide/ultrawarm.html") if {
 	some name in _pf_os_domains
 	t := _pf_os_opt(name, "ClusterConfig", "WarmType")
-	is_string(t)
+	_pf_is_lit(t)
 	not t in _pf_oswt_known
 }

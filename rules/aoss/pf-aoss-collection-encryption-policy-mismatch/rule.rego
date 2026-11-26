@@ -19,6 +19,9 @@ violation contains make_diag_full("pf-aoss-collection-encryption-policy-mismatch
 	is_string(cn)
 	not input.resources[cn]
 	_pf_aoss_enc != set()
+	every pname in _pf_aoss_enc {
+		_pf_aoss_doc(pname)
+	}
 	matched := {res |
 		some pname in _pf_aoss_enc
 		some res in _pf_aoss_resource_set(pname)

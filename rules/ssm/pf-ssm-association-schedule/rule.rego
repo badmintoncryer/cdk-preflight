@@ -232,6 +232,7 @@ violation contains make_diag_full("pf-ssm-association-schedule", "ERROR", name,
 	some name in resources_of_type("AWS::SSM::Association")
 	_pf_ssmas_apply(name)
 	not _pf_ssmas_cron_or_at(name)
+	not _pf_unknown(name, "Properties.ScheduleExpression")
 }
 
 _pf_ssmas_cron_or_at(name) if _pf_ssmas_kind(_pf_ssmas_expr(name)) in ["cron", "at"]
@@ -243,6 +244,8 @@ violation contains make_diag_full("pf-ssm-association-schedule", "ERROR", name,
 	some name in resources_of_type("AWS::SSM::Association")
 	object.get(_pf_ssmas_props(name), "ScheduleOffset", "__pf_absent") != "__pf_absent"
 	not _pf_ssmas_offset_ok(name)
+	not _pf_unknown(name, "Properties.ApplyOnlyAtCronInterval")
+	not _pf_unknown(name, "Properties.ScheduleExpression")
 }
 
 _pf_ssmas_offset_ok(name) if {

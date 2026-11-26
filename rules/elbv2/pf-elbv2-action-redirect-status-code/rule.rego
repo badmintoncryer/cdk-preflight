@@ -14,5 +14,6 @@ violation contains make_diag_full("pf-elbv2-action-redirect-status-code", "ERROR
 	name := a.name
 	rc := _pf_elb_oget(a.value, "RedirectConfig")
 	sc := _pf_elb_oget(rc, "StatusCode")
+	is_string(sc)
 	not sc in {"HTTP_301", "HTTP_302"}
 }

@@ -159,6 +159,19 @@ _pf_r53lib_keys := union({_pf_r53lib_skeys, _pf_r53lib_gkeys_all})
 
 _pf_r53lib_names := union({_pf_r53lib_snames, _pf_r53lib_gnames_all})
 
+# テンプレートが作るレコードセットのどれかの Name が文字列で読めない（参照・組み込み関数）。
+# そのときは「その名前のレコードは無い」と言えない。
+_pf_r53lib_names_unknown if {
+	some r in resources_of_type("AWS::Route53::RecordSet")
+	not is_string(object.get(_pf_r53lib_props(r), "Name", null))
+}
+
+_pf_r53lib_names_unknown if {
+	some g in resources_of_type("AWS::Route53::RecordSetGroup")
+	some it in flatten_list(g, "Properties.RecordSets")
+	not is_string(object.get(it.value, "Name", null))
+}
+
 # 複数ルールが共有する定数・ヘルパー（同一定義の重複を避けるためここに置く）。
 
 _pf_r53_regions := {
