@@ -8,5 +8,5 @@ upstream: none
 benchRegion: us-east-1
 repro:
   method: doc-only
-  evidence: "doc-only: 再現には Limitless クラスタ（最低 16 ACU、PI と Enhanced Monitoring 必須）が要り、実機ゲートのコストが制約 1 本に見合わない。DBShardGroup の MaxACU / MinACU は https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-rds-dbshardgroup.html に明記（MaxACU は MinACU 以上）。フィクスチャは境界に置いてある（fail MaxACU 19 / MinACU 20、pass 20 / 20）が、値そのものは実機で確かめていない。"
+  evidence: "doc-only: 再現には Limitless クラスタ（最低 16 ACU、PI と Enhanced Monitoring 必須）が要り、実機ゲートのコストが制約 1 本に見合わない。DBShardGroup の MaxACU / MinACU は https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-rds-dbshardgroup.html に明記（MaxACU は MinACU 以上）。フィクスチャは境界に置いてある（fail MaxACU 19 / MinACU 20、pass 20 / 20）が、値そのものは実機で確かめていない。 api 2026-11-26 us-east-1: CreateDBShardGroup against a nonexistent cluster answers DBClusterNotFoundFault \"The DB cluster doesn't exist.\" for MaxACU 19 / MinACU 20 and 20 / 20 alike, and the fail template through CloudFormation fails the same way (404 NotFound), so the cluster lookup runs before the ACU check and the constraint cannot be reached without a Limitless cluster."
 addedOn: 2026-09-08

@@ -8,5 +8,5 @@ benchRegion: us-east-1
 upstream: none
 repro:
   method: doc-only
-  evidence: 'A poller group tops out at 100 event source mappings. Not benched: the fail fixture needs 101 EventSourceMappings (57 KB), past CloudFormation''s 51,200-byte inline template limit, and each one needs a real MSK cluster (2026-09-07).'
+  evidence: "api 2026-11-26 us-east-1: CreateEventSourceMapping for self-managed Kafka (unreachable BootstrapServers 192.0.2.1:9092, --no-enabled, ProvisionedPollerConfig MinimumPollers 1 / MaximumPollers 1 / PollerGroupName cdkpf-g1, VPC subnet and security group access configurations), one topic per mapping: mappings 1-100 were created (Disabled), the 101st -> InvalidParameterValueException \"A single PollerGroupName can be associated with at most [100] ESMs.\" (all deleted in-session). No MSK cluster is needed. It stays doc-only only because the committed fail fixture (101 mappings, 57 KB) is past CloudFormation's 51,200-byte inline template limit, so the monthly gate cannot deploy it."
 addedOn: 2026-09-07

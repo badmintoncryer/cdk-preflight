@@ -4,15 +4,54 @@
     "Bkt": {
       "Type": "AWS::S3::Bucket"
     },
+    "BktPolicy": {
+      "Type": "AWS::S3::BucketPolicy",
+      "Properties": {
+        "Bucket": {
+          "Ref": "Bkt"
+        },
+        "PolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "lambda.amazonaws.com"
+              },
+              "Action": [
+                "s3:GetObject",
+                "s3:GetObjectVersion",
+                "s3:ListBucket"
+              ],
+              "Resource": [
+                {
+                  "Fn::GetAtt": ["Bkt", "Arn"]
+                },
+                {
+                  "Fn::Sub": "${Bkt.Arn}/*"
+                }
+              ],
+              "Condition": {
+                "StringEquals": {
+                  "aws:SourceAccount": {
+                    "Ref": "AWS::AccountId"
+                  }
+                }
+              }
+            }
+          ]
+        }
+      }
+    },
     "L": {
       "Type": "AWS::Lambda::LayerVersion",
+      "DependsOn": "BktPolicy",
       "Properties": {
         "Content": {
           "S3Bucket": {
             "Ref": "Bkt"
           },
           "S3Key": "l.zip",
-          "S3ObjectVersion": "null",
           "S3ObjectStorageMode": "REFERENCE"
         }
       }
