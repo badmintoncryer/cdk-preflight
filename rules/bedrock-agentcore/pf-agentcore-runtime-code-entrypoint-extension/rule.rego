@@ -13,6 +13,7 @@ violation contains make_diag_full("pf-agentcore-runtime-code-entrypoint-extensio
 	some name in resources_of_type("AWS::BedrockAgentCore::Runtime")
 	runtime := resolve(name, "Properties.AgentRuntimeArtifact.CodeConfiguration.Runtime")
 	is_string(runtime)
+	not input.resources[runtime]
 	startswith(runtime, "PYTHON_")
 	entries := resolve(name, "Properties.AgentRuntimeArtifact.CodeConfiguration.EntryPoint")
 	is_array(entries)

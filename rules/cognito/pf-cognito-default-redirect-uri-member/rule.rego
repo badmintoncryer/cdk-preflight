@@ -15,6 +15,7 @@ violation contains make_diag_full("pf-cognito-default-redirect-uri-member", "ERR
 	some name in resources_of_type("AWS::Cognito::UserPoolClient")
 	d := resolve(name, "Properties.DefaultRedirectURI")
 	is_string(d)
+	not input.resources[d]
 	cbs := flatten_list(name, "Properties.CallbackURLs")
 	count(cbs) > 0
 	not _pf_cgdrum_member(cbs, d)

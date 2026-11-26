@@ -11,5 +11,6 @@ violation contains make_diag_full("pf-dynamodb-kinesis-precision", "ERROR", name
 	some name in resources_of_type("AWS::DynamoDB::Table")
 	p := resolve(name, "Properties.KinesisStreamSpecification.ApproximateCreationDateTimePrecision")
 	is_string(p)
+	not input.resources[p]
 	not p in {"MICROSECOND", "MILLISECOND"}
 }

@@ -19,5 +19,6 @@ violation contains make_diag_full("pf-rds-license-model-engine", "ERROR", name,
 	allowed := _pf_rdslic[e]
 	lm := resolve(name, "Properties.LicenseModel")
 	is_string(lm)
+	not input.resources[lm]
 	not lm in allowed
 }

@@ -15,6 +15,7 @@ violation contains make_diag_full("pf-apigw-request-authorizer-identity-source",
 	resolve(name, "Properties.Type") == "REQUEST"
 	src := resolve(name, "Properties.IdentitySource")
 	is_string(src)
+	not input.resources[src]
 	some raw in split(src, ",")
 	part := trim_space(raw)
 	part != ""

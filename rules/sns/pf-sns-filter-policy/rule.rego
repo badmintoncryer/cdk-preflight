@@ -25,6 +25,7 @@ _pf_snsfp_sub contains [name, path, sub, name] if {
 _pf_snsfp_proto(name, path) := p if {
 	p := resolve(name, sprintf("%s.Protocol", [path]))
 	is_string(p)
+	not input.resources[p]
 }
 
 _pf_snsfp_pol(sub) := pol if {
@@ -100,5 +101,6 @@ violation contains make_diag_full("pf-sns-filter-policy", "ERROR", name,
 	some [name, path, sub, _] in _pf_snsfp_sub
 	s := resolve(name, sprintf("%s.FilterPolicyScope", [path]))
 	is_string(s)
+	not input.resources[s]
 	not s in {"MessageAttributes", "MessageBody"}
 }

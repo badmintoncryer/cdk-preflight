@@ -13,5 +13,6 @@ violation contains make_diag_full("pf-lambda-esm-docdb-full-document-values", "E
 	some name in _pf_lam_esm
 	v := resolve(name, "Properties.DocumentDBEventSourceConfig.FullDocument")
 	is_string(v)
+	not input.resources[v]
 	not v in {"UpdateLookup", "Default"}
 }

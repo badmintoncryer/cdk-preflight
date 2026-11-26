@@ -12,5 +12,6 @@ violation contains make_diag_full("pf-opensearch-engine-version-pattern", "ERROR
 	some name in _pf_os_domains
 	v := resolve(name, "Properties.EngineVersion")
 	is_string(v)
+	not input.resources[v]
 	not regex.match(`^Elasticsearch_[0-9]{1}\.[0-9]{1,2}$|^OpenSearch_[0-9]{1,2}\.[0-9]{1,2}$`, v)
 }

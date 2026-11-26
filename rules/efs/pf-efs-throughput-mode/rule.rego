@@ -9,6 +9,7 @@ _pf_efstm_fix := "Set ThroughputMode: provisioned together with ProvisionedThrou
 _pf_efstm_mode(name) := m if {
 	m := resolve(name, "Properties.ThroughputMode")
 	is_string(m)
+	not input.resources[m]
 }
 
 _pf_efstm_mode(name) := "bursting" if _pf_efslib_absent(name, "ThroughputMode")

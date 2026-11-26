@@ -60,6 +60,7 @@ violation contains make_diag_full("pf-ec2-volume-iops", "ERROR", name, "Properti
 	some name in resources_of_type("AWS::EC2::Volume")
 	vt := resolve(name, "Properties.VolumeType")
 	is_string(vt)
+	not input.resources[vt]
 	vt != "gp3"
 	resolve(name, "Properties.Throughput")
 }

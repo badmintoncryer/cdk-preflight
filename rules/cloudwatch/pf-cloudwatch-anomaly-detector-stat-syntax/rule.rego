@@ -10,5 +10,6 @@ violation contains make_diag_full("pf-cloudwatch-anomaly-detector-stat-syntax", 
 	some name in resources_of_type("AWS::CloudWatch::AnomalyDetector")
 	st := resolve(name, "Properties.SingleMetricAnomalyDetector.Stat")
 	is_string(st)
+	not input.resources[st]
 	not _pf_cwlib_stat_ok(st)
 }

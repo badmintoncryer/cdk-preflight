@@ -592,9 +592,9 @@ describe('a rule pack that cannot run fails synthesis instead of passing silentl
     ].join('\n'),
   };
 
-  function appWithBrokenRules(): App {
+  function appWithBrokenRules(strict: boolean): App {
     const app = makeApp(cliHandlesReporting);
-    Validations.of(app).addPlugins(new PreflightEnforcePlugin([brokenRule], false));
+    Validations.of(app).addPlugins(new PreflightEnforcePlugin([brokenRule], strict));
     installEnforceGate(app);
     return app;
   }
@@ -607,8 +607,9 @@ describe('a rule pack that cannot run fails synthesis instead of passing silentl
     stderr.mockRestore();
   });
 
-  test('reports pf-engine-error with the engine message and stops synthesis', () => {
-    const app = appWithBrokenRules();
+  test('when nothing can be evaluated (strict: the built-in rules are left), reports pf-engine-error and stops synthesis', () => {
+    // 落ちた service を外すと strict では組み込みルールの分しか残らず、それは外して走らせる手段が無い
+    const app = appWithBrokenRules(true);
     new sqs.CfnQueue(new Stack(app, 'S'), 'Q', {});
     expect(() => app.synth()).toThrow(/cdk-preflight: validation failed/);
 
@@ -620,7 +621,14 @@ describe('a rule pack that cannot run fails synthesis instead of passing silentl
     expect(engineError.description).not.toMatch(/undefined/);
   });
 
-  test('one unevaluatable template costs one template, not the whole run', () => {
+  test('without strict, a broken rule that is the only one left is skipped with a warning', () => {
+    const app = appWithBrokenRules(false);
+    new sqs.CfnQueue(new Stack(app, 'S'), 'Q', {});
+    expect(() => app.synth()).not.toThrow();
+    expect(readReport(app).map((v) => [v.ruleName, v.severity])).toEqual([[ENGINE_ERROR_RULE, 'warning']]);
+  });
+
+  test('a broken rule on one stack does not stop the rules on another', () => {
     // QueueName を持つスタックだけでエンジンが落ちるルール。同じプラグインの
     // もう 1 枚（SG のスタック）では通常どおりルールが走ることを見る。
     const brokenForQueueNames: BundledRuleData = {
@@ -651,6 +659,54 @@ describe('a rule pack that cannot run fails synthesis instead of passing silentl
     const rules = readReport(app).map((v) => v.ruleName);
     expect(new Set(rules)).toEqual(new Set([ENGINE_ERROR_RULE, 'pf-ec2-sg-port-range']));
     expect(rules.filter((r) => r === ENGINE_ERROR_RULE)).toHaveLength(1);
+  });
+
+  describe('a rule that errors at run time costs its own service, not the template', () => {
+    // 1 つの service モジュールの実行時エラーはテンプレート全体の評価を止める。それはルール側の
+    // バグなので、その service だけ外して残りのルールを走らせ、外したことは warning で残す。
+    const brokenForQueueNames: BundledRuleData = {
+      ...brokenRule,
+      id: 'pf-broken-for-queue-names',
+      rego: [
+        'package cdk_preflight',
+        '',
+        'import rego.v1',
+        '',
+        'violation contains make_diag_full("pf-broken-for-queue-names", "ERROR", name, "(template)",',
+        '\t"boom", "fix", "https://example.com") if {',
+        '\tsome name in resources_of_type("AWS::SQS::Queue")',
+        '\tsome _ in resolve(name, "Properties.QueueName")',
+        '}',
+        '',
+      ].join('\n'),
+    };
+    const sgRule = BUNDLED_RULES.find((r) => r.id === 'pf-ec2-sg-port-range')!;
+
+    function appWith(addSg: (stack: Stack) => void): App {
+      const app = makeApp(cliHandlesReporting);
+      Validations.of(app).addPlugins(new PreflightEnforcePlugin([brokenForQueueNames, sgRule], false));
+      installEnforceGate(app);
+      const stack = new Stack(app, 'S');
+      new sqs.CfnQueue(stack, 'Q', { queueName: 'q' });
+      addSg(stack);
+      return app;
+    }
+
+    test('the other services still block what they find', () => {
+      const app = appWith(addBadSecurityGroup);
+      expect(() => app.synth()).toThrow(/cdk-preflight: validation failed/);
+      const violations = readReport(app) as any[];
+      expect(new Set(violations.map((v) => v.ruleName))).toEqual(new Set([ENGINE_ERROR_RULE, 'pf-ec2-sg-port-range']));
+      const skipped = violations.find((v) => v.ruleName === ENGINE_ERROR_RULE);
+      expect(skipped.severity).toBe('warning');
+      expect(skipped.description).toMatch(/its test rules on this template/);
+    });
+
+    test('a template the other services accept synthesizes, with a warning', () => {
+      const app = appWith(() => {});
+      expect(() => app.synth()).not.toThrow();
+      expect(readReport(app).map((v) => [v.ruleName, v.severity])).toEqual([[ENGINE_ERROR_RULE, 'warning']]);
+    });
   });
 });
 

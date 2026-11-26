@@ -10,5 +10,6 @@ violation contains make_diag_full("pf-iam-slr-service-name-format", "ERROR", nam
 	some name in resources_of_type("AWS::IAM::ServiceLinkedRole")
 	v := resolve(name, "Properties.AWSServiceName")
 	is_string(v)
+	not input.resources[v]
 	not endswith(v, ".amazonaws.com")
 }

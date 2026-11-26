@@ -23,6 +23,7 @@ _pf_ssmdc_content(name) := c if {
 _pf_ssmdc_type(name) := t if {
 	t := resolve(name, "Properties.DocumentType")
 	is_string(t)
+	not input.resources[t]
 }
 
 _pf_ssmdc_type(name) := "Command" if {
@@ -37,6 +38,7 @@ _pf_ssmdc_schema(name) := sprintf("%v", [v]) if {
 _pf_ssmdc_format(name) := f if {
 	f := resolve(name, "Properties.DocumentFormat")
 	is_string(f)
+	not input.resources[f]
 }
 
 _pf_ssmdc_format(name) := "JSON" if {

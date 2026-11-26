@@ -31,6 +31,7 @@ violation contains make_diag_full("pf-cloudwatch-composite-alarm-rule-syntax", "
 	some name in resources_of_type("AWS::CloudWatch::CompositeAlarm")
 	expr := resolve(name, "Properties.AlarmRule")
 	is_string(expr)
+	not input.resources[expr]
 	t := trim_space(expr)
 	t != ""
 	not _pf_cwcas_valid_start(t)

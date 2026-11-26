@@ -47,5 +47,6 @@ violation contains make_diag_full("pf-sqs-fifo-only-attributes", "ERROR", name,
 	some [attr, allowed] in _pf_sqsfo_enum
 	v := resolve(name, sprintf("Properties.%s", [attr]))
 	is_string(v)
+	not input.resources[v]
 	not v in allowed
 }

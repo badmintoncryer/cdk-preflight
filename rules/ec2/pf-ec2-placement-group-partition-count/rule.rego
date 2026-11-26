@@ -13,5 +13,6 @@ violation contains make_diag_full("pf-ec2-placement-group-partition-count", "ERR
 	not _pf_ec2lib_absent(name, "PartitionCount")
 	s := resolve(name, "Properties.Strategy")
 	is_string(s)
+	not input.resources[s]
 	s != "partition"
 }

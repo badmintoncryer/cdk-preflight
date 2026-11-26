@@ -11,5 +11,6 @@ violation contains make_diag_full("pf-dynamodb-contributor-insights-mode", "ERRO
 	some name in resources_of_type("AWS::DynamoDB::Table")
 	m := resolve(name, "Properties.ContributorInsightsSpecification.Mode")
 	is_string(m)
+	not input.resources[m]
 	not m in {"ACCESSED_AND_THROTTLED_KEYS", "THROTTLED_KEYS"}
 }

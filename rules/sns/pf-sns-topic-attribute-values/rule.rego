@@ -13,6 +13,7 @@ violation contains make_diag_full("pf-sns-topic-attribute-values", "ERROR", name
 	some name in resources_of_type("AWS::SNS::Topic")
 	v := resolve(name, "Properties.DisplayName")
 	is_string(v)
+	not input.resources[v]
 	count(v) > 100
 }
 
@@ -37,5 +38,6 @@ violation contains make_diag_full("pf-sns-topic-attribute-values", "ERROR", name
 	some name in resources_of_type("AWS::SNS::Topic")
 	v := resolve(name, "Properties.TracingConfig")
 	is_string(v)
+	not input.resources[v]
 	not v in {"PassThrough", "Active"}
 }

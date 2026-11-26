@@ -14,6 +14,7 @@ violation contains make_diag_full("pf-rds-backtrack", "ERROR", name,
 	n > 0
 	eng := resolve(name, "Properties.Engine")
 	is_string(eng)
+	not input.resources[eng]
 	eng != "aurora-mysql"
 }
 

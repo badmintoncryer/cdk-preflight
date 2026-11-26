@@ -10,5 +10,6 @@ violation contains make_diag_full("pf-cognito-verification-sms-placeholder", "ER
 	some name in resources_of_type("AWS::Cognito::UserPool")
 	m := resolve(name, "Properties.VerificationMessageTemplate.SmsMessage")
 	is_string(m)
+	not input.resources[m]
 	not contains(m, "{####}")
 }

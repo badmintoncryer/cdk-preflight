@@ -10,5 +10,6 @@ violation contains make_diag_full("pf-logs-account-policy-document-json", "ERROR
 	some name in resources_of_type("AWS::Logs::AccountPolicy")
 	doc := resolve(name, "Properties.PolicyDocument")
 	is_string(doc)
+	not input.resources[doc]
 	not json.is_valid(doc)
 }

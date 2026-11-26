@@ -19,6 +19,7 @@ violation contains make_diag_full("pf-aoss-security-config-saml-metadata-shape",
 	some name in resources_of_type("AWS::OpenSearchServerless::SecurityConfig")
 	m := resolve(name, "Properties.SamlOptions.Metadata")
 	is_string(m)
+	not input.resources[m]
 	not contains(m, "SingleSignOnService")
 }
 
@@ -29,5 +30,6 @@ violation contains make_diag_full("pf-aoss-security-config-saml-metadata-shape",
 	some name in resources_of_type("AWS::OpenSearchServerless::SecurityConfig")
 	m := resolve(name, "Properties.SamlOptions.Metadata")
 	is_string(m)
+	not input.resources[m]
 	not contains(m, "X509Certificate")
 }

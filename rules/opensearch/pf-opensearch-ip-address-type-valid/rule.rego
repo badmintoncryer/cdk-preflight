@@ -16,5 +16,6 @@ violation contains make_diag_full("pf-opensearch-ip-address-type-valid", "WARN",
 	some name in _pf_os_domains
 	v := resolve(name, "Properties.IPAddressType")
 	is_string(v)
+	not input.resources[v]
 	not v in _pf_osip_known
 }

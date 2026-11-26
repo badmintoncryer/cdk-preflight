@@ -10,5 +10,6 @@ violation contains make_diag_full("pf-neptune-backup-window-format", "ERROR", na
 	some name in resources_of_type("AWS::Neptune::DBCluster")
 	w := resolve(name, "Properties.PreferredBackupWindow")
 	is_string(w)
+	not input.resources[w]
 	not regex.match(`^([01][0-9]|2[0-3]):[0-5][0-9]-([01][0-9]|2[0-3]):[0-5][0-9]$`, w)
 }

@@ -13,5 +13,6 @@ violation contains make_diag_full("pf-rds-cluster-express-postgresql-only", "ERR
 	_pf_rdsx_on(name)
 	eng := resolve(name, "Properties.Engine")
 	is_string(eng)
+	not input.resources[eng]
 	lower(eng) != "aurora-postgresql"
 }

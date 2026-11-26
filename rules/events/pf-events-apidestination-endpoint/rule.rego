@@ -17,6 +17,7 @@ violation contains make_diag_full("pf-events-apidestination-endpoint", "ERROR", 
 	some name in resources_of_type("AWS::Events::ApiDestination")
 	ep := resolve(name, "Properties.InvocationEndpoint")
 	is_string(ep)
+	not input.resources[ep]
 	not startswith(ep, "https://")
 }
 
@@ -29,6 +30,7 @@ violation contains make_diag_full("pf-events-apidestination-endpoint", "ERROR", 
 	region := data.cdk_preflight.deploy_region
 	arn := resolve(name, "Properties.ConnectionArn")
 	is_string(arn)
+	not input.resources[arn]
 	parts := split(arn, ":")
 	count(parts) > 3
 	r := parts[3]

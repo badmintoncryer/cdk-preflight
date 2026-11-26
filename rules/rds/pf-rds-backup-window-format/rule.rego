@@ -10,5 +10,6 @@ violation contains make_diag_full("pf-rds-backup-window-format", "ERROR", name,
 	some name in resources_of_type("AWS::RDS::DBInstance")
 	w := resolve(name, "Properties.PreferredBackupWindow")
 	is_string(w)
+	not input.resources[w]
 	not regex.match(`^([01][0-9]|2[0-3]):[0-5][0-9]-([01][0-9]|2[0-3]):[0-5][0-9]$`, w)
 }

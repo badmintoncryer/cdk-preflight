@@ -13,5 +13,6 @@ violation contains make_diag_full("pf-msk-network-type-ipv4-at-create", "ERROR",
 	some name in resources_of_type("AWS::MSK::Cluster")
 	t := resolve(name, "Properties.BrokerNodeGroupInfo.ConnectivityInfo.NetworkType")
 	is_string(t)
+	not input.resources[t]
 	t != "IPV4"
 }

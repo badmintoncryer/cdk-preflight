@@ -8,6 +8,7 @@ _pf_restypefieldinschema_sdl(api) := s if {
 	resolve(g, "Properties.ApiId") == api
 	s := resolve(g, "Properties.Definition")
 	is_string(s)
+	not input.resources[s]
 }
 
 violation contains make_diag_full("pf-appsync-res-type-field-in-schema", "ERROR", name,
@@ -20,5 +21,6 @@ violation contains make_diag_full("pf-appsync-res-type-field-in-schema", "ERROR"
 	sdl := _pf_restypefieldinschema_sdl(api)
 	t := resolve(name, "Properties.TypeName")
 	is_string(t)
+	not input.resources[t]
 	count(regex.find_n(sprintf(`type\s+%s\b`, [t]), sdl, -1)) == 0
 }

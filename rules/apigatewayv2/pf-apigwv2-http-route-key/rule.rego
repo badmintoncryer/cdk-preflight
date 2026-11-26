@@ -31,5 +31,6 @@ violation contains make_diag_full("pf-apigwv2-http-route-key", "ERROR", name,
 	_pf_agv2rk_http_api(name)
 	rk := resolve(name, "Properties.RouteKey")
 	is_string(rk)
+	not input.resources[rk]
 	not _pf_agv2rk_ok(rk)
 }

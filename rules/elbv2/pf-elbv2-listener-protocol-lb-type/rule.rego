@@ -23,5 +23,6 @@ violation contains make_diag_full("pf-elbv2-listener-protocol-lb-type", "ERROR",
 	allow := _pf_elblpt_allow[t]
 	proto := resolve(name, "Properties.Protocol")
 	is_string(proto)
+	not input.resources[proto]
 	not proto in allow
 }

@@ -238,3 +238,6 @@ jobs:
       - name: Rules over the aws-cdk integ snapshots
         id: rules_over_the_aws-cdk_integ_snapshots
         run: npx projen corpus
+      - name: Rules over references in place of literals
+        id: rules_over_references_in_place_of_literals
+        run: npx projen reference-sweep

@@ -10,7 +10,9 @@ violation contains make_diag_full("pf-apigwv2-integration-subtype-payload-versio
 	some name in resources_of_type("AWS::ApiGatewayV2::Integration")
 	sub := resolve(name, "Properties.IntegrationSubtype")
 	is_string(sub)
+	not input.resources[sub]
 	v := resolve(name, "Properties.PayloadFormatVersion")
 	is_string(v)
+	not input.resources[v]
 	v != "1.0"
 }

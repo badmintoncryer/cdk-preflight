@@ -19,6 +19,7 @@ violation contains make_diag_full("pf-lambda-url-qualifier-permission-match", "E
 	some name in _pf_lam_url
 	q := resolve(name, "Properties.Qualifier")
 	is_string(q)
+	not input.resources[q]
 	some p in _pf_lam_perm
 	props := _pf_lam_props(p)
 	_pf_lam_has_key(props, "FunctionUrlAuthType")

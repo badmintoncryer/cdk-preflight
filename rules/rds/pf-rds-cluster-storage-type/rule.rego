@@ -12,5 +12,6 @@ violation contains make_diag_full("pf-rds-cluster-storage-type", "ERROR", name,
 	_pf_rds_engine_in(name, {"aurora-mysql", "aurora-postgresql"})
 	st := resolve(name, "Properties.StorageType")
 	is_string(st)
+	not input.resources[st]
 	not st in {"aurora", "aurora-iopt1"}
 }

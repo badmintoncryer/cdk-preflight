@@ -15,6 +15,7 @@ violation contains make_diag_full("pf-dynamodb-sse-type", "ERROR", name,
 	some name in resources_of_type("AWS::DynamoDB::Table")
 	st := resolve(name, "Properties.SSESpecification.SSEType")
 	is_string(st)
+	not input.resources[st]
 	st != "KMS"
 }
 

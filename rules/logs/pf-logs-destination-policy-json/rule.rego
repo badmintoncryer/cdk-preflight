@@ -10,5 +10,6 @@ violation contains make_diag_full("pf-logs-destination-policy-json", "ERROR", na
 	some name in resources_of_type("AWS::Logs::Destination")
 	p := resolve(name, "Properties.DestinationPolicy")
 	is_string(p)
+	not input.resources[p]
 	not _pf_lgdpj_iam(p)
 }

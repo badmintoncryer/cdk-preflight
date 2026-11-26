@@ -10,5 +10,6 @@ violation contains make_diag_full("pf-opensearch-domain-name-pattern", "ERROR", 
 	some name in _pf_os_domains
 	n := resolve(name, "Properties.DomainName")
 	is_string(n)
+	not input.resources[n]
 	not regex.match(`^[a-z][a-z0-9\-]+$`, n)
 }

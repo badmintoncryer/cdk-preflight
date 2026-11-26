@@ -14,5 +14,6 @@ violation contains make_diag_full("pf-lambda-esm-starting-position-timestamp-req
 	_pf_lam_has(name, "StartingPositionTimestamp")
 	p := resolve(name, "Properties.StartingPosition")
 	is_string(p)
+	not input.resources[p]
 	p != "AT_TIMESTAMP"
 }

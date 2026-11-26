@@ -29,6 +29,7 @@ violation contains make_diag_full("pf-agentcore-oauth2-provider-vendor-config", 
 	some name in resources_of_type("AWS::BedrockAgentCore::OAuth2CredentialProvider")
 	vendor := resolve(name, "Properties.CredentialProviderVendor")
 	is_string(vendor)
+	not input.resources[vendor]
 	expected := _pf_oavc_expected(vendor)
 	props := input.resources[name].properties
 	is_object(props)

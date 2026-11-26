@@ -337,6 +337,18 @@
         }
       ]
     },
+    "reference-sweep": {
+      "name": "reference-sweep",
+      "description": "Replace each string a rule reads with a Ref / GetAtt and compare the firings with rules/_reference-baseline.txt",
+      "steps": [
+        {
+          "spawn": "bundle-rules"
+        },
+        {
+          "exec": "ts-node --project test/tsconfig.json scripts/reference-sweep.ts --check"
+        }
+      ]
+    },
     "release": {
       "name": "release",
       "description": "Prepare a release from \"main\" branch",

@@ -133,7 +133,8 @@ export class PreflightEnforcePlugin implements IPolicyValidationPlugin {
         violations.push(...group.stacks.map((st) => engineErrorViolation(st, e)));
         continue;
       }
-      violations.push(...this.validateStacks(engine, eng, group.stacks, ours));
+      const loaded = { rules, region: group.region, account: group.account, strict: this.strict };
+      violations.push(...this.validateStacks(engine, eng, group.stacks, ours, loaded));
     }
     return violations;
   }
@@ -143,11 +144,12 @@ export class PreflightEnforcePlugin implements IPolicyValidationPlugin {
     eng: any,
     stacks: IPolicyValidationContext['stackTemplates'],
     ours: Set<string>,
+    loaded: LoadedRules,
   ): PolicyViolation[] {
     const violations: PolicyViolation[] = [];
     const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'cdkpf-spec-'));
     try {
-      for (const st of stacks) this.validateStack(engine, eng, st, ours, tmp, violations);
+      for (const st of stacks) this.validateStack(engine, eng, st, ours, loaded, tmp, violations);
     } finally {
       fs.rmSync(tmp, { recursive: true, force: true });
     }
@@ -159,33 +161,42 @@ export class PreflightEnforcePlugin implements IPolicyValidationPlugin {
     eng: any,
     st: IPolicyValidationContext['stackTemplates'][number],
     ours: Set<string>,
+    loaded: LoadedRules,
     tmp: string,
     violations: PolicyViolation[],
   ): void {
     // Condition / Fn::If を既定値で決まる分だけ畳んだテンプレートを検査する（issue #408）。
     // 作られないリソースと通らない分岐に立つ findings は構造上すべて誤検知。
     const checked = specializeTemplateFile(st.templatePath, { region: st.region, accountId: st.accountId }, tmp) ?? st.templatePath;
+    const run = (e: any) => validateTemplate(e, new engine.TemplateFile(checked), {
+      // CDK 組み込みの CloudFormationValidatePlugin と同じく、スタック自身の値を渡す
+      pseudoParameterOverrides: {
+        accountId: st.accountId,
+        region: st.region,
+      },
+      // 組み込みルールは CDK 組み込みの CloudFormationValidatePlugin が同じテンプレートに
+      // 対して既に走らせている。strict でなければ結果も使わず捨てているので、丸ごと切る
+      // （実測 70 リソース 1 枚で初回 3.27s -> 0.22s）。strict のときだけ必要になる。
+      disableBuiltinRules: !this.strict,
+    });
     let report: any;
     try {
-      report = validateTemplate(eng, new engine.TemplateFile(checked), {
-        // CDK 組み込みの CloudFormationValidatePlugin と同じく、スタック自身の値を渡す
-        pseudoParameterOverrides: {
-          accountId: st.accountId,
-          region: st.region,
-        },
-        // 組み込みルールは CDK 組み込みの CloudFormationValidatePlugin が同じテンプレートに
-        // 対して既に走らせている。strict でなければ結果も使わず捨てているので、丸ごと切る
-        // （実測 70 リソース 1 枚で初回 3.27s -> 0.22s）。strict のときだけ必要になる。
-        disableBuiltinRules: !this.strict,
-      });
+      report = run(eng);
     } catch (e) {
       // throw を外に出すと CDK はこの呼び出しを plugin failure（violation ゼロ）として
       // 記録するだけになり、ここまでに集めた違反も後続テンプレートの違反も丸ごと消え、
       // 残るのは `failed: undefined` だけになる（issue #151）。
-      // synth を止めるのは installEnforceGate の役目。ここは「どのスタックで何が
-      // 起きたか」をレポートに残し、他スタックのルールを走らせ続けるためのもの。
-      violations.push(engineErrorViolation(st, e));
-      return;
+      // ルールの評価エラー（Rego の実行時エラー）は service モジュール 1 つが落ちただけでも
+      // テンプレート全体の評価を止める。これはルール側のバグであってテンプレートの問題では
+      // ないので、落ちた service だけ外して他の全ルールを走らせ直し、外したことは warning で
+      // 残す。外しても評価できないとき（コンパイル不能・エンジン自体の失敗）だけ synth を止める。
+      const retried = retryWithoutFailingServices(engine, run, e, loaded);
+      if (!retried) {
+        violations.push(engineErrorViolation(st, e));
+        return;
+      }
+      report = retried.report;
+      violations.push(skippedServicesViolation(st, retried.skipped, e));
     }
     for (const d of (report.diagnostics ?? []) as EngineDiagnostic[]) {
       const isOurs = d.source === 'CUSTOM' && ours.has(d.ruleId);
@@ -275,6 +286,75 @@ export const ENGINE_ERROR_RULE = 'pf-engine-error';
 function engineErrorText(e: unknown): string {
   const message = (e as { message?: unknown } | undefined)?.message;
   return typeof message === 'string' && message.length > 0 ? message : String(e);
+}
+
+/** 評価エラーから切り離し直すために要る、エンジンに載せたものの一式。 */
+interface LoadedRules {
+  readonly rules: BundledRuleData[];
+  readonly region?: string;
+  readonly account?: string;
+  readonly strict: boolean;
+}
+
+/** 評価エラーのメッセージに出る、落ちた service モジュールの名前。 */
+function failingService(e: unknown): string | undefined {
+  return /_pf_service_([A-Za-z0-9_-]+)/.exec(engineErrorText(e))?.[1];
+}
+
+/**
+ * 評価エラーを起こした service のルールを外したエンジンで評価し直す。外した先でまた別の
+ * service が落ちれば、それも外して続ける。service 名がエラーから読めない（＝ルールの
+ * 評価エラーではない）とき、または何度外しても通らないときは undefined。
+ */
+function retryWithoutFailingServices(
+  engineModule: any,
+  run: (eng: any) => any,
+  firstError: unknown,
+  loaded: LoadedRules,
+): { report: any; skipped: string[] } | undefined {
+  const skipped: string[] = [];
+  let err = firstError;
+  for (let attempt = 0; attempt < 5; attempt++) {
+    const service = failingService(err);
+    if (service === undefined || skipped.includes(service)) return undefined;
+    skipped.push(service);
+    const kept = loaded.rules.filter((r) => !skipped.includes(r.service));
+    // 残りが無い = 外した service しかこのアプリに関係しなかった。strict でなければ走らせるものが無い
+    // （ルールの無いエンジンは評価時に落ちる）。strict は組み込みルールの分が残るので諦める。
+    if (kept.length === 0) return loaded.strict ? undefined : { report: { diagnostics: [] }, skipped };
+    let eng: any;
+    try {
+      eng = buildRegoEngine(engineModule, kept, loaded.region, loaded.account);
+      return { report: run(eng), skipped };
+    } catch (e) {
+      err = e;
+    } finally {
+      eng?.free?.();
+    }
+  }
+  return undefined;
+}
+
+/** 評価エラーで一部 service のルールを外して検査したことを warning として報告する。 */
+function skippedServicesViolation(
+  st: { stackConstructPath: string; templatePath: string },
+  services: string[],
+  e: unknown,
+): PolicyViolation {
+  return {
+    ruleName: ENGINE_ERROR_RULE,
+    description:
+      `cdk-preflight could not evaluate its ${services.join(', ')} rules on this template `
+      + '(a bug in those rules, not a problem in the template), so they were skipped here; '
+      + 'every other rule ran: ' + engineErrorText(e),
+    severity: 'warning',
+    fix: 'Report this at https://github.com/badmintoncryer/cdk-preflight/issues',
+    violatingResources: [{
+      constructPath: st.stackConstructPath,
+      templatePath: st.templatePath,
+      locations: ['(template)'],
+    }],
+  };
 }
 
 /** 1 枚のテンプレートを検査できなかったことを violation として報告する。 */
@@ -450,16 +530,20 @@ function regoEngineCached(engineModule: any, rules: BundledRuleData[], region?: 
   if (cachedRegoEngine?.key !== key) {
     cachedRegoEngine?.engine?.free?.();
     cachedRegoEngine = undefined;
-    const customRules = [
-      ...BUNDLED_LIBS.map((l) => ({ name: l.name, content: l.rego })),
-      ...mergeRuleModules(rules),
-    ];
-    if (region !== undefined) {
-      customRules.push(deployEnvironmentModule(region, account));
-    }
-    cachedRegoEngine = { key, engine: new engineModule.RegoEngine({ customRules }) };
+    cachedRegoEngine = { key, engine: buildRegoEngine(engineModule, rules, region, account) };
   }
   return cachedRegoEngine.engine;
+}
+
+function buildRegoEngine(engineModule: any, rules: BundledRuleData[], region?: string, account?: string): any {
+  const customRules = [
+    ...BUNDLED_LIBS.map((l) => ({ name: l.name, content: l.rego })),
+    ...mergeRuleModules(rules),
+  ];
+  if (region !== undefined) {
+    customRules.push(deployEnvironmentModule(region, account));
+  }
+  return new engineModule.RegoEngine({ customRules });
 }
 
 // 観測モード（enforce: false）は CDK 組み込みの CloudFormationValidatePlugin に相乗りする。

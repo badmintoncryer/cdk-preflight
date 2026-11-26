@@ -76,6 +76,7 @@ _pf_mskspk_key(line) := line if {
 _pf_mskspk_bad(name) := ks if {
 	s := resolve(name, "Properties.ServerProperties")
 	is_string(s)
+	not input.resources[s]
 	ks := [k |
 		some ln in split(s, "\n")
 		t := trim_space(ln)

@@ -17,6 +17,7 @@ violation contains make_diag_full("pf-aoss-collection-encryption-policy-mismatch
 	object.get(_pf_aoss_props(cname), "EncryptionConfig", "__pf_absent") == "__pf_absent"
 	cn := resolve(cname, "Properties.Name")
 	is_string(cn)
+	not input.resources[cn]
 	_pf_aoss_enc != set()
 	matched := {res |
 		some pname in _pf_aoss_enc

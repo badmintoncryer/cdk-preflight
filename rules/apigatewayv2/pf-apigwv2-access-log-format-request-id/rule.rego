@@ -15,5 +15,6 @@ violation contains make_diag_full("pf-apigwv2-access-log-format-request-id", "ER
 	some name in resources_of_type("AWS::ApiGatewayV2::Stage")
 	f := resolve(name, "Properties.AccessLogSettings.Format")
 	is_string(f)
+	not input.resources[f]
 	not _pf_agvalfr_has_id(f)
 }

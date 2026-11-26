@@ -11,5 +11,6 @@ violation contains make_diag_full("pf-apigwv2-websocket-authorizer-type", "ERROR
 	_pf_apigwv2lib_protocol(name) == "WEBSOCKET"
 	t := resolve(name, "Properties.AuthorizerType")
 	is_string(t)
+	not input.resources[t]
 	t != "REQUEST"
 }

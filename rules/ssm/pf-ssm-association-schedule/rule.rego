@@ -14,6 +14,7 @@ _pf_ssmas_props(name) := props if {
 _pf_ssmas_expr(name) := s if {
 	s := resolve(name, "Properties.ScheduleExpression")
 	is_string(s)
+	not input.resources[s]
 }
 
 _pf_ssmas_apply(name) if resolve(name, "Properties.ApplyOnlyAtCronInterval") in {true, "true"}

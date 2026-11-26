@@ -12,5 +12,6 @@ violation contains make_diag_full("pf-logs-delivery-destination-output-format-en
 	some name in resources_of_type("AWS::Logs::DeliveryDestination")
 	f := resolve(name, "Properties.OutputFormat")
 	is_string(f)
+	not input.resources[f]
 	not f in _pf_lgdof_formats
 }

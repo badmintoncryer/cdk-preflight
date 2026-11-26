@@ -71,7 +71,11 @@ export function corpusFindings(dir: string, log: (s: string) => void = () => {})
     try {
       ds = validateTemplate(eng, new engine.TemplateFile(checked), { disableBuiltinRules: true }).diagnostics ?? [];
     } catch (e) {
+      // ルールの実行時エラーは、そのテンプレートでその service のルールを全部止める。受け入れ不可。
       log(`engine error on ${file}: ${e}`);
+      out.push({ rule: ENGINE_ERROR, severity: 'ERROR', template: path.relative(dir, file), logicalId: '', message: String(e).replace(/\s+/g, ' ') });
+      eng?.free?.();
+      eng = new engine.RegoEngine({ customRules: [...BUNDLED_LIBS.map((l) => ({ name: l.name, content: l.rego })), ...mergeRuleModules(BUNDLED_RULES)] });
       return;
     }
     for (const d of ds) {
@@ -90,6 +94,8 @@ export function corpusFindings(dir: string, log: (s: string) => void = () => {})
   return out;
 }
 
+const ENGINE_ERROR = '(engine-error)';
+
 export const ACCEPTED = path.join(__dirname, '..', 'rules', '_corpus-accepted.txt');
 
 /** "<rule> <template> <logicalId>" の集合。 */
@@ -105,7 +111,9 @@ export function corpusProblems(findings: CorpusFinding[], accepted: Set<string>)
   for (const f of findings) found.set(`${f.rule} ${f.template} ${f.logicalId}`, f);
   const problems: string[] = [];
   for (const [k, f] of found) {
-    if (!accepted.has(k)) {
+    if (f.rule === ENGINE_ERROR) {
+      problems.push(`evaluating ${f.template} is a runtime error, which stops every rule of the failing service: ${f.message}`);
+    } else if (!accepted.has(k)) {
       problems.push(`${f.rule} fires on a template aws-cdk deployed (${f.template} ${f.logicalId}): ${f.message}\n`
         + '  If that template really deploys, the rule is a false positive: fix it. If it cannot deploy (placeholder values, '
         + 'a feature retired since), add the line to rules/_corpus-accepted.txt with the reason.');

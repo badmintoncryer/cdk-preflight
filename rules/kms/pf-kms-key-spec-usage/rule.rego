@@ -14,6 +14,7 @@ _pf_kmsksu_props(name) := props if {
 _pf_kmsksu_spec(name) := s if {
 	s := resolve(name, "Properties.KeySpec")
 	is_string(s)
+	not input.resources[s]
 }
 
 _pf_kmsksu_spec(name) := "SYMMETRIC_DEFAULT" if {
@@ -49,6 +50,7 @@ violation contains make_diag_full("pf-kms-key-spec-usage", "ERROR", name,
 	_pf_kmsksu_allowed[spec]
 	usage := resolve(name, "Properties.KeyUsage")
 	is_string(usage)
+	not input.resources[usage]
 	not usage in _pf_kmsksu_allowed[spec]
 }
 

@@ -13,5 +13,6 @@ violation contains make_diag_full("pf-ec2-volume-multi-attach-type", "ERROR", na
 	coerce_to_bool(resolve(name, "Properties.MultiAttachEnabled")) == true
 	vt := resolve(name, "Properties.VolumeType")
 	is_string(vt)
+	not input.resources[vt]
 	not vt in {"io1", "io2"}
 }

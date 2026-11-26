@@ -22,6 +22,7 @@ violation contains make_diag_full("pf-sns-fifo-topic-name", "ERROR", name,
 	_pf_snsfifo_true(name)
 	tn := resolve(name, "Properties.TopicName")
 	is_string(tn)
+	not input.resources[tn]
 	not endswith(tn, ".fifo")
 }
 
@@ -32,6 +33,7 @@ violation contains make_diag_full("pf-sns-fifo-topic-name", "ERROR", name,
 	some name in resources_of_type("AWS::SNS::Topic")
 	tn := resolve(name, "Properties.TopicName")
 	is_string(tn)
+	not input.resources[tn]
 	endswith(tn, ".fifo")
 	not _pf_snsfifo_maybe_fifo(name)
 }

@@ -12,6 +12,7 @@ violation contains make_diag_full("pf-apigw-access-log-format-request-id", "ERRO
 	some name in resources_of_type("AWS::ApiGateway::Stage")
 	fmt := resolve(name, "Properties.AccessLogSetting.Format")
 	is_string(fmt)
+	not input.resources[fmt]
 	not contains(fmt, "$context.requestId")
 	not contains(fmt, "$context.extendedRequestId")
 }

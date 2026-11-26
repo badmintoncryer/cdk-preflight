@@ -20,5 +20,6 @@ violation contains make_diag_full("pf-appsync-code-request-response-exports-requ
 	some name in resources_of_type(_t)
 	code := resolve(name, "Properties.Code")
 	is_string(code)
+	not input.resources[code]
 	_pf_coderequestresponseexportsrequired_missing(code)
 }

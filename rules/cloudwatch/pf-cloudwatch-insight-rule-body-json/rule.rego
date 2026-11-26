@@ -10,5 +10,6 @@ violation contains make_diag_full("pf-cloudwatch-insight-rule-body-json", "ERROR
 	some name in resources_of_type("AWS::CloudWatch::InsightRule")
 	body := resolve(name, "Properties.RuleBody")
 	is_string(body)
+	not input.resources[body]
 	not json.is_valid(body)
 }
