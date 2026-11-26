@@ -344,3 +344,71 @@ export function specializeTemplateFile(templatePath: string, pseudo: PseudoValue
     return undefined;
   }
 }
+
+/**
+ * The template with every `Fn::If` that is still in it forced to one branch (`true`: the first,
+ * `false`: the second), a taken `{"Ref": "AWS::NoValue"}` removing the property or list element.
+ * Meant for a template that `specializeTemplate` has already folded, so what is left are the
+ * conditions the defaults cannot decide (issue #276).
+ *
+ * The engine collapses such an `Fn::If` to its true branch when a rule counts a list
+ * (`flatten_list`, `resolve`), but walks both branches when a rule reads a value. Neither is the
+ * template that deploys, and which one deploys is not known at synth. A finding that holds under
+ * both forced variants holds whichever way the condition goes; one that holds under only one of
+ * them is a finding about a deployment that may not happen. Returns undefined when the template
+ * has no `Fn::If` left, so the caller can skip the extra evaluations.
+ */
+export function forceConditionalBranches(template: unknown, branch: boolean): unknown | undefined {
+  const t = template as any;
+  if (!t || typeof t !== 'object' || !t.Resources || typeof t.Resources !== 'object') return undefined;
+  let found = false;
+  const walk = (node: any): any => {
+    if (Array.isArray(node)) {
+      const out: any[] = [];
+      for (const e of node) {
+        const v = walk(e);
+        if (v !== NO_VALUE) out.push(v);
+      }
+      return out;
+    }
+    if (!node || typeof node !== 'object') return node;
+    const keys = Object.keys(node);
+    if (keys.length === 1 && keys[0] === 'Fn::If' && Array.isArray(node['Fn::If']) && node['Fn::If'].length === 3
+      && typeof node['Fn::If'][0] === 'string') {
+      found = true;
+      const taken = node['Fn::If'][branch ? 1 : 2];
+      if (taken && typeof taken === 'object' && !Array.isArray(taken) && Object.keys(taken).length === 1 && taken.Ref === 'AWS::NoValue') return NO_VALUE;
+      return walk(taken);
+    }
+    const out: Record<string, unknown> = {};
+    for (const k of keys) {
+      const v = walk(node[k]);
+      if (v !== NO_VALUE) out[k] = v;
+    }
+    return out;
+  };
+  const resources: Record<string, unknown> = {};
+  for (const [id, r] of Object.entries<any>(t.Resources)) {
+    let res = r && typeof r === 'object' ? { ...r } : r;
+    if (res && typeof res === 'object') {
+      for (const k of ['Properties', 'Metadata', 'UpdatePolicy', 'CreationPolicy']) {
+        if (k in res) {
+          const v = walk(res[k]);
+          if (v === NO_VALUE) delete res[k];
+          else res[k] = v;
+        }
+      }
+    }
+    resources[id] = res;
+  }
+  const out: any = { ...t, Resources: resources };
+  if (t.Outputs && typeof t.Outputs === 'object') {
+    const outputs: Record<string, unknown> = {};
+    for (const [id, o] of Object.entries<any>(t.Outputs)) {
+      const v = walk(o);
+      if (v !== NO_VALUE) outputs[id] = v;
+    }
+    out.Outputs = outputs;
+  }
+  return found ? out : undefined;
+}

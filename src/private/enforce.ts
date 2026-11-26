@@ -10,7 +10,7 @@ import {
   type PolicyViolation,
 } from 'aws-cdk-lib';
 import type { IConstruct } from 'constructs';
-import { specializeTemplateFile } from './conditions';
+import { forceConditionalBranches, specializeTemplateFile } from './conditions';
 import { checkQuotas, type QuotaCheckOptions } from './quota';
 import { BUNDLED_LIBS, type BundledRuleData } from '../rules.generated';
 
@@ -168,7 +168,7 @@ export class PreflightEnforcePlugin implements IPolicyValidationPlugin {
     // Condition / Fn::If を既定値で決まる分だけ畳んだテンプレートを検査する（issue #408）。
     // 作られないリソースと通らない分岐に立つ findings は構造上すべて誤検知。
     const checked = specializeTemplateFile(st.templatePath, { region: st.region, accountId: st.accountId }, tmp) ?? st.templatePath;
-    const run = (e: any) => validateTemplate(e, new engine.TemplateFile(checked), {
+    const runOn = (e: any, file: string) => validateTemplate(e, new engine.TemplateFile(file), {
       // CDK 組み込みの CloudFormationValidatePlugin と同じく、スタック自身の値を渡す
       pseudoParameterOverrides: {
         accountId: st.accountId,
@@ -179,6 +179,7 @@ export class PreflightEnforcePlugin implements IPolicyValidationPlugin {
       // （実測 70 リソース 1 枚で初回 3.27s -> 0.22s）。strict のときだけ必要になる。
       disableBuiltinRules: !this.strict,
     });
+    const run = (e: any) => runOn(e, checked);
     let report: any;
     try {
       report = run(eng);
@@ -198,16 +199,20 @@ export class PreflightEnforcePlugin implements IPolicyValidationPlugin {
       report = retried.report;
       violations.push(skippedServicesViolation(st, retried.skipped, e));
     }
+    const settled = settledFindings(eng, runOn, checked, tmp);
     for (const d of (report.diagnostics ?? []) as EngineDiagnostic[]) {
       const isOurs = d.source === 'CUSTOM' && ours.has(d.ruleId);
       const isStrictHit = this.strict
         && d.source !== 'CUSTOM'
         && (d.severity === 'ERROR' || d.severity === 'FATAL');
       if (!isOurs && !isStrictHit) continue;
+      // 既定値で決まらない Fn::If の片方の枝でしか成り立たない指摘は、デプロイで落ちるとは
+      // 言い切れないので synth を止めない（issue #276）。消さずに warning として残す。
+      const unsettled = isOurs && settled !== undefined && !settled.has(findingKey(d));
       violations.push({
         ruleName: d.ruleId,
-        description: d.message,
-        severity: mapSeverity(d.severity),
+        description: unsettled ? `${d.message}${UNSETTLED_NOTE}` : d.message,
+        severity: unsettled && BLOCKS_SYNTH.has(mapSeverity(d.severity)) ? 'warning' : mapSeverity(d.severity),
         violatingResources: [{
           resourceLogicalId: d.entity?.logicalId ?? '(unknown)',
           templatePath: st.templatePath,
@@ -250,6 +255,41 @@ export function byEnvironment<T extends { region?: string; accountId?: string }>
     groups.get(key)!.stacks.push(st);
   }
   return [...groups.values()];
+}
+
+const UNSETTLED_NOTE = ' (reported as a warning: it holds on only one branch of an Fn::If whose condition cannot be decided at synth time)';
+
+function findingKey(d: EngineDiagnostic): string {
+  return `${d.ruleId}|${d.entity?.logicalId ?? ''}`;
+}
+
+/**
+ * テンプレートに既定値で決まらない Fn::If が残っているとき、全部を真の枝に倒した版と偽の枝に
+ * 倒した版の両方を評価し、両方で出た自前ルールの指摘のキーを返す（issue #276）。
+ * Fn::If が残っていない・読めない・どちらかの評価が失敗したときは undefined で、呼び出し側は
+ * 何も変えない。
+ */
+function settledFindings(
+  eng: any,
+  runOn: (e: any, file: string) => any,
+  checked: string,
+  tmp: string,
+): Set<string> | undefined {
+  try {
+    const tpl = JSON.parse(fs.readFileSync(checked, 'utf8'));
+    const keys: Set<string>[] = [];
+    for (const branch of [true, false]) {
+      const forced = forceConditionalBranches(tpl, branch);
+      if (forced === undefined) return undefined;
+      const file = path.join(tmp, `${fs.readdirSync(tmp).length}-forced-${branch}.template.json`);
+      fs.writeFileSync(file, JSON.stringify(forced));
+      const r = runOn(eng, file);
+      keys.push(new Set(((r.diagnostics ?? []) as EngineDiagnostic[]).filter((d) => d.source === 'CUSTOM').map(findingKey)));
+    }
+    return new Set([...keys[0]].filter((k) => keys[1].has(k)));
+  } catch {
+    return undefined;
+  }
 }
 
 /** 合成を止める violation severity。 */
