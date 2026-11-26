@@ -13,7 +13,7 @@ violation contains make_diag_full("pf-elbv2-tg-attr-slow-start-scope", "ERROR", 
 	some name in _pf_elb_tgs
 	some p in _pf_elb_pairs(name, "TargetGroupAttributes")
 	p.key == "slow_start.duration_seconds"
-	f := object.get(_pf_elb_family_of, object.get(_pf_elb_props(name), "Protocol", ""), "lambda")
+	f := object.get(_pf_elb_family_of, object.get(_pf_elb_props(name), "Protocol", "__pf_absent"), _pf_default("pf-elbv2-tg-attr-slow-start-scope", "Protocol.family"))
 	t := _pf_elb_tgtype(name)
 	not _pf_elbgss_ok(f, t)
 }

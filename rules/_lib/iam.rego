@@ -168,7 +168,7 @@ _pf_iamlib_partition := "aws" if {
 # Conditions are not read, so a role that names the service is never reported.
 _pf_iamlib_role_without_service(v, svc) := id if {
 	is_object(v)
-	object.get(v, "__kind", "") == "getatt:Arn"
+	_pf_oval(v, "__kind") == "getatt:Arn"
 	id := object.get(v, "__ref", null)
 	id in resources_of_type("AWS::IAM::Role")
 	some [r, _, d] in _pf_iamlib_trusts

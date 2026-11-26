@@ -10,6 +10,6 @@ violation contains make_diag_full("pf-config-recorder-include-global-requires-al
 	"Set AllSupported to true, or drop IncludeGlobalResourceTypes and name the global types in ResourceTypes",
 	"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-config-configurationrecorder-recordinggroup.html") if {
 	some name in resources_of_type("AWS::Config::ConfigurationRecorder")
-	object.get(_pf_cfglib_group(name), "IncludeGlobalResourceTypes", false) == true
+	_pf_oval(_pf_cfglib_group(name), "IncludeGlobalResourceTypes") == true
 	not _pf_cfglib_all_supported(name)
 }

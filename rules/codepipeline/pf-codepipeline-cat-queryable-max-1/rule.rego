@@ -10,6 +10,6 @@ violation contains make_diag_full("pf-codepipeline-cat-queryable-max-1", "ERROR"
 	"https://docs.aws.amazon.com/codepipeline/latest/APIReference/API_ActionConfigurationProperty.html") if {
 	some name in resources_of_type("AWS::CodePipeline::CustomActionType")
 	props := object.get(_pf_cplib_props(name), "ConfigurationProperties", [])
-	q := {n | some p in props; _pf_cplib_plain(p); object.get(p, "Queryable", false) == true; n := object.get(p, "Name", "")}
+	q := {n | some p in props; _pf_cplib_plain(p); _pf_oval(p, "Queryable") == true; n := _pf_oval(p, "Name")}
 	count(q) > 1
 }

@@ -11,5 +11,5 @@ violation contains make_diag_full("pf-route53-dnssec-requires-active-ksk", "ERRO
 	z := _pf_r53z_zone_of(name)
 	ksks := _pf_r53z_ksks_of(z)
 	count(ksks) > 0
-	count([k | some k in ksks; object.get(_pf_r53z_props(k), "Status", "") == "ACTIVE"]) == 0
+	count([k | some k in ksks; _pf_oval(_pf_r53z_props(k), "Status") == "ACTIVE"]) == 0
 }

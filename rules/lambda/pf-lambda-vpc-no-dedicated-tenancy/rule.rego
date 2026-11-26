@@ -14,5 +14,5 @@ violation contains make_diag_full("pf-lambda-vpc-no-dedicated-tenancy", "ERROR",
 	cfg := _pf_lam_vpccfg(name)
 	some sub in _pf_lam_list(object.get(cfg, "SubnetIds", []))
 	vpc := _pf_lam_vpc_of(sub)
-	object.get(_pf_lam_res_props(_pf_lam_ref(vpc)), "InstanceTenancy", "default") == "dedicated"
+	_pf_oval(_pf_lam_res_props(_pf_lam_ref(vpc)), "InstanceTenancy") == "dedicated"
 }

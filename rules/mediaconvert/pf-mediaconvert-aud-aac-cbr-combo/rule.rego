@@ -6,8 +6,8 @@ _pf_mc_aud_aac_cbr_combo_url := "https://docs.aws.amazon.com/mediaconvert/latest
 
 _pf_mcac_cbr contains {"rn": a.rn, "i": a.i, "key": key, "aac": a.aac} if {
 	some a in _pf_mclib_aac
-	object.get(a.aac, "RateControlMode", "CBR") == "CBR"
-	profile := object.get(a.aac, "CodecProfile", "LC")
+	object.get(a.aac, "RateControlMode", _pf_default("pf-mediaconvert-aud-aac-cbr-combo", "RateControlMode")) == "CBR"
+	profile := object.get(a.aac, "CodecProfile", _pf_default("pf-mediaconvert-aud-aac-cbr-combo", "CodecProfile"))
 	profile in {"LC", "HEV1", "HEV2"}
 	mode := _pf_mclib_aac_mode[a.aac.CodingMode]
 	sr := a.aac.SampleRate

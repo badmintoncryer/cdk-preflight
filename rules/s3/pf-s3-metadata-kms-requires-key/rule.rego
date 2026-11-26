@@ -16,6 +16,6 @@ violation contains make_diag_full("pf-s3-metadata-kms-requires-key", "ERROR", na
 	is_object(tc)
 	e := object.get(tc, "EncryptionConfiguration", {})
 	is_object(e)
-	object.get(e, "SseAlgorithm", "") == "aws:kms"
+	_pf_oval(e, "SseAlgorithm") == "aws:kms"
 	object.get(e, "KmsKeyArn", "__pf_absent") == "__pf_absent"
 }

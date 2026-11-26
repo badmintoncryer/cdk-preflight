@@ -20,7 +20,7 @@ import * as path from 'path';
 import * as YAML from 'yaml';
 import { deployEnvironmentModule, engineVersion, isSuperseded, loadEngine, validateTemplate } from '../src/private/enforce';
 import type { BundledRuleData } from '../src/rules.generated';
-import { type SupersededBy, uncoveredFindings } from './bundle-rules';
+import { collectLibs, type SupersededBy, uncoveredFindings } from './bundle-rules';
 
 interface Diagnostic {
   readonly ruleId: string;
@@ -112,10 +112,7 @@ function check(filters: string[]): number {
     console.error(`no rule matches ${filters.join(' ')}`);
     return 2;
   }
-  const libs = fs.existsSync(path.join(ROOT, 'rules', '_lib'))
-    ? fs.readdirSync(path.join(ROOT, 'rules', '_lib')).filter((f) => f.endsWith('.rego')).sort()
-      .map((f) => ({ name: `_lib/${f.replace(/\.rego$/, '')}`, content: fs.readFileSync(path.join(ROOT, 'rules', '_lib', f), 'utf8') }))
-    : [];
+  const libs = collectLibs(ROOT).map((l) => ({ name: l.name, content: l.rego }));
   const all = collect([]);
   // deploy_region はエンジンにモジュールとして焼き込むので、リージョンごとに 1 エンジン要る。
   // 対象に fixtureRegion 付きルールが無ければ 1 本しか作らない（初期化が重い）。

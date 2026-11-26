@@ -14,12 +14,12 @@ violation contains make_diag_full("pf-msk-unauthenticated-only-requires-no-tls-o
 	some name in resources_of_type("AWS::MSK::Cluster")
 	props := input.resources[name].properties
 	is_object(props)
-	object.get(props, ["ClientAuthentication", "Unauthenticated", "Enabled"], true) == false
+	object.get(props, ["ClientAuthentication", "Unauthenticated", "Enabled"], _pf_default("pf-msk-unauthenticated-only-requires-no-tls-only", "ClientAuthentication.Unauthenticated.Enabled")) == false
 	not _pf_mskuorn_authenticated(props)
 }
 
-_pf_mskuorn_authenticated(props) if object.get(props, ["ClientAuthentication", "Sasl", "Iam", "Enabled"], false) == true
+_pf_mskuorn_authenticated(props) if object.get(props, ["ClientAuthentication", "Sasl", "Iam", "Enabled"], _pf_default("pf-msk-unauthenticated-only-requires-no-tls-only", "ClientAuthentication.Sasl.Iam.Enabled")) == true
 
-_pf_mskuorn_authenticated(props) if object.get(props, ["ClientAuthentication", "Sasl", "Scram", "Enabled"], false) == true
+_pf_mskuorn_authenticated(props) if _pf_oval(props, ["ClientAuthentication", "Sasl", "Scram", "Enabled"]) == true
 
-_pf_mskuorn_authenticated(props) if object.get(props, ["ClientAuthentication", "Tls", "Enabled"], false) == true
+_pf_mskuorn_authenticated(props) if _pf_oval(props, ["ClientAuthentication", "Tls", "Enabled"]) == true

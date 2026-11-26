@@ -15,6 +15,6 @@ violation contains make_diag_full("pf-s3express-kms-key-with-aes256", "ERROR", n
 	is_object(c.value)
 	d := object.get(c.value, "ServerSideEncryptionByDefault", {})
 	is_object(d)
-	object.get(d, "SSEAlgorithm", "") == "AES256"
+	_pf_oval(d, "SSEAlgorithm") == "AES256"
 	object.get(d, "KMSMasterKeyID", "__pf_absent") != "__pf_absent"
 }

@@ -12,8 +12,8 @@ violation contains make_diag_full("pf-elbv2-listener-auth-action-https-only", "E
 	_pf_elblaah_fix, _pf_elblaah_url) if {
 	some name in _pf_elb_listeners
 	some a in _pf_elb_actions(name, "DefaultActions")
-	t := object.get(a.value, "Type", "")
+	t := object.get(a.value, "Type", "__pf_absent")
 	t in {"authenticate-cognito", "authenticate-oidc"}
-	proto := object.get(_pf_elb_props(name), "Protocol", "GENEVE")
+	proto := object.get(_pf_elb_props(name), "Protocol", _pf_default("pf-elbv2-listener-auth-action-https-only", "Protocol"))
 	proto != "HTTPS"
 }

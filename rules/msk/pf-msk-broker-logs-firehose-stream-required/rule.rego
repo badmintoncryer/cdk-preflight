@@ -15,6 +15,6 @@ violation contains make_diag_full("pf-msk-broker-logs-firehose-stream-required",
 	is_object(props)
 	dest := object.get(props, ["LoggingInfo", "BrokerLogs", "Firehose"], null)
 	is_object(dest)
-	object.get(dest, "Enabled", false) == true
+	_pf_oval(dest, "Enabled") == true
 	object.get(dest, "DeliveryStream", "__pf_absent") == "__pf_absent"
 }

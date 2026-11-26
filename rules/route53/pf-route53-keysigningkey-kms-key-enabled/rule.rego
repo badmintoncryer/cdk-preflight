@@ -9,5 +9,5 @@ violation contains make_diag_full("pf-route53-keysigningkey-kms-key-enabled", "E
 	"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-route53-keysigningkey.html") if {
 	some name in resources_of_type("AWS::Route53::KeySigningKey")
 	k := _pf_r53z_key_of(name)
-	object.get(_pf_r53z_props(k), "Enabled", true) == false
+	_pf_oval(_pf_r53z_props(k), "Enabled") == false
 }

@@ -107,7 +107,7 @@ _pf_ekslib_auth_mode(name) := "CONFIG_MAP" if {
 # request as false. Undefined (so the caller stays silent) when the value is a
 # Ref the preprocessor could not turn into a boolean.
 _pf_ekslib_flag(name, path) := v if {
-	v := object.get(_pf_ekslib_props(name), path, false)
+	v := object.get(_pf_ekslib_props(name), path, _pf_default("_lib/eks", "Enabled"))
 	is_boolean(v)
 }
 

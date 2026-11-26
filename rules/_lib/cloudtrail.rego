@@ -91,7 +91,7 @@ _pf_ctlib_logs_management(name) if {
 
 _pf_ctlib_logs_management(name) if {
 	some es in _pf_ctlib_event_selectors(name)
-	object.get(es, "IncludeManagementEvents", true) == true
+	object.get(es, "IncludeManagementEvents", _pf_default("_lib/cloudtrail", "IncludeManagementEvents")) == true
 }
 
 _pf_ctlib_fs_condition_count(fs) := sum([n |

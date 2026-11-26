@@ -16,5 +16,5 @@ violation contains make_diag_full("pf-lambda-alias-additional-version-not-latest
 	ws := _pf_lam_list(object.get(rc, "AdditionalVersionWeights", []))
 	some w in ws
 	is_object(w)
-	object.get(w, "FunctionVersion", "") == "$LATEST"
+	_pf_oval(w, "FunctionVersion") == "$LATEST"
 }

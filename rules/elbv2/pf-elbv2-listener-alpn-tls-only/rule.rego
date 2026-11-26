@@ -12,7 +12,7 @@ violation contains make_diag_full("pf-elbv2-listener-alpn-tls-only", "ERROR", na
 	_pf_elblat_fix, _pf_elblat_url) if {
 	some name in _pf_elb_listeners
 	_pf_elb_has(name, "AlpnPolicy")
-	proto := object.get(_pf_elb_props(name), "Protocol", "GENEVE")
+	proto := object.get(_pf_elb_props(name), "Protocol", _pf_default("pf-elbv2-listener-alpn-tls-only", "Protocol"))
 	proto != "TLS"
 	t := _pf_elb_listener_lbtype(name)
 }

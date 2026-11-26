@@ -28,5 +28,5 @@ violation contains make_diag_full("pf-s3-replication-tag-filter-delete-marker", 
 	_pf_s3rtd_tagged(f)
 	d := object.get(rule.value, "DeleteMarkerReplication", {})
 	is_object(d)
-	object.get(d, "Status", "") == "Enabled"
+	_pf_oval(d, "Status") == "Enabled"
 }

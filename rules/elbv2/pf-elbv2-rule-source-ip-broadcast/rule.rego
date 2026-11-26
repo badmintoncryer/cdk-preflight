@@ -15,7 +15,7 @@ violation contains make_diag_full("pf-elbv2-rule-source-ip-broadcast", "ERROR", 
 
 	some name in _pf_elb_rules
 	some c in _pf_elb_conditions(name)
-	object.get(c.value, "Field", "") == "source-ip"
+	_pf_oval(c.value, "Field") == "source-ip"
 	some v in _pf_elb_cond_values(c.value)
 	v == "255.255.255.255/32"
 }

@@ -161,7 +161,7 @@ _pf_cass_mode(name) := m if {
 	bm := object.get(input.resources[name].properties, "BillingMode", null)
 	is_object(bm)
 	not _pf_cass_tokenish(bm)
-	m := object.get(bm, "Mode", "ON_DEMAND")
+	m := _pf_oval(bm, "Mode")
 	is_string(m)
 }
 

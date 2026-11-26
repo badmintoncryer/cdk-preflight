@@ -20,11 +20,11 @@ _pf_cfnexplist_bad contains [out, ref, attr] if {
 	object.get(o, "exportName", null) != null
 	v := object.get(o, "value", null)
 	is_object(v)
-	kind := object.get(v, "__kind", "")
+	kind := _pf_oval(v, "__kind")
 	startswith(kind, "getatt:")
 	attr := substring(kind, 7, -1)
-	ref := object.get(v, "__ref", "")
-	rtype := object.get(object.get(input.resources, ref, {}), "resourceType", "")
+	ref := _pf_oval(v, "__ref")
+	rtype := _pf_oval(object.get(input.resources, ref, {}), "resourceType")
 	attr in object.get(_pf_cfnexplist_attrs, rtype, set())
 }
 

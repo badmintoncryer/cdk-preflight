@@ -8,19 +8,19 @@ import rego.v1
 # this template or an import; a Sub/Join that wraps a resource ref collapses to
 # an opaque marker and is deliberately left undetected.
 _pf_cfnexpref_dep(e) := sprintf("resource %s", [ref]) if {
-	object.get(e, "__kind", "") == "resource"
-	ref := object.get(e, "__ref", "")
+	_pf_oval(e, "__kind") == "resource"
+	ref := _pf_oval(e, "__ref")
 	input.resources[ref]
 }
 
 _pf_cfnexpref_dep(e) := sprintf("an attribute of resource %s", [ref]) if {
-	startswith(object.get(e, "__kind", ""), "getatt:")
-	ref := object.get(e, "__ref", "")
+	startswith(_pf_oval(e, "__kind"), "getatt:")
+	ref := _pf_oval(e, "__ref")
 	input.resources[ref]
 }
 
 _pf_cfnexpref_dep(e) := "an imported value (Fn::ImportValue)" if {
-	startswith(object.get(e, "__dynamic", ""), "cross-stack import")
+	startswith(_pf_oval(e, "__dynamic"), "cross-stack import")
 }
 
 _pf_cfnexpref_bad contains [out, dep] if {

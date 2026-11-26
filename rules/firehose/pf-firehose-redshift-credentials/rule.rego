@@ -7,7 +7,7 @@ import rego.v1
 _pf_fhcred_secret(c) if {
 	s := object.get(c, "SecretsManagerConfiguration", null)
 	is_object(s)
-	coerce_to_bool(object.get(s, "Enabled", false)) == true
+	coerce_to_bool(_pf_oval(s, "Enabled")) == true
 }
 
 violation contains make_diag_full("pf-firehose-redshift-credentials", "ERROR", name,

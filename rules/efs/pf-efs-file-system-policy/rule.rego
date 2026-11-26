@@ -47,7 +47,7 @@ violation contains make_diag_full("pf-efs-file-system-policy", "ERROR", name,
 }
 
 _pf_efspol_locks(s) if {
-	object.get(s, "Effect", "") == "Deny"
+	_pf_oval(s, "Effect") == "Deny"
 	some a in _pf_efspol_list(object.get(s, "Action", []))
 	a in {"*", "elasticfilesystem:*", "elasticfilesystem:PutFileSystemPolicy"}
 }

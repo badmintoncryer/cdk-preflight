@@ -13,6 +13,6 @@ violation contains make_diag_full("pf-cloudfront-rhp-server-timing-sampling-rate
 	cfgv := _pf_cflib_props(name, "ResponseHeadersPolicyConfig")
 	st := object.get(cfgv, "ServerTimingHeadersConfig", null)
 	is_object(st)
-	object.get(st, "Enabled", false) == true
+	_pf_oval(st, "Enabled") == true
 	object.get(st, "SamplingRate", "__pf_absent") == "__pf_absent"
 }

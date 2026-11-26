@@ -13,6 +13,6 @@ violation contains make_diag_full("pf-cloudfront-origin-shield-region-required",
 	some o in _pf_cflib_origins(name)
 	os := object.get(o.value, "OriginShield", null)
 	is_object(os)
-	object.get(os, "Enabled", false) == true
+	_pf_oval(os, "Enabled") == true
 	object.get(os, "OriginShieldRegion", "__pf_absent") == "__pf_absent"
 }

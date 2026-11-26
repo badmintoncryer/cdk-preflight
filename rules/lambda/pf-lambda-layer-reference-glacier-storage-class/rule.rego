@@ -14,7 +14,7 @@ violation contains make_diag_full("pf-lambda-layer-reference-glacier-storage-cla
 	_pf_llrg_fix, _pf_llrg_url) if {
 	some name in _pf_lam_layer
 	c := _pf_lam_obj(_pf_lam_props(name), "Content")
-	object.get(c, "S3ObjectStorageMode", "") == "REFERENCE"
+	_pf_oval(c, "S3ObjectStorageMode") == "REFERENCE"
 	bkt := resolve(name, "Properties.Content.S3Bucket")
 	bp := object.get(object.get(input.resources, bkt, {}), "properties", {})
 	lc := object.get(bp, "LifecycleConfiguration", {})

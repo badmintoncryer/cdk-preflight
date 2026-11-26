@@ -10,6 +10,6 @@ violation contains make_diag_full("pf-firehose-cloudwatch-logging-names", "ERROR
 	some [name, path, c] in _pf_fhlib_prefixed
 	o := object.get(c, "CloudWatchLoggingOptions", null)
 	is_object(o)
-	coerce_to_bool(object.get(o, "Enabled", false)) == true
+	coerce_to_bool(_pf_oval(o, "Enabled")) == true
 	object.get(o, "LogGroupName", "__pf_absent") == "__pf_absent"
 }

@@ -20,7 +20,7 @@ _pf_batchfcm_req(name, rtype) := v if {
 	some item in flatten_list(name, "Properties.ContainerProperties.ResourceRequirements")
 	entry := item.value
 	is_object(entry)
-	object.get(entry, "Type", "") == rtype
+	_pf_oval(entry, "Type") == rtype
 	raw := object.get(entry, "Value", null)
 	is_string(raw)
 	v := _pf_tonum(raw)

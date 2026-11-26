@@ -5,7 +5,7 @@ import rego.v1
 # The Auto Scaling group protects new instances from scale-in (CloudFormation
 # accepts the boolean either as true or as the string "true").
 _pf_ecs_scalein(props) if {
-	object.get(props, "NewInstancesProtectedFromScaleIn", false) in {true, "true"}
+	_pf_oval(props, "NewInstancesProtectedFromScaleIn") in {true, "true"}
 }
 
 violation contains make_diag_full("pf-ecs-cp-managed-termination-scale-in-protection", "ERROR", name,

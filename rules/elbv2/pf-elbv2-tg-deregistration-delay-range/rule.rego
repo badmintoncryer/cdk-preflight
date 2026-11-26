@@ -15,7 +15,7 @@ violation contains make_diag_full("pf-elbv2-tg-deregistration-delay-range", "ERR
 	some item in flatten_list(name, "Properties.TargetGroupAttributes")
 	attr := item.value
 	is_object(attr)
-	object.get(attr, "Key", "") == "deregistration_delay.timeout_seconds"
+	_pf_oval(attr, "Key") == "deregistration_delay.timeout_seconds"
 	num := _pf_onum(attr, "Value")
 	_pf_dereg_delay_out(num)
 }

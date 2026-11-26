@@ -24,9 +24,9 @@ violation contains make_diag_full("pf-eks-cluster-subnets-two-azs", "ERROR", nam
 	some name in resources_of_type("AWS::EKS::Cluster")
 	ids := flatten_list(name, "Properties.ResourcesVpcConfig.SubnetIds")
 	count(ids) >= 2
-	azs := {a | some v in ids; a := _pf_ekssn_az(object.get(v.value, "__ref", ""))}
+	azs := {a | some v in ids; a := _pf_ekssn_az(_pf_oval(v.value, "__ref"))}
 	count(azs) == 1
-	count([v | some v in ids; _pf_ekssn_az(object.get(v.value, "__ref", ""))]) == count(ids)
+	count([v | some v in ids; _pf_ekssn_az(_pf_oval(v.value, "__ref"))]) == count(ids)
 	some az in azs
 }
 

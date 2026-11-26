@@ -12,6 +12,6 @@ violation contains make_diag_full("pf-iot-authorizer-signing-keys", "ERROR", nam
 	"Set TokenKeyName and TokenSigningPublicKeys, or set SigningDisabled to true",
 	"https://docs.aws.amazon.com/iot/latest/developerguide/custom-authorizer.html") if {
 	some name in resources_of_type("AWS::IoT::Authorizer")
-	object.get(_pf_iotlib_props(name), "SigningDisabled", false) == false
+	object.get(_pf_iotlib_props(name), "SigningDisabled", _pf_default("pf-iot-authorizer-signing-keys", "SigningDisabled")) == false
 	not _pf_iotlib_has(name, "TokenKeyName")
 }

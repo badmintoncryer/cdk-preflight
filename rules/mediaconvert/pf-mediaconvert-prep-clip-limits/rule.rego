@@ -15,7 +15,7 @@ violation contains make_diag_full("pf-mediaconvert-prep-clip-limits", "ERROR", r
 	_pf_mclib_lit(cl)
 	some k in _pf_mccl_keys
 	is_number(cl[k])
-	src := object.get(cc, "SampleRangeConversion", "NONE")
+	src := object.get(cc, "SampleRangeConversion", _pf_default("pf-mediaconvert-prep-clip-limits", "SampleRangeConversion"))
 	is_string(src)
 	src != "LIMITED_RANGE_CLIP"
 }

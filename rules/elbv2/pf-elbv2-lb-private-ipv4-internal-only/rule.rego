@@ -8,7 +8,7 @@ _pf_elbpip_url := "https://docs.aws.amazon.com/elasticloadbalancing/latest/APIRe
 
 _pf_elbpip_internal_nlb(name) if {
 	_pf_elb_lbtype(name) == "network"
-	object.get(_pf_elb_props(name), "Scheme", "internet-facing") == "internal"
+	_pf_oval(_pf_elb_props(name), "Scheme") == "internal"
 }
 
 violation contains make_diag_full("pf-elbv2-lb-private-ipv4-internal-only", "ERROR", name,

@@ -12,7 +12,7 @@ violation contains make_diag_full("pf-lambda-layer-reference-needs-bucket-policy
 	_pf_llrb_fix, _pf_llrb_url) if {
 	some name in _pf_lam_layer
 	c := _pf_lam_obj(_pf_lam_props(name), "Content")
-	object.get(c, "S3ObjectStorageMode", "") == "REFERENCE"
+	_pf_oval(c, "S3ObjectStorageMode") == "REFERENCE"
 	bkt := resolve(name, "Properties.Content.S3Bucket")
 	bkt in resources_of_type("AWS::S3::Bucket")
 	not _pf_llrb_policy(bkt)

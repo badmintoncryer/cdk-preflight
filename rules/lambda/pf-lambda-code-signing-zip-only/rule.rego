@@ -13,5 +13,5 @@ violation contains make_diag_full("pf-lambda-code-signing-zip-only", "ERROR", na
 	some name in _pf_lam_fn
 	props := _pf_lam_props(name)
 	_pf_lam_has_key(props, "CodeSigningConfigArn")
-	object.get(props, "PackageType", "Zip") == "Image"
+	_pf_oval(props, "PackageType") == "Image"
 }

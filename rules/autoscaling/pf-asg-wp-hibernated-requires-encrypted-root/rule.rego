@@ -15,10 +15,10 @@ violation contains make_diag_full("pf-asg-wp-hibernated-requires-encrypted-root"
 	lt := _pf_aslib_lt(_pf_aslib_group(name))
 	some i, m in _pf_aslib_arr(lt, ["LaunchTemplateData", "BlockDeviceMappings"])
 	is_object(m)
-	_pf_asgwphe_root(object.get(m, "DeviceName", ""))
+	_pf_asgwphe_root(object.get(m, "DeviceName", "__pf_absent"))
 	ebs := object.get(m, "Ebs", null)
 	is_object(ebs)
-	e := object.get(ebs, "Encrypted", false)
+	e := object.get(ebs, "Encrypted", _pf_default("pf-asg-wp-hibernated-requires-encrypted-root", "Encrypted"))
 	not is_object(e)
 	e != true
 }

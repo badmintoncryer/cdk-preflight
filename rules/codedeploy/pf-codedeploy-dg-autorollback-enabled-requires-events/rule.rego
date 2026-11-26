@@ -24,6 +24,6 @@ violation contains make_diag_full("pf-codedeploy-dg-autorollback-enabled-require
 	"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-codedeploy-deploymentgroup-autorollbackconfiguration.html") if {
 	some name in resources_of_type("AWS::CodeDeploy::DeploymentGroup")
 	rc := _pf_codedeploylib_obj(_pf_codedeploylib_props(name), "AutoRollbackConfiguration")
-	object.get(rc, "Enabled", false) == true
+	_pf_oval(rc, "Enabled") == true
 	not _pf_cdroll_one(rc)
 }

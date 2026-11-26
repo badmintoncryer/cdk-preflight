@@ -12,5 +12,5 @@ violation contains make_diag_full("pf-cognito-schema-custom-required", "ERROR", 
 	is_object(a.value)
 	n := _pf_oval(a.value, "Name")
 	not n in _pf_coglib_std_attrs
-	object.get(a.value, "Required", false) == true
+	_pf_oval(a.value, "Required") == true
 }

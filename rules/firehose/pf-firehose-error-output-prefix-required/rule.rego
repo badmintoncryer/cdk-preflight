@@ -3,14 +3,14 @@ package cdk_preflight
 import rego.v1
 
 _pf_fherop_set(c) if {
-	e := object.get(c, "ErrorOutputPrefix", "")
+	e := _pf_oval(c, "ErrorOutputPrefix")
 	is_string(e)
 	_pf_unconditional_items(e)
 	count(e) > 0
 }
 
 # An intrinsic is unknowable here, so treat it as set and stay quiet.
-_pf_fherop_set(c) if is_object(object.get(c, "ErrorOutputPrefix", ""))
+_pf_fherop_set(c) if is_object(_pf_oval(c, "ErrorOutputPrefix"))
 
 violation contains make_diag_full("pf-firehose-error-output-prefix-required", "ERROR", name,
 	sprintf("%s.ErrorOutputPrefix", [path]),

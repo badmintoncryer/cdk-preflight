@@ -10,5 +10,5 @@ violation contains make_diag_full("pf-route53-cidrcollection-locationname-wildca
 	some name in resources_of_type("AWS::Route53::CidrCollection")
 	some l in flatten_list(name, "Properties.Locations")
 	is_object(l.value)
-	object.get(l.value, "LocationName", "") == "*"
+	_pf_oval(l.value, "LocationName") == "*"
 }

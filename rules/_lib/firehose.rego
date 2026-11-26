@@ -115,7 +115,7 @@ _pf_fhlib_dp_enabled(name, path) if {
 	p == path
 	dp := object.get(c, "DynamicPartitioningConfiguration", null)
 	is_object(dp)
-	coerce_to_bool(object.get(dp, "Enabled", false)) == true
+	coerce_to_bool(_pf_oval(dp, "Enabled")) == true
 }
 
 # A user-written literal, not an intrinsic (those arrive as marker objects).

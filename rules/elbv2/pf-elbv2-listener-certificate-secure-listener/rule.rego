@@ -13,6 +13,6 @@ violation contains make_diag_full("pf-elbv2-listener-certificate-secure-listener
 	some name in resources_of_type("AWS::ElasticLoadBalancingV2::ListenerCertificate")
 	l := resolve(name, "Properties.ListenerArn")
 	l in _pf_elb_listeners
-	proto := object.get(_pf_elb_props(l), "Protocol", "GENEVE")
+	proto := object.get(_pf_elb_props(l), "Protocol", _pf_default("pf-elbv2-listener-certificate-secure-listener", "Protocol"))
 	not proto in _pf_elb_secure
 }

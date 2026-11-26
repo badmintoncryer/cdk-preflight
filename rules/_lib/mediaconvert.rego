@@ -11,9 +11,9 @@ import rego.v1
 
 _pf_mclib_lit(o) if {
 	is_object(o)
-	object.get(o, "__kind", "_") == "_"
-	object.get(o, "__dynamic", "_") == "_"
-	object.get(o, "__conditional", "_") == "_"
+	object.get(o, "__kind", "__pf_absent") == "__pf_absent"
+	object.get(o, "__dynamic", "__pf_absent") == "__pf_absent"
+	object.get(o, "__conditional", "__pf_absent") == "__pf_absent"
 }
 
 _pf_mclib_settings(rn, rt) := s if {
@@ -132,7 +132,7 @@ _pf_mclib_present(v) if is_string(v)
 
 _pf_mclib_present(v) if {
 	is_object(v)
-	startswith(object.get(v, "__kind", ""), "getatt:")
+	startswith(object.get(v, "__kind", "__pf_absent"), "getatt:")
 }
 
 # AAC CBR の許容表（ug/aac-support.html の CBR 表。LC / HEV1 / HEV2 のみ、XHE は含めない）。

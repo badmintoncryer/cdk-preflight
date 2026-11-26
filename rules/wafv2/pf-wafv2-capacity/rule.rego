@@ -41,7 +41,7 @@ _pf_wafcap_base("XssMatchStatement", b) := 40
 
 _pf_wafcap_base("SqliMatchStatement", b) := 30 if b.SensitivityLevel == "HIGH"
 
-_pf_wafcap_base("SqliMatchStatement", b) := 20 if object.get(b, "SensitivityLevel", "LOW") != "HIGH"
+_pf_wafcap_base("SqliMatchStatement", b) := 20 if object.get(b, "SensitivityLevel", _pf_default("pf-wafv2-capacity", "SensitivityLevel")) != "HIGH"
 
 _pf_wafcap_base("ByteMatchStatement", b) := 2 if b.PositionalConstraint in {"EXACTLY", "STARTS_WITH", "ENDS_WITH"}
 

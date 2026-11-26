@@ -19,7 +19,7 @@ violation contains make_diag_full("pf-elbv2-rule-host-header-format", "ERROR", n
 
 	some name in _pf_elb_rules
 	some c in _pf_elb_conditions(name)
-	object.get(c.value, "Field", "") == "host-header"
+	_pf_oval(c.value, "Field") == "host-header"
 	some i, v in _pf_elb_cond_values(c.value)
 	is_string(v)
 	not _pf_elbrhh_ok(v)

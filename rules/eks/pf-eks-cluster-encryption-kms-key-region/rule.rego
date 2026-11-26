@@ -14,7 +14,7 @@ violation contains make_diag_full("pf-eks-cluster-encryption-kms-key-region", "E
 	region := data.cdk_preflight.deploy_region
 	is_string(region)
 	some ec in flatten_list(name, "Properties.EncryptionConfig")
-	arn := object.get(ec.value, ["Provider", "KeyArn"], "")
+	arn := object.get(ec.value, ["Provider", "KeyArn"], _pf_default("pf-eks-cluster-encryption-kms-key-region", "Provider.KeyArn"))
 	_pf_ekslib_lit(arn)
 	parts := split(arn, ":")
 	count(parts) >= 6

@@ -5,7 +5,7 @@ import rego.v1
 _pf_elbsc_alb(name) if {
 	props := input.resources[name].properties
 	is_object(props)
-	object.get(props, "Type", "application") == "application"
+	object.get(props, "Type", _pf_default("pf-elbv2-alb-subnet-count", "Type")) == "application"
 }
 
 violation contains make_diag_full("pf-elbv2-alb-subnet-count", "ERROR", name,

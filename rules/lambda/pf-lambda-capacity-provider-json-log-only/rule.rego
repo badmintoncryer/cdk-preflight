@@ -14,5 +14,5 @@ violation contains make_diag_full("pf-lambda-capacity-provider-json-log-only", "
 	cpc := _pf_lam_obj(_pf_lam_props(name), "CapacityProviderConfig")
 	lmi := _pf_lam_obj(cpc, "LambdaManagedInstancesCapacityProviderConfig")
 	lmi == lmi
-	object.get(_pf_lam_obj(_pf_lam_props(name), "LoggingConfig"), "LogFormat", "JSON") == "Text"
+	_pf_oval(_pf_lam_obj(_pf_lam_props(name), "LoggingConfig"), "LogFormat") == "Text"
 }

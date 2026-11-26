@@ -47,7 +47,7 @@ _pf_eblib_lit_opt(it) if {
 	is_object(it)
 	is_string(it.Namespace)
 	is_string(it.OptionName)
-	is_string(object.get(it, "ResourceName", ""))
+	is_string(object.get(it, "ResourceName", "__pf_absent"))
 	not _pf_ll_conditional(it)
 	s := _pf_eblib_valstr(it.Value)
 	not contains(s, "{{")
@@ -119,9 +119,9 @@ _pf_eblib_std_platform(rn) if {
 # リテラルのオブジェクト（Ref / GetAtt / Sub / Fn::If のマーカーではない）
 _pf_eblib_lit_obj(o) if {
 	is_object(o)
-	object.get(o, "__kind", "_") == "_"
-	object.get(o, "__dynamic", "_") == "_"
-	object.get(o, "__conditional", "_") == "_"
+	object.get(o, "__kind", "__pf_absent") == "__pf_absent"
+	object.get(o, "__dynamic", "__pf_absent") == "__pf_absent"
+	object.get(o, "__conditional", "__pf_absent") == "__pf_absent"
 }
 
 _pf_eblib_num(s) := _pf_tonum(s) if regex.match(`^-?(0|[1-9][0-9]*)(\.[0-9]+)?$`, s)

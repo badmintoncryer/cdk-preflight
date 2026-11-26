@@ -29,7 +29,7 @@ _pf_r53z_str(o, k) := v if {
 # Fn::GetAtt <logical>.<attr> のマーカーが指す論理 ID。
 _pf_r53z_getatt(v, attr) := r if {
 	is_object(v)
-	object.get(v, "__kind", "") == sprintf("getatt:%s", [attr])
+	object.get(v, "__kind", "__pf_absent") == sprintf("getatt:%s", [attr])
 	r := object.get(v, "__ref", null)
 	is_string(r)
 }
@@ -196,13 +196,13 @@ _pf_r53z_dnssec_principal := "dnssec-route53.amazonaws.com"
 # キーポリシーが DNSSEC のサービスプリンシパルに Allow を与えているか。
 _pf_r53z_key_grants(k) if {
 	some st in _pf_r53z_stmts(k)
-	object.get(st, "Effect", "") == "Allow"
+	_pf_oval(st, "Effect") == "Allow"
 	_pf_r53z_svc_is(st, _pf_r53z_dnssec_principal)
 }
 
 _pf_r53z_signing_actions(k) := {a |
 	some st in _pf_r53z_stmts(k)
-	object.get(st, "Effect", "") == "Allow"
+	_pf_oval(st, "Effect") == "Allow"
 	_pf_r53z_svc_is(st, _pf_r53z_dnssec_principal)
 	some a in _pf_r53z_alist(st)
 }

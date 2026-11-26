@@ -13,7 +13,7 @@ violation contains make_diag_full("pf-elbv2-rule-http-method-charset", "ERROR", 
 
 	some name in _pf_elb_rules
 	some c in _pf_elb_conditions(name)
-	object.get(c.value, "Field", "") == "http-request-method"
+	_pf_oval(c.value, "Field") == "http-request-method"
 	some i, v in _pf_elb_cond_values(c.value)
 	is_string(v)
 	not regex.match("^[A-Z_-]{1,40}$", v)

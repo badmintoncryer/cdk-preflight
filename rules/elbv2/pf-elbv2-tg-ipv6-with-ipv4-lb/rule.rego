@@ -11,7 +11,7 @@ violation contains make_diag_full("pf-elbv2-tg-ipv6-with-ipv4-lb", "ERROR", p.tg
 	sprintf("The target group is IPv6 but listener '%s' hangs off a load balancer with an 'ipv4' IP address type", [p.listener]),
 	_pf_elbtgil_fix, _pf_elbtgil_url) if {
 	some p in _pf_elb_listener_tgs
-	object.get(_pf_elb_props(p.tg), "IpAddressType", "ipv4") == "ipv6"
+	_pf_oval(_pf_elb_props(p.tg), "IpAddressType") == "ipv6"
 	lb := _pf_elb_lb_of(p.listener)
-	object.get(_pf_elb_props(lb), "IpAddressType", "ipv4") == "ipv4"
+	object.get(_pf_elb_props(lb), "IpAddressType", _pf_default("pf-elbv2-tg-ipv6-with-ipv4-lb", "IpAddressType")) == "ipv4"
 }

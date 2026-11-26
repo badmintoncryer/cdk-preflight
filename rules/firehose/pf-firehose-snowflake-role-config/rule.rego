@@ -11,6 +11,6 @@ violation contains make_diag_full("pf-firehose-snowflake-role-config", "ERROR", 
 	path == "Properties.SnowflakeDestinationConfiguration"
 	rc := object.get(c, "SnowflakeRoleConfiguration", null)
 	is_object(rc)
-	coerce_to_bool(object.get(rc, "Enabled", false)) == true
+	coerce_to_bool(_pf_oval(rc, "Enabled")) == true
 	object.get(rc, "SnowflakeRole", "__pf_absent") == "__pf_absent"
 }

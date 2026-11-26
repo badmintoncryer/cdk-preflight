@@ -61,9 +61,9 @@ _pf_sd_record_types(svc) := [t |
 	is_string(t)
 ]
 
-# RoutingPolicy を省略したときの既定は MULTIVALUE。
+# RoutingPolicy を省略したときの値は rules/_defaults.yaml の台帳から（実機で MULTIVALUE として扱われた）。
 _pf_sd_routing(svc) := p if {
-	p := object.get(_pf_sd_dnsconfig(svc), "RoutingPolicy", "MULTIVALUE")
+	p := object.get(_pf_sd_dnsconfig(svc), "RoutingPolicy", _pf_default("_lib/servicediscovery", "RoutingPolicy"))
 	is_string(p)
 }
 

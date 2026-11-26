@@ -14,7 +14,7 @@ violation contains make_diag_full("pf-s3-lifecycle-delete-marker-exclusive", "ER
 	_pf_static_list(name, "Properties.LifecycleConfiguration.Rules")
 	some rule in flatten_list(name, "Properties.LifecycleConfiguration.Rules")
 	is_object(rule.value)
-	object.get(rule.value, "ExpiredObjectDeleteMarker", false) == true
+	_pf_oval(rule.value, "ExpiredObjectDeleteMarker") == true
 	some k in ["ExpirationInDays", "ExpirationDate", "TagFilters"]
 	object.get(rule.value, k, "__pf_absent") != "__pf_absent"
 }

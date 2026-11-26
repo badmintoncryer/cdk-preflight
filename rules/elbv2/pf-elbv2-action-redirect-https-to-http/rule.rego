@@ -13,6 +13,6 @@ violation contains make_diag_full("pf-elbv2-action-redirect-https-to-http", "ERR
 	some a in _pf_elb_all_actions
 	name := a.name
 	rc := _pf_elb_oget(a.value, "RedirectConfig")
-	object.get(rc, "Protocol", "#{protocol}") == "HTTP"
+	_pf_oval(rc, "Protocol") == "HTTP"
 	_pf_elb_listener_proto(name) == "HTTPS"
 }

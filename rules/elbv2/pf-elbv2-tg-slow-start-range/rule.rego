@@ -20,7 +20,7 @@ violation contains make_diag_full("pf-elbv2-tg-slow-start-range", "ERROR", name,
 	some item in flatten_list(name, "Properties.TargetGroupAttributes")
 	attr := item.value
 	is_object(attr)
-	object.get(attr, "Key", "") == "slow_start.duration_seconds"
+	_pf_oval(attr, "Key") == "slow_start.duration_seconds"
 	num := _pf_onum(attr, "Value")
 	_pf_slow_start_out(num)
 }

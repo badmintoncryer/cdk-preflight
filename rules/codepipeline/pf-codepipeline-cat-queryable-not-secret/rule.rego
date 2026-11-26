@@ -12,7 +12,7 @@ violation contains make_diag_full("pf-codepipeline-cat-queryable-not-secret", "E
 	some name in resources_of_type("AWS::CodePipeline::CustomActionType")
 	some i, p in object.get(_pf_cplib_props(name), "ConfigurationProperties", [])
 	_pf_cplib_plain(p)
-	object.get(p, "Queryable", false) == true
+	_pf_oval(p, "Queryable") == true
 	secret := _pf_oval(p, "Secret")
 	required := _pf_oval(p, "Required")
 	not _pf_cplib_queryable_ok(secret, required)

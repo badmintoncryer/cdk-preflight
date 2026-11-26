@@ -31,7 +31,7 @@ violation contains make_diag_full("pf-secretsmanager-target-attachment", "ERROR"
 	s := _pf_smta_secret(name)
 	g := object.get(input.resources[s].properties, "GenerateSecretString", null)
 	is_object(g)
-	object.get(g, "SecretStringTemplate", "") == ""
+	object.get(g, "SecretStringTemplate", _pf_default("pf-secretsmanager-target-attachment", "SecretStringTemplate")) == ""
 }
 
 violation contains make_diag_full("pf-secretsmanager-target-attachment", "ERROR", name,

@@ -12,6 +12,6 @@ violation contains make_diag_full("pf-lambda-s3-storage-mode-zip-only", "ERROR",
 	_pf_lssm_fix, _pf_lssm_url) if {
 	some name in _pf_lam_fn
 	props := _pf_lam_props(name)
-	object.get(props, "PackageType", "Zip") == "Image"
+	_pf_oval(props, "PackageType") == "Image"
 	_pf_lam_has_key(_pf_lam_obj(props, "Code"), "S3ObjectStorageMode")
 }

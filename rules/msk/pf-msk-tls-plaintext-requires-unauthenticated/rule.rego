@@ -14,13 +14,13 @@ violation contains make_diag_full("pf-msk-tls-plaintext-requires-unauthenticated
 	some name in resources_of_type("AWS::MSK::Cluster")
 	props := input.resources[name].properties
 	is_object(props)
-	object.get(props, ["EncryptionInfo", "EncryptionInTransit", "ClientBroker"], "TLS") == "TLS_PLAINTEXT"
+	object.get(props, ["EncryptionInfo", "EncryptionInTransit", "ClientBroker"], _pf_default("pf-msk-tls-plaintext-requires-unauthenticated", "EncryptionInTransit.ClientBroker")) == "TLS_PLAINTEXT"
 	_pf_msktpru_authenticated(props)
-	object.get(props, ["ClientAuthentication", "Unauthenticated", "Enabled"], false) != true
+	object.get(props, ["ClientAuthentication", "Unauthenticated", "Enabled"], _pf_default("pf-msk-tls-plaintext-requires-unauthenticated", "ClientAuthentication.Unauthenticated.Enabled")) != true
 }
 
-_pf_msktpru_authenticated(props) if object.get(props, ["ClientAuthentication", "Sasl", "Iam", "Enabled"], false) == true
+_pf_msktpru_authenticated(props) if object.get(props, ["ClientAuthentication", "Sasl", "Iam", "Enabled"], _pf_default("pf-msk-tls-plaintext-requires-unauthenticated", "ClientAuthentication.Sasl.Iam.Enabled")) == true
 
-_pf_msktpru_authenticated(props) if object.get(props, ["ClientAuthentication", "Sasl", "Scram", "Enabled"], false) == true
+_pf_msktpru_authenticated(props) if _pf_oval(props, ["ClientAuthentication", "Sasl", "Scram", "Enabled"]) == true
 
-_pf_msktpru_authenticated(props) if object.get(props, ["ClientAuthentication", "Tls", "Enabled"], false) == true
+_pf_msktpru_authenticated(props) if _pf_oval(props, ["ClientAuthentication", "Tls", "Enabled"]) == true

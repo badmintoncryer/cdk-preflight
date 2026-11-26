@@ -17,7 +17,7 @@ violation contains make_diag_full("pf-s3-replication-sse-kms-needs-replica-key",
 	is_object(ssc)
 	sse := object.get(ssc, "SseKmsEncryptedObjects", {})
 	is_object(sse)
-	object.get(sse, "Status", "") == "Enabled"
+	_pf_oval(sse, "Status") == "Enabled"
 	d := object.get(rule.value, "Destination", {})
 	is_object(d)
 	enc := object.get(d, "EncryptionConfiguration", {})

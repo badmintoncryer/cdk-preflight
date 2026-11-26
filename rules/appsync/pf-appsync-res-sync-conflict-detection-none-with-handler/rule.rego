@@ -11,5 +11,5 @@ violation contains make_diag_full("pf-appsync-res-sync-conflict-detection-none-w
 	sc := resolve(name, "Properties.SyncConfig")
 	is_object(sc)
 	sc.ConflictDetection == "NONE"
-	object.get(sc, "ConflictHandler", "NONE") != "NONE"
+	_pf_oval(sc, "ConflictHandler") != "NONE"
 }

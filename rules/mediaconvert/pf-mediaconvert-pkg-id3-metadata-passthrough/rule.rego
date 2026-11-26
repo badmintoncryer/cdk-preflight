@@ -9,14 +9,14 @@ _pf_mcid3_cm(rn) := cm if {
 	_pf_mclib_container(rn) == "CMFC"
 	cm := _pf_mclib_cont(rn).CmfcSettings
 	_pf_mclib_lit(cm)
-	object.get(cm, "TimedMetadata", "NONE") == "NONE"
+	object.get(cm, "TimedMetadata", _pf_default("pf-mediaconvert-pkg-id3-metadata-passthrough", "CmfcSettings.TimedMetadata")) == "NONE"
 }
 
 _pf_mcid3_mp(rn) := mp if {
 	_pf_mclib_container(rn) == "MPD"
 	mp := _pf_mclib_cont(rn).MpdSettings
 	_pf_mclib_lit(mp)
-	object.get(mp, "TimedMetadata", "NONE") == "NONE"
+	_pf_oval(mp, "TimedMetadata") == "NONE"
 }
 
 violation contains make_diag_full("pf-mediaconvert-pkg-id3-metadata-passthrough", "ERROR", rn, "Properties.SettingsJson.ContainerSettings.CmfcSettings.TimedMetadataValue",
@@ -41,8 +41,8 @@ violation contains make_diag_full("pf-mediaconvert-pkg-id3-metadata-passthrough"
 	some rn in resources_of_type("AWS::MediaConvert::Preset")
 	cm := _pf_mcid3_cm(rn)
 	cm.ManifestMetadataSignaling == "ENABLED"
-	object.get(cm, "Scte35Source", "NONE") == "NONE"
-	object.get(cm, "Scte35Esam", "NONE") == "NONE"
+	_pf_oval(cm, "Scte35Source") == "NONE"
+	_pf_oval(cm, "Scte35Esam") == "NONE"
 }
 
 violation contains make_diag_full("pf-mediaconvert-pkg-id3-metadata-passthrough", "ERROR", rn, "Properties.SettingsJson.ContainerSettings.MpdSettings.TimedMetadataSchemeIdUri",

@@ -14,6 +14,6 @@ violation contains make_diag_full("pf-elbv2-rule-condition-duplicate-field", "ER
 	_pf_elbrcd_fix, _pf_elbrcd_url) if {
 	some name in _pf_elb_rules
 	some f in _pf_elbrcd_once
-	n := count([c | some c in _pf_elb_conditions(name); object.get(c.value, "Field", "") == f])
+	n := count([c | some c in _pf_elb_conditions(name); _pf_oval(c.value, "Field") == f])
 	n > 1
 }

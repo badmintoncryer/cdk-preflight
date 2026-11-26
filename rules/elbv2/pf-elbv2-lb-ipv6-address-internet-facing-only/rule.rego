@@ -11,7 +11,7 @@ violation contains make_diag_full("pf-elbv2-lb-ipv6-address-internet-facing-only
 	"IPv6Address is mapped on an internal load balancer; a mapped IPv6 address is only accepted on an internet-facing dualstack network load balancer",
 	_pf_elbv6a_fix, _pf_elbv6a_url) if {
 	some name in _pf_elb_lbs
-	object.get(_pf_elb_props(name), "Scheme", "internet-facing") != "internet-facing"
+	_pf_oval(_pf_elb_props(name), "Scheme") != "internet-facing"
 	some m in flatten_list(name, "Properties.SubnetMappings")
 	_pf_elb_ohas(m.value, "IPv6Address")
 }

@@ -25,6 +25,6 @@ violation contains make_diag_full("pf-codedeploy-dg-alarm-configuration-enabled-
 	"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-codedeploy-deploymentgroup-alarmconfiguration.html") if {
 	some name in resources_of_type("AWS::CodeDeploy::DeploymentGroup")
 	ac := _pf_codedeploylib_obj(_pf_codedeploylib_props(name), "AlarmConfiguration")
-	object.get(ac, "Enabled", false) == true
+	_pf_oval(ac, "Enabled") == true
 	not _pf_cdalarm_one(ac)
 }

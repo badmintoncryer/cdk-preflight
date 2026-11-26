@@ -16,7 +16,7 @@ violation contains make_diag_full("pf-codepipeline-artifact-stores-region-of-pip
 	region := data.cdk_preflight.deploy_region
 	is_string(region)
 	stores := object.get(_pf_cplib_props(name), "ArtifactStores", [])
-	regions := {r | some e in stores; r := object.get(e, "Region", ""); _pf_cplib_lit(r)}
+	regions := {r | some e in stores; r := _pf_oval(e, "Region"); _pf_cplib_lit(r)}
 	count(regions) == count(stores)
 	count(regions) > 0
 	not region in regions

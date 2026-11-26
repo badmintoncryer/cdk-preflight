@@ -13,5 +13,5 @@ violation contains make_diag_full("pf-batch-jd-ecs-essential-required", "ERROR",
 	cs := object.get(t.value, "Containers", [])
 	_pf_unconditional_items(cs)
 	count(cs) > 0
-	count([1 | some c in cs; object.get(c, "Essential", true) == false]) == count(cs)
+	count([1 | some c in cs; _pf_oval(c, "Essential") == false]) == count(cs)
 }

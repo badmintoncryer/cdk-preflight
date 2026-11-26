@@ -19,7 +19,7 @@ violation contains make_diag_full("pf-mediaconvert-cap-dvbsub-dds-coordinates", 
 	_pf_mclib_lit(ds)
 	dv := ds.DvbSubDestinationSettings
 	_pf_mclib_lit(dv)
-	object.get(dv, "DdsHandling", "NONE") == "NONE"
+	object.get(dv, "DdsHandling", _pf_default("pf-mediaconvert-cap-dvbsub-dds-coordinates", "DdsHandling")) == "NONE"
 	some k in _pf_mcdd_keys
 	is_number(dv[k])
 	dv[k] != 0

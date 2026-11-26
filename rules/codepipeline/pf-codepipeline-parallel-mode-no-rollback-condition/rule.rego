@@ -11,9 +11,9 @@ violation contains make_diag_full("pf-codepipeline-parallel-mode-no-rollback-con
 	"https://docs.aws.amazon.com/codepipeline/latest/userguide/stage-conditions.html") if {
 	some name in resources_of_type("AWS::CodePipeline::Pipeline")
 	props := _pf_cplib_props(name)
-	object.get(props, "ExecutionMode", "") == "PARALLEL"
+	_pf_oval(props, "ExecutionMode") == "PARALLEL"
 	some si, st in _pf_cplib_stages(name)
 	of := object.get(st, "OnFailure", {})
 	_pf_cplib_plain(of)
-	object.get(of, "Result", "") == "ROLLBACK"
+	_pf_oval(of, "Result") == "ROLLBACK"
 }

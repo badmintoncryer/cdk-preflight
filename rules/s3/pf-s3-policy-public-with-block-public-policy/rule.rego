@@ -10,7 +10,7 @@ _pf_s3pbp_anyone(pr) if pr == "*"
 
 _pf_s3pbp_anyone(pr) if {
 	is_object(pr)
-	object.get(pr, "AWS", "") == "*"
+	_pf_oval(pr, "AWS") == "*"
 }
 
 _pf_s3pbp_anyone(pr) if {
@@ -31,7 +31,7 @@ violation contains make_diag_full("pf-s3-policy-public-with-block-public-policy"
 	resolve(b, "Properties.PublicAccessBlockConfiguration.BlockPublicPolicy") == true
 	some st in flatten_list(p, "Properties.PolicyDocument.Statement")
 	is_object(st.value)
-	object.get(st.value, "Effect", "") == "Allow"
+	_pf_oval(st.value, "Effect") == "Allow"
 	object.get(st.value, "Condition", "__pf_absent") == "__pf_absent"
 	_pf_s3pbp_anyone(object.get(st.value, "Principal", null))
 }

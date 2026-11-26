@@ -10,6 +10,6 @@ violation contains make_diag_full("pf-networkfirewall-policy-session-holding-req
 	"Point TLSInspectionConfigurationArn at a TLS inspection configuration, or drop EnableTLSSessionHolding",
 	"https://docs.aws.amazon.com/network-firewall/latest/APIReference/API_FirewallPolicy.html") if {
 	some name in resources_of_type("AWS::NetworkFirewall::FirewallPolicy")
-	object.get(_pf_nfwlib_fp(name), "EnableTLSSessionHolding", false) == true
+	_pf_oval(_pf_nfwlib_fp(name), "EnableTLSSessionHolding") == true
 	object.get(_pf_nfwlib_fp(name), "TLSInspectionConfigurationArn", "__pf_absent") == "__pf_absent"
 }

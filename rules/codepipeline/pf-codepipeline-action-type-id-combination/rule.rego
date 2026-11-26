@@ -36,7 +36,7 @@ violation contains make_diag_full("pf-codepipeline-action-type-id-combination", 
 	some ai, a in _pf_cplib_actions(st)
 	_pf_cplib_plain(a)
 	tid := _pf_cplib_tid(a)
-	object.get(tid, "Owner", "AWS") == "ThirdParty"
+	_pf_oval(tid, "Owner") == "ThirdParty"
 	prov := _pf_oval(tid, "Provider")
 	_pf_cplib_aws_providers[prov]
 	cat := _pf_cplib_category(a)

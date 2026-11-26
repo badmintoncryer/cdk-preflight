@@ -69,7 +69,7 @@ violation contains make_diag_full("pf-ecr-lifecycle-count", "ERROR", name,
 	_pf_ecrlpc_fix, _pf_ecrlpc_url) if {
 	some [name, i, rule] in _pf_ecrlib_rules
 	sel := _pf_ecrlib_selection(rule)
-	object.get(sel, "storageClass", "") == "archive"
+	_pf_oval(sel, "storageClass") == "archive"
 	ct := object.get(sel, "countType", null)
 	is_string(ct)
 	ct != "sinceImageTransitioned"

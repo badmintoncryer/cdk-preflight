@@ -12,7 +12,7 @@ _pf_cwmqr_countable(q) if object.get(q, "ReturnData", "__pf_absent") == "__pf_ab
 
 _pf_cwmqr_countable(q) if is_boolean(object.get(q, "ReturnData", null))
 
-_pf_cwmqr_returns(q) if object.get(q, "ReturnData", true) == true
+_pf_cwmqr_returns(q) if object.get(q, "ReturnData", _pf_default("pf-cloudwatch-metric-query-returndata", "ReturnData")) == true
 
 _pf_cwmqr_anomaly(name) if is_string(resolve(name, "Properties.ThresholdMetricId"))
 

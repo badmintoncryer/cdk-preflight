@@ -8,7 +8,7 @@ _pf_ec2enip_primaries(name) := pfv if {
 	_pf_static_list(name, "Properties.PrivateIpAddresses")
 	pfv := [p |
 	some p in flatten_list(name, "Properties.PrivateIpAddresses")
-	coerce_to_bool(object.get(p.value, "Primary", false)) == true
+	coerce_to_bool(_pf_oval(p.value, "Primary")) == true
 ]
 }
 

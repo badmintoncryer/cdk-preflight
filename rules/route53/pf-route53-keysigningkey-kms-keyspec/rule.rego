@@ -10,9 +10,9 @@ violation contains make_diag_full("pf-route53-keysigningkey-kms-keyspec", "ERROR
 	some name in resources_of_type("AWS::Route53::KeySigningKey")
 	k := _pf_r53z_key_of(name)
 	p := _pf_r53z_props(k)
-	ks := object.get(p, "KeySpec", "SYMMETRIC_DEFAULT")
+	ks := object.get(p, "KeySpec", _pf_default("pf-route53-keysigningkey-kms-keyspec", "KeySpec"))
 	is_string(ks)
-	ku := object.get(p, "KeyUsage", "ENCRYPT_DECRYPT")
+	ku := object.get(p, "KeyUsage", _pf_default("pf-route53-keysigningkey-kms-keyspec", "KeyUsage"))
 	is_string(ku)
 	not _pf_r53z_dnssec_keyspec(ks, ku)
 }

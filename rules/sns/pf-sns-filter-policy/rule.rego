@@ -82,7 +82,7 @@ violation contains make_diag_full("pf-sns-filter-policy", "ERROR", name,
 	is_array(e)
 }
 
-_pf_snsfp_attr_scope(sub) if object.get(sub, "FilterPolicyScope", "MessageAttributes") == "MessageAttributes"
+_pf_snsfp_attr_scope(sub) if object.get(sub, "FilterPolicyScope", _pf_default("pf-sns-filter-policy", "FilterPolicyScope")) == "MessageAttributes"
 
 violation contains make_diag_full("pf-sns-filter-policy", "ERROR", name,
 	sprintf("%s.FilterPolicy.%s", [path, k]),

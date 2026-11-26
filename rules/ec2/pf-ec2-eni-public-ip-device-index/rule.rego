@@ -11,7 +11,7 @@ violation contains make_diag_full("pf-ec2-eni-public-ip-device-index", "ERROR", 
 	_pf_ec2pidx_url) if {
 	some name in resources_of_type("AWS::EC2::Instance")
 	some n in flatten_list(name, "Properties.NetworkInterfaces")
-	coerce_to_bool(object.get(n.value, "AssociatePublicIpAddress", false)) == true
+	coerce_to_bool(_pf_oval(n.value, "AssociatePublicIpAddress")) == true
 	idx := _pf_onum(n.value, "DeviceIndex")
 	idx != 0
 }

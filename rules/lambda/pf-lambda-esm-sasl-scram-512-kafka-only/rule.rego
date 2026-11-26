@@ -13,6 +13,6 @@ violation contains make_diag_full("pf-lambda-esm-sasl-scram-512-kafka-only", "ER
 	some name in _pf_lam_esm
 	some i, c in _pf_lam_list(_pf_lam_get(name, "SourceAccessConfigurations"))
 	is_object(c)
-	object.get(c, "Type", "") == "SASL_SCRAM_512_AUTH"
+	_pf_oval(c, "Type") == "SASL_SCRAM_512_AUTH"
 	_pf_lam_arn_not(name, "kafka")
 }

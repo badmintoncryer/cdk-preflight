@@ -45,7 +45,7 @@ violation contains make_diag_full("pf-pipes-filter-pattern", "ERROR", name,
 	_pf_pipefp_url) if {
 	some name in resources_of_type("AWS::Pipes::Pipe")
 	some f in _pf_pipefp_patterns(name)
-	not json.is_valid(object.get(f.value, "Pattern", ""))
+	not json.is_valid(_pf_oval(f.value, "Pattern"))
 }
 
 violation contains make_diag_full("pf-pipes-filter-pattern", "ERROR", name,

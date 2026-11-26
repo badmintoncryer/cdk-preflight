@@ -7,7 +7,7 @@ import rego.v1
 _pf_cgrae_declared(pool, v) if {
 	some att in flatten_list(pool, "Properties.Schema")
 	is_object(att.value)
-	n := object.get(att.value, "Name", "")
+	n := _pf_oval(att.value, "Name")
 	v in {n, concat("", ["custom:", n]), concat("", ["dev:custom:", n])}
 }
 

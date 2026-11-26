@@ -69,16 +69,22 @@ _pf_kmslock_covers(a) if {
 
 _pf_kmslock_grants(s) if {
 	is_object(s)
-	object.get(s, "Effect", "Allow") == "Allow"
+	_pf_kmslock_allows(s)
 	pr := object.get(s, "Principal", null)
 	_pf_kmslock_principal_ours(pr)
 	_pf_kmslock_action_covers(s)
 }
 
+# A statement without Effect is a malformed policy (Effect is required), so it is
+# read as granting: the rule then never claims a lockout over it.
+_pf_kmslock_allows(s) if not "Effect" in object.keys(s)
+
+_pf_kmslock_allows(s) if s.Effect == "Allow"
+
 # NotPrincipal / NotAction statements are treated as granting (never a false positive)
 _pf_kmslock_grants(s) if {
 	is_object(s)
-	object.get(s, "Effect", "Allow") == "Allow"
+	_pf_kmslock_allows(s)
 	object.get(s, "NotPrincipal", "__pf_absent") != "__pf_absent"
 }
 

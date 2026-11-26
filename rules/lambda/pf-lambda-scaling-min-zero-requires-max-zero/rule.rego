@@ -12,7 +12,7 @@ violation contains make_diag_full("pf-lambda-scaling-min-zero-requires-max-zero"
 	_pf_lsmz_fix, _pf_lsmz_url) if {
 	some name in _pf_lam_fn
 	sc := _pf_lam_obj(_pf_lam_props(name), "FunctionScalingConfig")
-	object.get(sc, "MinExecutionEnvironments", -1) == 0
+	_pf_oval(sc, "MinExecutionEnvironments") == 0
 	mx := _pf_oval(sc, "MaxExecutionEnvironments")
 	mx != 0
 }

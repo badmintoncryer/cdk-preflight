@@ -83,7 +83,7 @@ _pf_ssmpp_attrs(p) := a if {
 	is_object(a)
 }
 
-_pf_ssmpp_of(name, t) := [p | some p in _pf_ssmpp_list(name); is_object(p); object.get(p, "Type", "") == t]
+_pf_ssmpp_of(name, t) := [p | some p in _pf_ssmpp_list(name); is_object(p); _pf_oval(p, "Type") == t]
 
 violation contains make_diag_full("pf-ssm-parameter-policies", "ERROR", name,
 	"Properties.Policies",
@@ -100,7 +100,7 @@ violation contains make_diag_full("pf-ssm-parameter-policies", "ERROR", name,
 	some name in resources_of_type("AWS::SSM::Parameter")
 	some i, p in _pf_ssmpp_list(name)
 	is_object(p)
-	object.get(p, "Type", "") == "Expiration"
+	_pf_oval(p, "Type") == "Expiration"
 	a := _pf_ssmpp_attrs(p)
 	object.get(a, "Timestamp", "__pf_absent") == "__pf_absent"
 }
@@ -112,7 +112,7 @@ violation contains make_diag_full("pf-ssm-parameter-policies", "ERROR", name,
 	some name in resources_of_type("AWS::SSM::Parameter")
 	some i, p in _pf_ssmpp_list(name)
 	is_object(p)
-	object.get(p, "Type", "") == "Expiration"
+	_pf_oval(p, "Type") == "Expiration"
 	ts := object.get(_pf_ssmpp_attrs(p), "Timestamp", null)
 	ts != null
 	not _pf_ssmpp_iso(ts)

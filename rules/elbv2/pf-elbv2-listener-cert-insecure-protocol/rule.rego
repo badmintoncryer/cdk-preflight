@@ -13,6 +13,6 @@ violation contains make_diag_full("pf-elbv2-listener-cert-insecure-protocol", "E
 	some name in _pf_elb_listeners
 	_pf_unconditional_list(name, "Properties.Certificates")
 	count(flatten_list(name, "Properties.Certificates")) > 0
-	proto := object.get(_pf_elb_props(name), "Protocol", "GENEVE")
+	proto := object.get(_pf_elb_props(name), "Protocol", _pf_default("pf-elbv2-listener-cert-insecure-protocol", "Protocol"))
 	not proto in _pf_elb_secure
 }

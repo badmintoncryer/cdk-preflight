@@ -8,13 +8,13 @@ _pf_lepgc_url := "https://docs.aws.amazon.com/lambda/latest/dg/msk-esm-parameter
 
 _pf_lepgc_names := {g |
 	some name in _pf_lam_esm
-	g := object.get(_pf_lam_ppc(name), "PollerGroupName", "")
+	g := _pf_oval(_pf_lam_ppc(name), "PollerGroupName")
 	g != ""
 }
 
 _pf_lepgc_count(g) := count([name |
 	some name in _pf_lam_esm
-	object.get(_pf_lam_ppc(name), "PollerGroupName", "") == g
+	_pf_oval(_pf_lam_ppc(name), "PollerGroupName") == g
 ])
 
 violation contains make_diag_full("pf-lambda-esm-poller-group-esm-count", "WARN", "PollerGroupName",
