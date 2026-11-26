@@ -1,7 +1,7 @@
 /**
  * Condition の三値評価（src/private/conditions.ts）。証明できた false だけがリソースを外す。
  */
-import { inactiveResources, specializeTemplate } from '../src/private/conditions';
+import { forceConditionalBranches, inactiveResources, specializeTemplate } from '../src/private/conditions';
 
 const sub = (condition: string) => ({ Type: 'AWS::SNS::Subscription', Condition: condition, Properties: {} });
 
@@ -141,5 +141,33 @@ describe('specializeTemplate', () => {
       Conditions: conditions,
       Resources: { R: { Type: 'AWS::SNS::Topic', Condition: 'Maybe', Properties: { A: { 'Fn::If': ['Maybe', 1, 2] } } } },
     })).toBeUndefined();
+  });
+});
+
+describe('forceConditionalBranches (issue #276)', () => {
+  const tpl = {
+    Resources: {
+      R: {
+        Type: 'AWS::SNS::Topic',
+        Properties: {
+          A: { 'Fn::If': ['C', 'x', 'y'] },
+          L: ['k', { 'Fn::If': ['C', 'v', { Ref: 'AWS::NoValue' }] }, { 'Fn::If': ['D', { Ref: 'AWS::NoValue' }, 'w'] }],
+        },
+      },
+    },
+    Outputs: { O: { Value: { 'Fn::If': ['C', 'a', 'b'] } } },
+  };
+
+  test('forces every Fn::If to one branch and drops a taken AWS::NoValue', () => {
+    const t = forceConditionalBranches(tpl, true) as any;
+    expect(t.Resources.R.Properties).toEqual({ A: 'x', L: ['k', 'v'] });
+    expect(t.Outputs.O.Value).toBe('a');
+    const f = forceConditionalBranches(tpl, false) as any;
+    expect(f.Resources.R.Properties).toEqual({ A: 'y', L: ['k', 'w'] });
+    expect(f.Outputs.O.Value).toBe('b');
+  });
+
+  test('a template without Fn::If gives undefined', () => {
+    expect(forceConditionalBranches({ Resources: { R: { Type: 'AWS::SNS::Topic', Properties: { A: 'x' } } } }, true)).toBeUndefined();
   });
 });

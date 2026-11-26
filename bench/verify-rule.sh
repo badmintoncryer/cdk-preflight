@@ -5,7 +5,8 @@
 # リージョン: CDKPF_REGION > meta.yaml の benchRegion > ap-northeast-1
 # exit: 0=verified / 2=BROKEN(fail が通った=制約ドリフト疑い)
 #       3=pass 不成立（デプロイはされたが CREATE_COMPLETE 以外で終わった）/ 4=INCONCLUSIVE(判定不能)
-# スタックは cdkpf-* 命名で作成し、必ず削除する。コストは失敗スタックのみで実質ゼロ。
+# スタックは cdkpf-* 命名で作成し、必ず削除する。コストはほぼ失敗スタックだけだが、足場に時間課金の
+# リソース（EKS クラスターなど）を持つフィクスチャは、消し損ねがそのまま課金になる（#372）。
 set -u
 cd "$(dirname "$0")/.."
 RULE="${1:?usage: verify-rule.sh <rule-id> [--fail-only]}"
@@ -166,6 +167,9 @@ scaffolding_failure() { # <失敗したリソース型> <理由> -> 足場の失
   grep -qiE 'maximum number of|LimitExceeded|limit exceeded|quota|Rate exceeded|Throttl|already ?exists' <<<"$reason"
 }
 
+# 消し損ねるとそのまま時間課金になる型（#372）。retain 削除で切り離さない
+BILLED_TYPES='^AWS::(EKS::(Cluster|Nodegroup)|MSK::(Cluster|ServerlessCluster)|ElastiCache::(CacheCluster|ReplicationGroup|ServerlessCache)|MemoryDB::Cluster|OpenSearchService::Domain|Elasticsearch::Domain|Redshift::Cluster|RDS::(DBCluster|DBInstance)|DocDB::(DBCluster|DBInstance)|Neptune::(DBCluster|DBInstance)|EC2::(NatGateway|Instance)|Route53RecoveryControl::Cluster|DMS::ReplicationInstance)$'
+
 cleanup() { # 無人運用前提: DELETE_FAILED で固着したら retain 削除まで自動で撃つ
   local stack=$1 st
   if st=$(stack_status "$stack"); then
@@ -175,16 +179,36 @@ cleanup() { # 無人運用前提: DELETE_FAILED で固着したら retain 削除
     # 在るか分からないときは消しにいく（無いスタックへの delete-stack は無害）。
     echo "cleanup: $stack ($REGION) status unreadable, deleting anyway" >> "$LOG"
   fi
-  aws cloudformation delete-stack --stack-name "$stack" --region "$REGION" >>"$LOG" 2>&1
-  aws cloudformation wait stack-delete-complete --stack-name "$stack" --region "$REGION" >>"$LOG" 2>&1 && return 0
-  # wait が落ちた理由は DELETE_FAILED とは限らない（throttle でも落ちる）。LEFTOVER は
-  # 消し残りの索引として読むものなので、消えているなら黙って抜ける。
-  [ "$(stack_status "$stack")" = GONE ] && return 0
-  local ids
+  local wait_s
+  for wait_s in "" ${CDKPF_RECLAIM_BACKOFF-60 120 240 480}; do
+    if [ -n "$wait_s" ]; then
+      # 待てば消える DELETE_FAILED（EKS クラスターの更新中、ENI の解放待ちの VPC）だけ、間隔を伸ばして撃ち直す（#372）
+      aws cloudformation describe-stack-resources --stack-name "$stack" --region "$REGION" \
+        --query "StackResources[?ResourceStatus=='DELETE_FAILED'].ResourceStatusReason" --output text 2>>"$LOG" |
+        grep -qiE 'update in progress|ResourceInUse|has dependencies|DependencyViolation|currently in use' || break
+      echo "cleanup: $stack ($REGION) transient DELETE_FAILED, retrying in ${wait_s}s" >> "$LOG"
+      sleep "$wait_s"
+    fi
+    aws cloudformation delete-stack --stack-name "$stack" --region "$REGION" >>"$LOG" 2>&1
+    aws cloudformation wait stack-delete-complete --stack-name "$stack" --region "$REGION" >>"$LOG" 2>&1 && return 0
+    # wait が落ちた理由は DELETE_FAILED とは限らない（throttle でも落ちる）。LEFTOVER は
+    # 消し残りの索引として読むものなので、消えているなら黙って抜ける。
+    [ "$(stack_status "$stack")" = GONE ] && return 0
+  done
+  local ids billed
   ids=$(aws cloudformation describe-stack-resources --stack-name "$stack" --region "$REGION" \
     --query "StackResources[?ResourceStatus=='DELETE_FAILED'].LogicalResourceId" --output text 2>>"$LOG")
   if [ -z "$ids" ] || [ "$ids" = "None" ]; then
     echo "LEFTOVER: $stack ($REGION) delete did not complete" | tee -a "$LOG"
+    return 0
+  fi
+  # 時間課金のリソースを retain で切り離すと、スタックは消えて課金物だけが孤児で残り、cdkpf-* の
+  # 一覧からも辿れなくなる（#372）。スタックごと残して LEFTOVER で人に渡す
+  billed=$(aws cloudformation describe-stack-resources --stack-name "$stack" --region "$REGION" \
+    --query "StackResources[?ResourceStatus=='DELETE_FAILED'].ResourceType" --output text 2>>"$LOG" |
+    tr '\t' '\n' | grep -E "$BILLED_TYPES" | sort -u | tr '\n' ' ')
+  if [ -n "$billed" ]; then
+    echo "LEFTOVER: $stack ($REGION) stuck with hourly-billed resources, not retained: $billed" | tee -a "$LOG"
     return 0
   fi
   aws cloudformation delete-stack --stack-name "$stack" --region "$REGION" --retain-resources $ids >>"$LOG" 2>&1

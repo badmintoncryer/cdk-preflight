@@ -885,7 +885,7 @@
 | `pf-cfn-stackset-deploymenttargets-ou-servicemanaged` | AWS::CloudFormation::StackSet | OrganizationalUnitIds targets require PermissionModel: SERVICE_MANAGED | ERROR | none |
 | `pf-cfn-stackset-failuretolerance-exclusive` | AWS::CloudFormation::StackSet | FailureToleranceCount and FailureTolerancePercentage are mutually exclusive | ERROR | none |
 | `pf-cfn-stackset-maxconcurrent-exclusive` | AWS::CloudFormation::StackSet | MaxConcurrentCount and MaxConcurrentPercentage are mutually exclusive | ERROR | none |
-| `pf-cloudfront-acm-cert-region` | AWS::CloudFront::Distribution | CloudFront viewer certificates must live in us-east-1 | WARN | none |
+| `pf-cloudfront-acm-cert-region` | AWS::CloudFront::Distribution | CloudFront viewer certificates must live in us-east-1 | ERROR | none |
 | `pf-cloudfront-alias-unique` | AWS::CloudFront::Distribution | Aliases must not contain duplicates | ERROR | none |
 | `pf-cloudfront-aliases-require-custom-certificate` | AWS::CloudFront::Distribution | A distribution with Aliases cannot use the CloudFront default certificate | ERROR | none |
 | `pf-cloudfront-allowed-methods-set` | AWS::CloudFront::Distribution | AllowedMethods must be one of the three sets CloudFront supports | ERROR | none |
@@ -2304,7 +2304,7 @@
 | `pf-lambda-layer-content-storage-mode-enum` | AWS::Lambda::LayerVersion | S3ObjectStorageMode is COPY or REFERENCE | ERROR | pending-engine |
 | `pf-lambda-layer-cross-account-needs-permission` | AWS::Lambda::Function | A cross-account layer needs a share | WARN | none |
 | `pf-lambda-layer-name-pattern` | AWS::Lambda::LayerVersion | A layer name is letters, digits, dashes and underscores | ERROR | retired: engine F3031 covers it from aws-cdk-lib 2.278.0 |
-| `pf-lambda-layer-reference-needs-bucket-policy` | AWS::Lambda::LayerVersion | REFERENCE content needs a bucket policy for Lambda | WARN | none |
+| `pf-lambda-layer-reference-needs-bucket-policy` | AWS::Lambda::LayerVersion | REFERENCE content needs a bucket policy for Lambda | ERROR | none |
 | `pf-lambda-layer-reference-needs-versioning` | AWS::Lambda::LayerVersion | REFERENCE content needs a versioned bucket | WARN | none |
 | `pf-lambda-layerperm-arn-length` | AWS::Lambda::LayerVersionPermission | A layer version ARN is at most 140 characters | ERROR | none |
 | `pf-lambda-layerperm-arn-version-suffix` | AWS::Lambda::LayerVersionPermission | A layer permission names a layer version | ERROR | none |

@@ -5,7 +5,7 @@
 import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
-import { App, CfnCondition, CfnParameter, Fn, Stack, Stage, Validations, aws_apigateway as apigateway, aws_ec2 as ec2, aws_eks as eks, aws_iam as iam, aws_kinesis as kinesis, aws_logs as logs, aws_sns as sns, aws_sqs as sqs } from 'aws-cdk-lib';
+import { App, CfnCondition, CfnParameter, CfnResource, Fn, Stack, Stage, Validations, aws_apigateway as apigateway, aws_ec2 as ec2, aws_eks as eks, aws_iam as iam, aws_kinesis as kinesis, aws_logs as logs, aws_sns as sns, aws_sqs as sqs } from 'aws-cdk-lib';
 import { Preflight } from '../src';
 import {
   ENGINE_ERROR_RULE,
@@ -372,6 +372,53 @@ describe('enforce mode (default)', () => {
     Preflight.apply(app, { enforce: true });
     sgWithIf(new Stack(app, 'S', { env: { region: 'us-east-1', account: '123456789012' } }), false);
     expect(() => app.synth()).toThrow(/pf-ec2-sg-port-range|Validation failed/);
+  });
+
+  // issue #276: 既定値で決まらない Fn::If は、真偽どちらに倒しても成り立つ指摘だけが synth を止める
+  function sgWithUndecidedIf(stack: Stack, badOnBothBranches: boolean): void {
+    const flag = new CfnParameter(stack, 'Flag', { type: 'String' });
+    const on = new CfnCondition(stack, 'On', { expression: Fn.conditionEquals(flag.valueAsString, 'on') });
+    const bad = [{ IpProtocol: 'tcp', FromPort: 99999, ToPort: 99999, CidrIp: '10.0.0.0/8' }];
+    const good = [{ IpProtocol: 'tcp', FromPort: 443, ToPort: 443, CidrIp: '10.0.0.0/8' }];
+    const vpc = new ec2.CfnVPC(stack, 'Vpc', { cidrBlock: '10.0.0.0/16' });
+    const sg = new ec2.CfnSecurityGroup(stack, 'SG', { groupDescription: 'cdk-preflight loader test', vpcId: vpc.ref });
+    sg.addPropertyOverride('SecurityGroupIngress', Fn.conditionIf(on.logicalId, bad, badOnBothBranches ? bad : good));
+  }
+
+  test('issue #276: a finding that holds on only one branch of an undecided Fn::If is a warning', () => {
+    const app = makeApp();
+    Preflight.apply(app, { enforce: true });
+    sgWithUndecidedIf(new Stack(app, 'S', { env: { region: 'us-east-1', account: '123456789012' } }), false);
+    expect(() => app.synth()).not.toThrow();
+    const mine = readReport(app).filter((v) => v.ruleName === 'pf-ec2-sg-port-range');
+    expect(mine.length).toBeGreaterThan(0);
+    expect(mine.every((v) => v.severity === 'warning')).toBe(true);
+  });
+
+  test('issue #276: a finding that holds on both branches of an undecided Fn::If still fails synthesis', () => {
+    const app = makeApp();
+    Preflight.apply(app, { enforce: true });
+    sgWithUndecidedIf(new Stack(app, 'S', { env: { region: 'us-east-1', account: '123456789012' } }), true);
+    expect(() => app.synth()).toThrow(/pf-ec2-sg-port-range|Validation failed/);
+  });
+
+  test('issue #276: list counts over mutually exclusive undecided Fn::If elements do not fail synthesis', () => {
+    const app = makeApp();
+    Preflight.apply(app, { enforce: true });
+    const stack = new Stack(app, 'S', { env: { region: 'us-east-1', account: '123456789012' } });
+    const flag = new CfnParameter(stack, 'Flag', { type: 'String' });
+    const on = new CfnCondition(stack, 'On', { expression: Fn.conditionEquals(flag.valueAsString, 'on') });
+    const off = new CfnCondition(stack, 'Off', { expression: Fn.conditionNot(on) });
+    const kvs = (n: string) => ({ KeyValueStoreARN: `arn:aws:cloudfront::111122223333:key-value-store/${n}1111111-2222-3333-4444-555555555555` });
+    const fn = new CfnResource(stack, 'F', {
+      type: 'AWS::CloudFront::Function',
+      properties: { Name: 'f1', AutoPublish: true, FunctionCode: 'x', FunctionConfig: { Comment: 'c', Runtime: 'cloudfront-js-2.0' } },
+    });
+    fn.addPropertyOverride('FunctionConfig.KeyValueStoreAssociations', [
+      Fn.conditionIf(on.logicalId, kvs('a'), Fn.ref('AWS::NoValue')),
+      Fn.conditionIf(off.logicalId, kvs('b'), Fn.ref('AWS::NoValue')),
+    ]);
+    expect(() => app.synth()).not.toThrow();
   });
 
   test('observe mode drops findings on switched-off resources too, and reports the original template', () => {
