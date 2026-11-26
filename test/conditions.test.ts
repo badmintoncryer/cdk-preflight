@@ -1,7 +1,7 @@
 /**
  * Condition の三値評価（src/private/conditions.ts）。証明できた false だけがリソースを外す。
  */
-import { inactiveResources } from '../src/private/conditions';
+import { inactiveResources, specializeTemplate } from '../src/private/conditions';
 
 const sub = (condition: string) => ({ Type: 'AWS::SNS::Subscription', Condition: condition, Properties: {} });
 
@@ -88,5 +88,58 @@ describe('inactiveResources', () => {
     expect(inactive({ Conditions: { A: { Condition: 'B' }, B: { Condition: 'A' }, C: { Condition: 'Nope' } } })).toEqual([]);
     expect([...inactiveResources(null)]).toEqual([]);
     expect([...inactiveResources({ Resources: { R: { Type: 'X', Condition: 'Missing' } } })]).toEqual([]);
+  });
+});
+
+describe('specializeTemplate', () => {
+  const params = { Parameters: { Flag: { Type: 'String', Default: 'off' }, Free: { Type: 'String' } } };
+  const conditions = {
+    On: { 'Fn::Equals': [{ Ref: 'Flag' }, 'on'] },
+    Off: { 'Fn::Equals': [{ Ref: 'Flag' }, 'off'] },
+    Maybe: { 'Fn::Equals': [{ Ref: 'Free' }, 'x'] },
+  };
+
+  test('takes the decided Fn::If branch, drops a taken AWS::NoValue, keeps an undecided Fn::If', () => {
+    const out = specializeTemplate({
+      ...params,
+      Conditions: conditions,
+      Resources: {
+        R: {
+          Type: 'AWS::SNS::Topic',
+          Properties: {
+            A: { 'Fn::If': ['On', 'bad', 'good'] },
+            B: { 'Fn::If': ['On', 'x', { Ref: 'AWS::NoValue' }] },
+            C: [{ 'Fn::If': ['Off', { Ref: 'AWS::NoValue' }, 'y'] }, 'z'],
+            D: { 'Fn::If': ['Maybe', 1, 2] },
+          },
+        },
+      },
+    }) as any;
+    expect(out.Resources.R.Properties).toEqual({ A: 'good', C: ['z'], D: { 'Fn::If': ['Maybe', 1, 2] } });
+  });
+
+  test('removes switched-off resources and outputs, and the DependsOn entries that point at them', () => {
+    const out = specializeTemplate({
+      ...params,
+      Conditions: conditions,
+      Resources: {
+        Gone: { Type: 'AWS::SNS::Topic', Condition: 'On' },
+        Kept: { Type: 'AWS::SNS::Topic', Condition: 'Maybe', DependsOn: ['Gone', 'Other'] },
+        Other: { Type: 'AWS::SNS::Topic', DependsOn: 'Gone' },
+      },
+      Outputs: { O1: { Condition: 'On', Value: { Ref: 'Gone' } }, O2: { Value: { 'Fn::If': ['On', { Ref: 'Gone' }, 'none'] } } },
+    }) as any;
+    expect(Object.keys(out.Resources)).toEqual(['Kept', 'Other']);
+    expect(out.Resources.Kept.DependsOn).toEqual(['Other']);
+    expect(out.Resources.Other.DependsOn).toBeUndefined();
+    expect(out.Outputs).toEqual({ O2: { Value: 'none' } });
+  });
+
+  test('a template with nothing decided is left alone', () => {
+    expect(specializeTemplate({
+      ...params,
+      Conditions: conditions,
+      Resources: { R: { Type: 'AWS::SNS::Topic', Condition: 'Maybe', Properties: { A: { 'Fn::If': ['Maybe', 1, 2] } } } },
+    })).toBeUndefined();
   });
 });

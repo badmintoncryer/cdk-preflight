@@ -4,8 +4,8 @@ import rego.v1
 
 violation contains make_diag_full("pf-route53-svcparams-key-enum", "WARN", name,
 	"Properties.ResourceRecords",
-	sprintf("'%s' is not a defined SvcParam key; Route 53 supports only alpn, no-default-alpn, port, ipv4hint, ech, ipv6hint, dohpath and ohttp (the keyNNNNN form is rejected as well)", [k]),
-	"Use one of the eight defined keys",
+	sprintf("'%s' is not a defined SvcParam key; Route 53 supports only mandatory, alpn, no-default-alpn, port, ipv4hint, ech, ipv6hint, dohpath and ohttp (the keyNNNNN form is rejected as well)", [k]),
+	"Use one of the nine defined keys",
 	"https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/ResourceRecordTypes.html") if {
 	some name in resources_of_type("AWS::Route53::RecordSet")
 	rs := _pf_r53lib_props(name)
@@ -21,8 +21,8 @@ violation contains make_diag_full("pf-route53-svcparams-key-enum", "WARN", name,
 
 violation contains make_diag_full("pf-route53-svcparams-key-enum", "WARN", name,
 	sprintf("Properties.RecordSets[%d].ResourceRecords", [_pf_it.index]),
-	sprintf("'%s' is not a defined SvcParam key; Route 53 supports only alpn, no-default-alpn, port, ipv4hint, ech, ipv6hint, dohpath and ohttp (the keyNNNNN form is rejected as well)", [k]),
-	"Use one of the eight defined keys",
+	sprintf("'%s' is not a defined SvcParam key; Route 53 supports only mandatory, alpn, no-default-alpn, port, ipv4hint, ech, ipv6hint, dohpath and ohttp (the keyNNNNN form is rejected as well)", [k]),
+	"Use one of the nine defined keys",
 	"https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/ResourceRecordTypes.html") if {
 	some name in resources_of_type("AWS::Route53::RecordSetGroup")
 	some _pf_it in flatten_list(name, "Properties.RecordSets")
@@ -40,8 +40,8 @@ violation contains make_diag_full("pf-route53-svcparams-key-enum", "WARN", name,
 
 violation contains make_diag_full("pf-route53-svcparams-key-enum", "WARN", name,
 	"Properties.ResourceRecords",
-	sprintf("'%s' is not a defined SvcParam key; Route 53 supports only alpn, no-default-alpn, port, ipv4hint, ech, ipv6hint, dohpath and ohttp (the keyNNNNN form is rejected as well)", [k]),
-	"Use one of the eight defined keys",
+	sprintf("'%s' is not a defined SvcParam key; Route 53 supports only mandatory, alpn, no-default-alpn, port, ipv4hint, ech, ipv6hint, dohpath and ohttp (the keyNNNNN form is rejected as well)", [k]),
+	"Use one of the nine defined keys",
 	"https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/ResourceRecordTypes.html") if {
 	some name in resources_of_type("AWS::Route53::RecordSet")
 	rs := _pf_r53lib_props(name)
@@ -57,8 +57,8 @@ violation contains make_diag_full("pf-route53-svcparams-key-enum", "WARN", name,
 
 violation contains make_diag_full("pf-route53-svcparams-key-enum", "WARN", name,
 	sprintf("Properties.RecordSets[%d].ResourceRecords", [_pf_it.index]),
-	sprintf("'%s' is not a defined SvcParam key; Route 53 supports only alpn, no-default-alpn, port, ipv4hint, ech, ipv6hint, dohpath and ohttp (the keyNNNNN form is rejected as well)", [k]),
-	"Use one of the eight defined keys",
+	sprintf("'%s' is not a defined SvcParam key; Route 53 supports only mandatory, alpn, no-default-alpn, port, ipv4hint, ech, ipv6hint, dohpath and ohttp (the keyNNNNN form is rejected as well)", [k]),
+	"Use one of the nine defined keys",
 	"https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/ResourceRecordTypes.html") if {
 	some name in resources_of_type("AWS::Route53::RecordSetGroup")
 	some _pf_it in flatten_list(name, "Properties.RecordSets")

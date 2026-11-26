@@ -10,5 +10,6 @@ violation contains make_diag_full("pf-iam-oidc-provider-url-https", "ERROR", nam
 	some name in resources_of_type("AWS::IAM::OIDCProvider")
 	v := resolve(name, "Properties.Url")
 	is_string(v)
+	not input.resources[v]
 	not startswith(v, "https://")
 }

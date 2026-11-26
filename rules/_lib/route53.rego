@@ -169,7 +169,7 @@ _pf_r53_regions := {
 	"us-isob-east-1", "us-isob-west-1", "us-isof-east-1", "us-isof-south-1", "us-west-1", "us-west-2",
 }
 
-_pf_r53_svcb_keys := {"alpn", "dohpath", "ech", "ipv4hint", "ipv6hint", "no-default-alpn", "ohttp", "port"}
+_pf_r53_svcb_keys := {"alpn", "dohpath", "mandatory", "ech", "ipv4hint", "ipv6hint", "no-default-alpn", "ohttp", "port"}
 
 _pf_r53_svcb_valued := {"alpn", "dohpath", "ech", "ipv4hint", "ipv6hint", "port"}
 

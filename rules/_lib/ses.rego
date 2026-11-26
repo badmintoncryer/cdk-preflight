@@ -63,9 +63,13 @@ _pf_ses_ed_has_other(name, k) if {
 	_pf_ses_ed_has(name, o)
 }
 
+# The SES v2 names, and the v1 names the CloudFormation reference lists (CDK writes these);
+# both deploy (bench 2026-09-24 for the v2 names, the aws-cdk integ snapshot for the v1 names).
 _pf_ses_event_types := {
 	"SEND", "REJECT", "BOUNCE", "COMPLAINT", "DELIVERY", "OPEN", "CLICK",
 	"RENDERING_FAILURE", "DELIVERY_DELAY", "SUBSCRIPTION",
+	"send", "reject", "bounce", "complaint", "delivery", "open", "click",
+	"renderingFailure", "deliveryDelay", "subscription",
 }
 
 # --- #70 C2: SES 受信系（ReceiptRule / ReceiptRuleSet）--------------------------

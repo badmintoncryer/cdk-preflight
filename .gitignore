@@ -57,5 +57,6 @@ junit.xml
 !/API.md
 /src/rules.generated.ts
 /bench/out/
+/.corpus/
 !/.github/workflows/monthly-verify.yml
 !/.projenrc.ts

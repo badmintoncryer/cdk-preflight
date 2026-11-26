@@ -14,6 +14,12 @@ _pf_ddbgpw_provisioned(name) if {
 
 _pf_ddbgpw_has(name) if is_object(resolve(name, "Properties.WriteProvisionedThroughputSettings"))
 
+_pf_ddbgpw_from_source(name) if {
+	props := input.resources[name].properties
+	is_object(props)
+	object.get(props, "GlobalTableSourceArn", "__pf_absent") != "__pf_absent"
+}
+
 violation contains make_diag_full("pf-dynamodb-global-table-provisioned-write-settings", "ERROR", name,
 	"Properties.WriteProvisionedThroughputSettings",
 	"BillingMode is PROVISIONED (the default) but WriteProvisionedThroughputSettings is missing; the global table cannot be created without write capacity",
@@ -22,4 +28,6 @@ violation contains make_diag_full("pf-dynamodb-global-table-provisioned-write-se
 	some name in resources_of_type("AWS::DynamoDB::GlobalTable")
 	_pf_ddbgpw_provisioned(name)
 	not _pf_ddbgpw_has(name)
+	# a replica of an existing table takes its capacity settings from the source table
+	not _pf_ddbgpw_from_source(name)
 }

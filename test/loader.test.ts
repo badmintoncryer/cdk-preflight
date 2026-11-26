@@ -358,6 +358,47 @@ describe('enforce mode (default)', () => {
     expect(() => app.synth()).toThrow(/pf-ec2-sg-port-range|Validation failed/);
   });
 
+  // エンジンは Fn::If の両方の分岐を見る。既定値で通らないと決まる分岐の値に立つ指摘は誤検知
+  function sgWithIf(stack: Stack, badWhenOn: boolean): void {
+    const flag = new CfnParameter(stack, 'Flag', { type: 'String', default: 'off' });
+    const on = new CfnCondition(stack, 'On', { expression: Fn.conditionEquals(flag.valueAsString, 'on') });
+    const bad = [{ IpProtocol: 'tcp', FromPort: 99999, ToPort: 99999, CidrIp: '10.0.0.0/8' }];
+    const good = [{ IpProtocol: 'tcp', FromPort: 443, ToPort: 443, CidrIp: '10.0.0.0/8' }];
+    const vpc = new ec2.CfnVPC(stack, 'Vpc', { cidrBlock: '10.0.0.0/16' });
+    const sg = new ec2.CfnSecurityGroup(stack, 'SG', { groupDescription: 'cdk-preflight loader test', vpcId: vpc.ref });
+    sg.addPropertyOverride('SecurityGroupIngress', Fn.conditionIf(on.logicalId, badWhenOn ? bad : good, badWhenOn ? good : bad));
+  }
+
+  test('a value in an Fn::If branch that the defaults never take is not checked', () => {
+    const app = makeApp();
+    Preflight.apply(app, { enforce: true });
+    sgWithIf(new Stack(app, 'S', { env: { region: 'us-east-1', account: '123456789012' } }), true);
+    expect(() => app.synth()).not.toThrow();
+  });
+
+  test('the Fn::If branch that the defaults take is still checked', () => {
+    const app = makeApp();
+    Preflight.apply(app, { enforce: true });
+    sgWithIf(new Stack(app, 'S', { env: { region: 'us-east-1', account: '123456789012' } }), false);
+    expect(() => app.synth()).toThrow(/pf-ec2-sg-port-range|Validation failed/);
+  });
+
+  test('observe mode drops findings on switched-off resources too, and reports the original template', () => {
+    const app = makeApp();
+    Preflight.apply(app, { enforce: false });
+    const stack = new Stack(app, 'S', { env: { region: 'us-east-1', account: '123456789012' } });
+    const flag = new CfnParameter(stack, 'Flag', { type: 'String', default: 'off' });
+    const on = new CfnCondition(stack, 'On', { expression: Fn.conditionEquals(flag.valueAsString, 'on') });
+    addBadSecurityGroup(stack);
+    (stack.node.findChild('SG') as ec2.CfnSecurityGroup).cfnOptions.condition = on;
+    const live = new Stack(app, 'Live');
+    addBadSecurityGroup(live);
+    app.synth();
+    const mine = readReport(app).filter((v) => v.ruleName === 'pf-ec2-sg-port-range') as any[];
+    const where = mine.flatMap((v) => v.violatingConstructs.map((c: any) => `${c.constructPath} ${c.cloudFormationResource?.templatePath}`));
+    expect([...new Set(where)]).toEqual(['Live/SG Live.template.json']);
+  });
+
   test('passes synthesis for clean stacks', () => {
     const app = makeApp();
     Preflight.apply(app, { enforce: true });

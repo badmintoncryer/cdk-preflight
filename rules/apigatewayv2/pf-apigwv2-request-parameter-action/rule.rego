@@ -10,6 +10,17 @@ _pf_agvqpa_no_subtype(name) if {
 	object.get(props, "IntegrationSubtype", "__pf_absent") == "__pf_absent"
 }
 
+# WebSocket APIs map integration.request.<header|querystring|path>.<name> instead; this
+# form is HTTP-API only. An imported ApiId leaves the protocol unknown, so the WebSocket
+# key shape alone also keeps the rule quiet.
+_pf_agvqpa_ws(name) if {
+	api := resolve(name, "Properties.ApiId")
+	api in resources_of_type("AWS::ApiGatewayV2::Api")
+	resolve(api, "Properties.ProtocolType") == "WEBSOCKET"
+}
+
+_pf_agvqpa_ok(k) if startswith(k, "integration.request.")
+
 _pf_agvqpa_ok(k) if regex.match(`^(append|overwrite|remove):(header|querystring|path)\.[^ ]+$`, k)
 
 violation contains make_diag_full("pf-apigwv2-request-parameter-action", "ERROR", name,
@@ -19,6 +30,7 @@ violation contains make_diag_full("pf-apigwv2-request-parameter-action", "ERROR"
 	"https://docs.aws.amazon.com/apigateway/latest/developerguide/http-api-parameter-mapping.html") if {
 	some name in resources_of_type("AWS::ApiGatewayV2::Integration")
 	_pf_agvqpa_no_subtype(name)
+	not _pf_agvqpa_ws(name)
 	rp := resolve(name, "Properties.RequestParameters")
 	is_object(rp)
 	some k, _ in rp

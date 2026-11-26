@@ -13,6 +13,7 @@ violation contains make_diag_full("pf-lambda-perm-principal-service-domain", "ER
 	some name in _pf_lam_perm
 	v := resolve(name, "Properties.Principal")
 	is_string(v)
+	not input.resources[v]
 	v != "*"
 	not contains(v, ".")
 	not startswith(v, "arn:")

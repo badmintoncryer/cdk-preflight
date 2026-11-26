@@ -33,4 +33,6 @@ violation contains make_diag_full("pf-ec2-natgw-allocation", "ERROR", name,
 	some name in resources_of_type("AWS::EC2::NatGateway")
 	_pf_ec2nga_public(name)
 	_pf_ec2nga_absent(name, "AllocationId")
+	# a regional NAT gateway takes its EIPs per zone in AvailabilityZoneAddresses
+	_pf_ec2nga_absent(name, "AvailabilityMode")
 }

@@ -169,6 +169,36 @@ project.buildWorkflow!.addPostBuildJob('package-smoke', {
   ],
 });
 
+// 実テンプレート回帰（scripts/corpus-sweep.ts）。aws-cdk の統合テストのスナップショット（integ-runner が
+// 実際にデプロイしたテンプレート約 3,000 枚）に全ルールを掛け、rules/_corpus-accepted.txt に無い指摘で落とす。
+// 誤検知はどれもデプロイ済みのアプリから見つかっていたので、書き手の想定の外の形をここで流す。
+const corpus = project.addTask('corpus', {
+  description: 'Run every rule over the aws-cdk integ snapshots and compare with rules/_corpus-accepted.txt',
+});
+corpus.spawn(bundleRules);
+corpus.exec('bash scripts/fetch-corpus.sh .corpus');
+corpus.exec('ts-node --project test/tsconfig.json scripts/corpus-sweep.ts --check .corpus/packages');
+project.gitignore.addPatterns('/.corpus/');
+project.github!.tryFindWorkflow('build')!.addJob('corpus', {
+  runsOn: ['ubuntu-latest'],
+  permissions: { contents: github.workflows.JobPermission.READ },
+  steps: [
+    github.WorkflowSteps.checkout({
+      with: {
+        ref: '${{ github.event.pull_request.head.ref }}',
+        repository: '${{ github.event.pull_request.head.repo.full_name }}',
+      },
+    }),
+    {
+      name: 'Setup Node.js',
+      uses: 'actions/setup-node@v7.0.0',
+      with: { 'node-version': '24' },
+    },
+    { name: 'Install dependencies', run: 'yarn install --check-files --frozen-lockfile' },
+    { name: 'Rules over the aws-cdk integ snapshots', run: 'npx projen corpus' },
+  ],
+});
+
 // ルール不要化（エンジンが追いついた）の検知。AWS 不要・完全ローカル。
 // src/rules.generated.ts は gitignore 済みの生成物なので、素の checkout（月次の report ジョブ）には無い。
 // 先に作らないと TS2307 でコンパイルが落ちる（2026-09-27 の月次で確認）。

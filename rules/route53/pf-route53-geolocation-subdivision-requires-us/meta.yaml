@@ -2,8 +2,8 @@ id: pf-route53-geolocation-subdivision-requires-us
 service: route53
 benchRegion: us-east-1
 resourceTypes: [AWS::Route53::RecordSet, AWS::Route53::RecordSetGroup]
-severity: ERROR
-title: "GeoLocation.SubdivisionCode is only valid with CountryCode US"
+severity: WARN
+title: "GeoLocation.SubdivisionCode is only valid with CountryCode US or UA"
 constraintSource: https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/resource-record-sets-values-geo.html
 upstream: none
 repro:

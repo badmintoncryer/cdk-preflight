@@ -12,5 +12,5 @@ violation contains make_diag_full("pf-ecs-svc-binpack-field", "ERROR", name,
 	object.get(ps.value, "Type", null) == "binpack"
 	f := object.get(ps.value, "Field", null)
 	_pf_ecs_lit(f)
-	not f in {"cpu", "memory"}
+	not lower(f) in {"cpu", "memory"}
 }
