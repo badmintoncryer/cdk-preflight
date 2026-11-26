@@ -5,4 +5,3 @@
 #
 # 書式: <rule-id> <ResourceType.Property.Path>
 
-pf-s3express-lifecycle-rule-no-action AWS::S3Express::DirectoryBucket.LifecycleConfiguration.Rules.*.ExpirationInDays
