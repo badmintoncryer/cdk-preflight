@@ -11,6 +11,6 @@ violation contains make_diag_full("pf-lambda-esm-poller-group-name-kafka-only", 
 	"PollerGroupName on a non-Kafka event source; poller groups share pollers across Kafka mappings only",
 	_pf_lekpg_fix, _pf_lekpg_url) if {
 	some name in _pf_lam_esm
-	object.get(_pf_lam_ppc(name), "PollerGroupName", "") != ""
+	_pf_oval(_pf_lam_ppc(name), "PollerGroupName") != ""
 	_pf_lam_arn_not(name, "kafka")
 }

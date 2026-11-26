@@ -11,5 +11,5 @@ violation contains make_diag_full("pf-route53resolver-rule-targetip-sni-doh-only
 	p := _pf_r53r_props(name)
 	some t in _pf_r53r_arr(p, "TargetIps")
 	_pf_r53r_has(t, "ServerNameIndication")
-	object.get(t, "Protocol", "") != "DoH"
+	object.get(t, "Protocol", _pf_default("pf-route53resolver-rule-targetip-sni-doh-only", "TargetIps.Protocol")) != "DoH"
 }

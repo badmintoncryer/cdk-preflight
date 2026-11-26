@@ -12,7 +12,7 @@ _pf_cwtmi_countable(q) if is_boolean(object.get(q, "ReturnData", null))
 
 _pf_cwtmi_matches(q, tmid) if {
 	object.get(q, "Id", null) == tmid
-	object.get(q, "ReturnData", true) == true
+	object.get(q, "ReturnData", _pf_default("pf-cloudwatch-threshold-metric-id", "ReturnData")) == true
 }
 
 violation contains make_diag_full("pf-cloudwatch-threshold-metric-id", "ERROR", name,

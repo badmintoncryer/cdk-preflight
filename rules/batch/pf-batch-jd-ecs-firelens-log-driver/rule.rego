@@ -14,5 +14,5 @@ violation contains make_diag_full("pf-batch-jd-ecs-firelens-log-driver", "ERROR"
 	cs := object.get(t.value, "Containers", [])
 	some c in cs
 	_pf_batch_ohas(c, "FirelensConfiguration")
-	count([1 | some x in cs; object.get(object.get(x, "LogConfiguration", {}), "LogDriver", "") == "awsfirelens"]) == 0
+	count([1 | some x in cs; _pf_oval(object.get(x, "LogConfiguration", {}), "LogDriver") == "awsfirelens"]) == 0
 }

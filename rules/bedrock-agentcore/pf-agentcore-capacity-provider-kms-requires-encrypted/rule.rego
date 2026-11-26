@@ -13,5 +13,5 @@ violation contains make_diag_full("pf-agentcore-capacity-provider-kms-requires-e
 	some name in resources_of_type("AWS::BedrockAgentCore::CapacityProvider")
 	some v in _pf_accp_vols(name)
 	object.get(v.ebs, "KmsKeyId", "__pf_absent") != "__pf_absent"
-	object.get(v.ebs, "Encrypted", false) == false
+	object.get(v.ebs, "Encrypted", _pf_default("pf-agentcore-capacity-provider-kms-requires-encrypted", "Encrypted")) == false
 }

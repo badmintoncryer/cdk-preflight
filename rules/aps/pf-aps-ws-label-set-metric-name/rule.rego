@@ -11,7 +11,7 @@ violation contains make_diag_full("pf-aps-ws-label-set-metric-name", "ERROR", na
 	some labels in _pf_aps_label_sets(name)
 	some label in labels
 	is_object(label)
-	object.get(label, "Name", "") == "__name__"
+	_pf_oval(label, "Name") == "__name__"
 	v := _pf_oval(label, "Value")
 	is_string(v)
 	not regex.match(`^[a-zA-Z_:][a-zA-Z0-9_:]*$`, v)

@@ -84,7 +84,7 @@ _pf_coglib_std_attrs := object.keys(_pf_coglib_std_attr_types)
 _pf_coglib_custom_attrs(name) := [a |
 	some a in flatten_list(name, "Properties.Schema")
 	is_object(a.value)
-	n := object.get(a.value, "Name", "")
+	n := object.get(a.value, "Name", "__pf_absent")
 	not n in _pf_coglib_std_attrs
 ]
 

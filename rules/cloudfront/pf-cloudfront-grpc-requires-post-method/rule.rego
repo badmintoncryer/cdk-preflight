@@ -13,7 +13,7 @@ violation contains make_diag_full("pf-cloudfront-grpc-requires-post-method", "ER
 	some b in _pf_cflib_behaviors(name)
 	grpc := object.get(b.value, "GrpcConfig", null)
 	is_object(grpc)
-	object.get(grpc, "Enabled", false) == true
+	_pf_oval(grpc, "Enabled") == true
 	am := object.get(b.value, "AllowedMethods", ["GET", "HEAD"])
 	is_array(am)
 	not "POST" in am

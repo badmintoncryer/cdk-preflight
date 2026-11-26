@@ -11,5 +11,5 @@ violation contains make_diag_full("pf-batch-jd-efs-access-point-transit-encrypti
 	some v in _pf_batch_volumes(name)
 	e := _pf_batch_efs(v)
 	_pf_batch_ohas(_pf_batch_oget(e, "AuthorizationConfig"), "AccessPointId")
-	object.get(e, "TransitEncryption", "DISABLED") != "ENABLED"
+	object.get(e, "TransitEncryption", _pf_default("pf-batch-jd-efs-access-point-transit-encryption", "TransitEncryption")) != "ENABLED"
 }

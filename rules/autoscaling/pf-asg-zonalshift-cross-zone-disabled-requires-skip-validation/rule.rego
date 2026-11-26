@@ -9,8 +9,8 @@ _pf_asgzs_skip(name) if resolve(name, "Properties.SkipZonalShiftValidation") == 
 _pf_asgzs_crosszone_off(tg) if {
 	some a in _pf_aslib_arr(tg, ["TargetGroupAttributes"])
 	is_object(a)
-	object.get(a, "Key", "") == "load_balancing.cross_zone.enabled"
-	object.get(a, "Value", "") == "false"
+	_pf_oval(a, "Key") == "load_balancing.cross_zone.enabled"
+	_pf_oval(a, "Value") == "false"
 }
 
 violation contains make_diag_full("pf-asg-zonalshift-cross-zone-disabled-requires-skip-validation", "ERROR", name,

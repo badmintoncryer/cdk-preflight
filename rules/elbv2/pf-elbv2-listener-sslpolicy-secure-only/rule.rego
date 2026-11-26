@@ -12,6 +12,6 @@ violation contains make_diag_full("pf-elbv2-listener-sslpolicy-secure-only", "ER
 	_pf_elblss_fix, _pf_elblss_url) if {
 	some name in _pf_elb_listeners
 	_pf_elb_has(name, "SslPolicy")
-	proto := object.get(_pf_elb_props(name), "Protocol", "GENEVE")
+	proto := object.get(_pf_elb_props(name), "Protocol", _pf_default("pf-elbv2-listener-sslpolicy-secure-only", "Protocol"))
 	not proto in _pf_elb_secure
 }

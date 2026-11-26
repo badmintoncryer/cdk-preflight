@@ -16,5 +16,5 @@ violation contains make_diag_full("pf-msk-vpc-connectivity-auth-not-at-create", 
 	is_object(props)
 	auth := object.get(props, ["BrokerNodeGroupInfo", "ConnectivityInfo", "VpcConnectivity", "ClientAuthentication"], {})
 	some path in [["Sasl", "Iam", "Enabled"], ["Sasl", "Scram", "Enabled"], ["Tls", "Enabled"]]
-	object.get(auth, path, false) == true
+	object.get(auth, path, _pf_default("pf-msk-vpc-connectivity-auth-not-at-create", "VpcConnectivity.ClientAuthentication.*.Enabled")) == true
 }

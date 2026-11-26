@@ -611,13 +611,85 @@ export function collectRules(root: string): BundledRule[] {
 export function collectLibs(root: string): BundledLib[] {
   const dir = path.join(root, 'rules', '_lib');
   if (!fs.existsSync(dir)) return [];
-  return fs.readdirSync(dir).filter((f) => f.endsWith('.rego')).sort().map((f) => {
+  const libs = fs.readdirSync(dir).filter((f) => f.endsWith('.rego')).sort().map((f) => {
     const rego = fs.readFileSync(path.join(dir, f), 'utf8');
     const hdrProblem = headerProblem(rego);
     if (hdrProblem) throw new Error(`_lib/${f}: ${hdrProblem}`);
     if (rego.includes('violation contains')) throw new Error(`_lib/${f}: helper modules must not emit diagnostics`);
     return { name: `_lib/${f.replace(/\.rego$/, '')}`, rego };
   });
+  return [...libs, { name: DEFAULTS_MODULE, rego: renderDefaultsModule(readDefaults(root)) }];
+}
+
+// ---- 省略時の値の台帳（rules/_defaults.yaml） -------------------------------------------
+//
+// 省略されたプロパティを「サービスがこの値として扱う」と読んでよいのは、出典があるときだけ。
+// ルールは object.get の既定値にサービスの値を直書きせず（scripts/lint-rules.ts が禁止）、
+// `_pf_default("<owner>", "<key>")` で台帳を引く。台帳に無ければ未定義なので、その判定ごと降りる。
+// owner はルール id か _lib/<name>。サービスの既定値でなくても、計測（fail テンプレートの実機
+// デプロイや、サービスの答えを固定したテスト）がその読みに依っているものはここに載せる。
+
+export const DEFAULTS_MODULE = '_lib/_defaults';
+const DEFAULT_BASES = ['deploy', 'docs', 'test'] as const;
+
+export interface DeclaredDefault {
+  readonly owner: string;
+  readonly key: string;
+  readonly value: unknown;
+  readonly basis: string;
+  readonly source: string;
+}
+
+export function readDefaults(root: string): DeclaredDefault[] {
+  const file = path.join(root, 'rules', '_defaults.yaml');
+  if (!fs.existsSync(file)) return [];
+  const doc = YAML.parse(fs.readFileSync(file, 'utf8')) ?? {};
+  const out: DeclaredDefault[] = [];
+  for (const [owner, keys] of Object.entries<any>(doc)) {
+    for (const [key, d] of Object.entries<any>(keys ?? {})) {
+      const where = `rules/_defaults.yaml ${owner}.${key}`;
+      if (!d || !('value' in d)) throw new Error(`${where}: value is required`);
+      if (!DEFAULT_BASES.includes(d.basis)) throw new Error(`${where}: basis must be one of ${DEFAULT_BASES.join(', ')}`);
+      if (typeof d.source !== 'string' || d.source.trim().length < 10) throw new Error(`${where}: source must say where the value comes from`);
+      out.push({ owner, key, value: d.value, basis: d.basis, source: d.source });
+    }
+  }
+  return out;
+}
+
+export function renderDefaultsModule(defaults: DeclaredDefault[]): string {
+  const table: Record<string, Record<string, unknown>> = {};
+  for (const d of defaults) (table[d.owner] ??= {})[d.key] = d.value;
+  return [
+    'package cdk_preflight',
+    '',
+    'import rego.v1',
+    '',
+    '# Generated from rules/_defaults.yaml by scripts/bundle-rules.ts.',
+    `_pf_default_table := ${JSON.stringify(table, null, 2)}`,
+    '',
+    '_pf_default(owner, key) := _pf_default_table[owner][key]',
+    '',
+  ].join('\n');
+}
+
+/** `_pf_default("<owner>", "<key>")` の呼び出しと台帳の突き合わせ。 */
+export function defaultsProblems(defaults: DeclaredDefault[], modules: { owner: string; rego: string }[]): string[] {
+  const declared = new Set(defaults.map((d) => `${d.owner} ${d.key}`));
+  const used = new Set<string>();
+  const problems: string[] = [];
+  for (const m of modules) {
+    for (const call of m.rego.matchAll(/_pf_default\(\s*"([^"]+)"\s*,\s*"([^"]+)"\s*\)/g)) {
+      const [, owner, key] = call;
+      if (owner !== m.owner) problems.push(`${m.owner}: reads the default declared for ${owner}; declare its own under ${m.owner}`);
+      if (!declared.has(`${owner} ${key}`)) problems.push(`${m.owner}: _pf_default("${owner}", "${key}") is not declared in rules/_defaults.yaml`);
+      used.add(`${owner} ${key}`);
+    }
+  }
+  for (const d of defaults) {
+    if (!used.has(`${d.owner} ${d.key}`)) problems.push(`rules/_defaults.yaml: ${d.owner}.${d.key} is not read by any rule; delete it`);
+  }
+  return problems;
 }
 
 export function renderGenerated(rules: BundledRule[], libs: BundledLib[] = []): string {
@@ -735,6 +807,11 @@ if (require.main === module) {
     ...libs.map((l) => ({ name: l.name, rego: l.rego })),
   ]);
   if (collisions.length > 0) throw new Error(`rego name collisions:\n  ${collisions.join('\n  ')}`);
+  const undeclared = defaultsProblems(readDefaults(root), [
+    ...rules.map((r) => ({ owner: r.id, rego: r.rego })),
+    ...libs.filter((l) => l.name !== DEFAULTS_MODULE).map((l) => ({ owner: l.name, rego: l.rego })),
+  ]);
+  if (undeclared.length > 0) throw new Error(`rules/_defaults.yaml:\n  ${undeclared.join('\n  ')}`);
 
   // 既定は src/rules.generated.ts だけ（gitignore 済みのビルド生成物）。--docs を付けたときだけ
   // コミット対象の docs/rules.md と README を書く。ルール追加 PR がこの 2 つを触らないので、

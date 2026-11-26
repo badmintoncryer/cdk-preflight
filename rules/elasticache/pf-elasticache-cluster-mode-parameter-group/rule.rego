@@ -12,7 +12,7 @@ _pf_eccmpg_fix := "Point CacheParameterGroupName at a parameter group whose Prop
 _pf_eccmpg_cluster_on(pgname) if {
 	props := resolve(pgname, "Properties.Properties")
 	is_object(props)
-	lower(object.get(props, "cluster-enabled", "no")) == "yes"
+	lower(_pf_oval(props, "cluster-enabled")) == "yes"
 }
 
 violation contains make_diag_full("pf-elasticache-cluster-mode-parameter-group", "ERROR", name,

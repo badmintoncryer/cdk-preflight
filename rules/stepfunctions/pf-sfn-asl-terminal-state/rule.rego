@@ -12,7 +12,7 @@ _pf_sfnterm_ok(name) if {
 	p == "States"
 	some _, st in s
 	is_object(st)
-	object.get(st, "End", false) == true
+	_pf_oval(st, "End") == true
 }
 
 _pf_sfnterm_ok(name) if {

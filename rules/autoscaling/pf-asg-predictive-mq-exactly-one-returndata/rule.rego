@@ -7,7 +7,7 @@ _pf_asgprd_url := "https://docs.aws.amazon.com/autoscaling/ec2/APIReference/API_
 _pf_asgprd_returning(qs) := count([1 |
 	some q in qs
 	is_object(q)
-	object.get(q, "ReturnData", true) == true
+	_pf_oval(q, "ReturnData") == true
 ])
 
 violation contains make_diag_full("pf-asg-predictive-mq-exactly-one-returndata", "ERROR", name,

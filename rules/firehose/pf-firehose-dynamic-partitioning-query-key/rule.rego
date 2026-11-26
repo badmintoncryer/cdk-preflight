@@ -14,7 +14,7 @@ _pf_fhdpk_keys(q) := ks if {
 }
 
 _pf_fhdpq_prefix_keys(c) := ks if {
-	p := object.get(c, "Prefix", "")
+	p := object.get(c, "Prefix", _pf_default("pf-firehose-dynamic-partitioning-query-key", "Prefix"))
 	is_string(p)
 	ks := {v |
 		some e in _pf_fhlib_exprs(p)

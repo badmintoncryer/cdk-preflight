@@ -13,5 +13,5 @@ violation contains make_diag_full("pf-s3express-bucket-key-enabled-false", "ERRO
 	some name in resources_of_type("AWS::S3Express::DirectoryBucket")
 	some c in flatten_list(name, "Properties.BucketEncryption.ServerSideEncryptionConfiguration")
 	is_object(c.value)
-	object.get(c.value, "BucketKeyEnabled", true) == false
+	_pf_oval(c.value, "BucketKeyEnabled") == false
 }

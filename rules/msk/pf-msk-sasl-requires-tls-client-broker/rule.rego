@@ -15,12 +15,12 @@ violation contains make_diag_full("pf-msk-sasl-requires-tls-client-broker", "ERR
 	props := input.resources[name].properties
 	is_object(props)
 	_pf_msksrtcb_authenticated(props)
-	object.get(props, ["EncryptionInfo", "EncryptionInTransit", "ClientBroker"], "TLS") == "PLAINTEXT"
+	object.get(props, ["EncryptionInfo", "EncryptionInTransit", "ClientBroker"], _pf_default("pf-msk-sasl-requires-tls-client-broker", "EncryptionInTransit.ClientBroker")) == "PLAINTEXT"
 }
 
 # Any client authentication mechanism explicitly switched on.
-_pf_msksrtcb_authenticated(props) if object.get(props, ["ClientAuthentication", "Sasl", "Iam", "Enabled"], false) == true
+_pf_msksrtcb_authenticated(props) if object.get(props, ["ClientAuthentication", "Sasl", "Iam", "Enabled"], _pf_default("pf-msk-sasl-requires-tls-client-broker", "ClientAuthentication.Sasl.Iam.Enabled")) == true
 
-_pf_msksrtcb_authenticated(props) if object.get(props, ["ClientAuthentication", "Sasl", "Scram", "Enabled"], false) == true
+_pf_msksrtcb_authenticated(props) if _pf_oval(props, ["ClientAuthentication", "Sasl", "Scram", "Enabled"]) == true
 
-_pf_msksrtcb_authenticated(props) if object.get(props, ["ClientAuthentication", "Tls", "Enabled"], false) == true
+_pf_msksrtcb_authenticated(props) if _pf_oval(props, ["ClientAuthentication", "Tls", "Enabled"]) == true

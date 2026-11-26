@@ -10,6 +10,6 @@ violation contains make_diag_full("pf-batch-jd-resource-requirements-duplicate-t
 	some name in resources_of_type("AWS::Batch::JobDefinition")
 	cp := _pf_batch_cp(name)
 	some t in {"VCPU", "MEMORY", "GPU"}
-	n := count([1 | some e in object.get(cp, "ResourceRequirements", []); is_object(e); object.get(e, "Type", "") == t])
+	n := count([1 | some e in object.get(cp, "ResourceRequirements", []); is_object(e); _pf_oval(e, "Type") == t])
 	n > 1
 }

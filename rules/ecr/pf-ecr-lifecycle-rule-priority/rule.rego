@@ -11,7 +11,7 @@ _pf_ecrlpr_prio(rule) := p if {
 	is_number(p)
 }
 
-_pf_ecrlpr_any(name) := [i | some [n, i, rule] in _pf_ecrlib_rules; n == name; object.get(_pf_ecrlib_selection(rule), "tagStatus", "") == "any"]
+_pf_ecrlpr_any(name) := [i | some [n, i, rule] in _pf_ecrlib_rules; n == name; _pf_oval(_pf_ecrlib_selection(rule), "tagStatus") == "any"]
 
 violation contains make_diag_full("pf-ecr-lifecycle-rule-priority", "ERROR", name,
 	sprintf("%s[%d].rulePriority", [_pf_ecrlib_prop(name), i]),
@@ -39,7 +39,7 @@ violation contains make_diag_full("pf-ecr-lifecycle-rule-priority", "ERROR", nam
 	sprintf("the tagStatus=any rule has rulePriority %d but another rule has %d; PutLifecyclePolicy fails with \"Rule for tagStatus=ANY must have the highest rulePriority\"", [p, q]),
 	_pf_ecrlpr_fix, _pf_ecrlpr_url) if {
 	some [name, i, rule] in _pf_ecrlib_rules
-	object.get(_pf_ecrlib_selection(rule), "tagStatus", "") == "any"
+	_pf_oval(_pf_ecrlib_selection(rule), "tagStatus") == "any"
 	p := _pf_ecrlpr_prio(rule)
 	some [n2, j, other] in _pf_ecrlib_rules
 	n2 == name

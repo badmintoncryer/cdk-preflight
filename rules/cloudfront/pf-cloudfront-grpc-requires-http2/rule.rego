@@ -13,7 +13,7 @@ violation contains make_diag_full("pf-cloudfront-grpc-requires-http2", "ERROR", 
 	some b in _pf_cflib_behaviors(name)
 	grpc := object.get(b.value, "GrpcConfig", null)
 	is_object(grpc)
-	object.get(grpc, "Enabled", false) == true
+	_pf_oval(grpc, "Enabled") == true
 	hv := object.get(_pf_cflib_config(name), "HttpVersion", null)
 	is_string(hv)
 	not hv in {"http2", "http2and3"}

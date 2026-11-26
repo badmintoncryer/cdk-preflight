@@ -11,7 +11,7 @@ _pf_elbldal_last(acts) := t if {
 	count(orders) == count(acts)
 	some a in acts
 	object.get(a.value, "Order", null) == max(orders)
-	t := object.get(a.value, "Type", "")
+	t := _pf_oval(a.value, "Type")
 }
 
 _pf_elbldal_last(acts) := t if {
@@ -19,7 +19,7 @@ _pf_elbldal_last(acts) := t if {
 	count(orders) != count(acts)
 	some a in acts
 	a.index == max([x.index | some x in acts])
-	t := object.get(a.value, "Type", "")
+	t := _pf_oval(a.value, "Type")
 }
 
 violation contains make_diag_full("pf-elbv2-listener-default-action-routing-last", "ERROR", name,

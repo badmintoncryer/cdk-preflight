@@ -5,7 +5,7 @@ import rego.v1
 _pf_apisinglelambdaauthorizer_types(n) := pfv if {
 	_pf_static_list(n, "Properties.AdditionalAuthenticationProviders")
 	pfv := array.concat(
-	[object.get(input.resources[n].properties, "AuthenticationType", "")],
+	[_pf_oval(input.resources[n].properties, "AuthenticationType")],
 	[p.value.AuthenticationType | some p in flatten_list(n, "Properties.AdditionalAuthenticationProviders")],
 )
 }

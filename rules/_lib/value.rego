@@ -108,4 +108,15 @@ _pf_json_size_min(doc) := n if {
 
 # オブジェクト o のキー k の値。キーが無ければ未定義（object.get の既定値の代わり）。
 # 省略を「サービスの既定値が指定された」と読まずに、その判定ごと降りる。
-_pf_oval(o, k) := o[k] if is_object(o)
+# k はキー 1 つか、object.get と同じキーの配列（入れ子のパス）。
+_pf_oval(o, k) := o[k] if {
+	is_object(o)
+	not is_array(k)
+}
+
+_pf_oval(o, k) := v if {
+	is_object(o)
+	is_array(k)
+	v := object.get(o, k, "__pf_absent")
+	v != "__pf_absent"
+}

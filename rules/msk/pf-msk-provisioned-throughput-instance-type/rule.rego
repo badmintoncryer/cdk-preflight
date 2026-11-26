@@ -15,8 +15,8 @@ violation contains make_diag_full("pf-msk-provisioned-throughput-instance-type",
 	some name in resources_of_type("AWS::MSK::Cluster")
 	props := input.resources[name].properties
 	is_object(props)
-	object.get(props, ["BrokerNodeGroupInfo", "StorageInfo", "EBSStorageInfo", "ProvisionedThroughput", "Enabled"], false) == true
-	itype := object.get(props, ["BrokerNodeGroupInfo", "InstanceType"], "")
+	object.get(props, ["BrokerNodeGroupInfo", "StorageInfo", "EBSStorageInfo", "ProvisionedThroughput", "Enabled"], _pf_default("pf-msk-provisioned-throughput-instance-type", "ProvisionedThroughput.Enabled")) == true
+	itype := object.get(props, ["BrokerNodeGroupInfo", "InstanceType"], _pf_default("pf-msk-provisioned-throughput-instance-type", "BrokerNodeGroupInfo.InstanceType"))
 	itype in _pf_mskptit_too_small
 }
 

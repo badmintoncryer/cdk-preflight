@@ -1,0 +1,370 @@
+# 省略時の値の台帳。ルールが「このプロパティを省略したら、サービスはこの値として扱う」と読むのは、
+# ここに出典付きで書いた値だけ。ルール本体は object.get の既定値にサービスの値を直書きせず
+# （scripts/lint-rules.ts が禁止）、`_pf_default("<owner>", "<key>")` でここを引く。
+# 台帳に無い値は未定義なので、省略されたプロパティについてルールは判定しない。
+#
+#   <owner>:            ルール id、または _lib/<name>（呼び出し元のモジュール自身）
+#     <key>:            プロパティ（入れ子は . 区切り。ルールの中で一意なら名前は自由）
+#       value:          省略時にサービスが使う値
+#       basis:          deploy（実機で確かめた）| docs（AWS のドキュメントに書いてある）| test
+#       source:         出典。deploy は証拠の場所、docs は URL と該当の一文
+#
+# scripts/bundle-rules.ts が、宣言の無い呼び出しと、どこからも読まれない宣言を拒否する。
+
+"_lib/cloudtrail":
+  "IncludeManagementEvents":
+    value: true
+    basis: docs
+    source: "https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-cloudtrail-trail-eventselector.html: \"By default, the value is true.\""
+
+"_lib/eks":
+  "Enabled":
+    value: false
+    basis: deploy
+    source: "rules/eks/pf-eks-cluster-automode-all-three/meta.yaml repro.evidence: bench 2026-09-25 us-east-1, ComputeConfig.Enabled true with ElasticLoadBalancing and BlockStorage omitted -> \"... all either fully enabled or fully disabled.\" (the omitted flags were read as disabled)"
+
+"_lib/elbv2":
+  "TargetType":
+    value: "instance"
+    basis: docs
+    source: "https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-elasticloadbalancingv2-targetgroup.html: \"instance - Register targets by instance ID. This is the default value.\""
+  "Type":
+    value: "application"
+    basis: docs
+    source: "https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-elasticloadbalancingv2-loadbalancer.html: \"The type of load balancer. The default is application.\""
+
+"_lib/servicediscovery":
+  "RoutingPolicy":
+    value: "MULTIVALUE"
+    basis: deploy
+    source: "the fail templates of rules/servicediscovery/pf-servicediscovery-instance-alias-requires-weighted and pf-servicediscovery-service-cname-requires-weighted omit RoutingPolicy and were rejected on a real deploy as not WEIGHTED (meta.yaml repro.evidence, 2026-09-22/23 us-east-1)"
+
+pf-agentcore-capacity-provider-kms-requires-encrypted:
+  "Encrypted":
+    value: false
+    basis: deploy
+    source: "the fail template of rules/pf-agentcore-capacity-provider-kms-requires-encrypted omits this property and failed on a real deploy (meta.yaml repro.evidence), so the service read the omission as this value"
+
+pf-asg-wp-hibernated-requires-encrypted-root:
+  "Encrypted":
+    value: false
+    basis: deploy
+    source: "the fail template of rules/pf-asg-wp-hibernated-requires-encrypted-root omits this property and failed on a real deploy (meta.yaml repro.evidence), so the service read the omission as this value"
+
+pf-batch-jd-efs-access-point-transit-encryption:
+  "TransitEncryption":
+    value: "DISABLED"
+    basis: docs
+    source: "https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-batch-jobdefinition-efsvolumeconfiguration.html: \"If this parameter is omitted, the default value of DISABLED is used.\""
+
+pf-batch-jd-efs-iam-transit-encryption:
+  "TransitEncryption":
+    value: "DISABLED"
+    basis: docs
+    source: "https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-batch-jobdefinition-efsvolumeconfiguration.html: \"If this parameter is omitted, the default value of DISABLED is used.\""
+
+pf-cloudwatch-metric-query-returndata:
+  "ReturnData":
+    value: true
+    basis: docs
+    source: "https://docs.aws.amazon.com/AmazonCloudWatch/latest/APIReference/API_MetricDataQuery.html: \"If you omit this, the default of true is used.\""
+
+pf-cloudwatch-threshold-metric-id:
+  "ReturnData":
+    value: true
+    basis: docs
+    source: "https://docs.aws.amazon.com/AmazonCloudWatch/latest/APIReference/API_MetricDataQuery.html: \"If you omit this, the default of true is used.\""
+
+pf-ec2-vpce-gateway-service:
+  "VpcEndpointType":
+    value: "Gateway"
+    basis: docs
+    source: "https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-ec2-vpcendpoint.html: VpcEndpointType \"Default: Gateway\""
+
+pf-eks-cluster-encryption-kms-key-region:
+  "Provider.KeyArn":
+    value: ""
+    basis: deploy
+    source: "the fail template of rules/pf-eks-cluster-encryption-kms-key-region omits this property and failed on a real deploy (meta.yaml repro.evidence), so the service read the omission as this value"
+
+pf-elbv2-action-forward-same-ip-type:
+  "IpAddressType":
+    value: "ipv4"
+    basis: deploy
+    source: "the fail template of rules/pf-elbv2-action-forward-same-ip-type omits this property and failed on a real deploy (meta.yaml repro.evidence), so the service read the omission as this value"
+
+pf-elbv2-alb-subnet-count:
+  "Type":
+    value: "application"
+    basis: docs
+    source: "https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-elasticloadbalancingv2-loadbalancer.html: \"The type of load balancer. The default is application.\""
+
+pf-elbv2-lb-source-nat-prefix-requires-dualstack:
+  "IpAddressType":
+    value: "ipv4"
+    basis: deploy
+    source: "the fail template of rules/pf-elbv2-lb-source-nat-prefix-requires-dualstack omits this property and failed on a real deploy (meta.yaml repro.evidence), so the service read the omission as this value"
+
+pf-elbv2-listener-alpn-tls-only:
+  "Protocol":
+    value: "GENEVE"
+    basis: deploy
+    source: "bench 2026-11-25 (#407, test/rules.test.ts \"messages match what the service answers for an omitted property\"): the pass template of pf-elbv2-listener-alpn-single without Listener.Protocol was rejected with \"A listener protocol must be specified\"; only a Gateway Load Balancer (GENEVE) listener may omit Protocol, and the message names the omission"
+
+pf-elbv2-listener-auth-action-https-only:
+  "Protocol":
+    value: "GENEVE"
+    basis: deploy
+    source: "bench 2026-11-25 (#407, test/rules.test.ts \"messages match what the service answers for an omitted property\"): the pass template of pf-elbv2-action-oidc-endpoint-https without Listener.Protocol was rejected with \"A listener protocol must be specified\"; only a Gateway Load Balancer (GENEVE) listener may omit Protocol, and the message names the omission"
+
+pf-elbv2-listener-cert-insecure-protocol:
+  "Protocol":
+    value: "GENEVE"
+    basis: deploy
+    source: "bench 2026-11-25 (#407, test/rules.test.ts \"messages match what the service answers for an omitted property\"): the pass template of pf-elbv2-listener-cert-exactly-one without Listener.Protocol was rejected with \"A listener protocol must be specified\"; only a Gateway Load Balancer (GENEVE) listener may omit Protocol, and the message names the omission"
+
+pf-elbv2-listener-certificate-secure-listener:
+  "Protocol":
+    value: "GENEVE"
+    basis: deploy
+    source: "omission bench recorded in rules/pf-elbv2-listener-certificate-secure-listener/meta.yaml (omissionFails: AWS::ElasticLoadBalancingV2::Listener.Protocol): the pass template with this property removed fails to deploy, so the service reads the omission as this value"
+
+pf-elbv2-listener-mtls-https-only:
+  "Protocol":
+    value: "GENEVE"
+    basis: deploy
+    source: "bench 2026-11-25 (#407, test/rules.test.ts \"messages match what the service answers for an omitted property\"): the pass template of pf-elbv2-listener-mtls-ignore-expiry-verify-only without Listener.Protocol was rejected with \"A listener protocol must be specified\"; only a Gateway Load Balancer (GENEVE) listener may omit Protocol, and the message names the omission"
+
+pf-elbv2-listener-sslpolicy-secure-only:
+  "Protocol":
+    value: "GENEVE"
+    basis: deploy
+    source: "bench 2026-11-25 (#407, test/rules.test.ts \"messages match what the service answers for an omitted property\"): the pass template of pf-elbv2-listener-cert-exactly-one without Listener.Protocol was rejected with \"A listener protocol must be specified\"; only a Gateway Load Balancer (GENEVE) listener may omit Protocol, and the message names the omission"
+
+pf-elbv2-tg-attr-slow-start-scope:
+  "Protocol.family":
+    value: "lambda"
+    basis: deploy
+    source: "bench 2026-11-25 (#407, test/rules.test.ts \"messages match what the service answers for an omitted property\"): the pass template of pf-elbv2-tg-slow-start-range without TargetGroup.Protocol was rejected with \"A protocol must be specified\"; only a lambda target group may omit Protocol, and the message names the omission"
+
+pf-elbv2-tg-ipv6-with-ipv4-lb:
+  "IpAddressType":
+    value: "ipv4"
+    basis: deploy
+    source: "the fail template of rules/pf-elbv2-tg-ipv6-with-ipv4-lb omits this property and failed on a real deploy (meta.yaml repro.evidence), so the service read the omission as this value"
+
+pf-events-target-ecs-fargate-network-mode:
+  "NetworkMode":
+    value: "bridge"
+    basis: docs
+    source: "https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-ecs-taskdefinition.html: \"If no network mode is specified, the default is bridge.\""
+
+pf-firehose-dynamic-partitioning-query-key:
+  "Prefix":
+    value: ""
+    basis: deploy
+    source: "omission bench recorded in rules/pf-firehose-dynamic-partitioning-query-key/meta.yaml (omissionFails: AWS::KinesisFirehose::DeliveryStream.ExtendedS3DestinationConfiguration.Prefix): the pass template with this property removed fails to deploy, so the service reads the omission as this value"
+
+pf-iot-authorizer-signing-keys:
+  "SigningDisabled":
+    value: false
+    basis: deploy
+    source: "omission bench recorded in rules/pf-iot-authorizer-signing-keys/meta.yaml (omissionFails: AWS::IoT::Authorizer.SigningDisabled): the pass template with this property removed fails to deploy, so the service reads the omission as this value"
+
+pf-iot-certificate-mode-combo:
+  "CertificateMode":
+    value: "DEFAULT"
+    basis: deploy
+    source: "omission bench recorded in rules/pf-iot-certificate-mode-combo/meta.yaml (omissionFails: AWS::IoT::Certificate.CertificateMode): the pass template with this property removed fails to deploy, so the service reads the omission as this value"
+
+pf-lambda-imageconfig-requires-image:
+  "PackageType":
+    value: "Zip"
+    basis: deploy
+    source: "omission bench recorded in rules/pf-lambda-imageconfig-requires-image/meta.yaml (omissionFails: AWS::Lambda::Function.PackageType): the pass template with this property removed fails to deploy, so the service reads the omission as this value"
+
+pf-lambda-layer-reference-needs-versioning:
+  "VersioningConfiguration.Status":
+    value: ""
+    basis: docs
+    source: "https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-s3-bucket-versioningconfiguration.html: Status is \"Required: Yes\", so a VersioningConfiguration without Status cannot be deployed and the rule may read it as not Enabled."
+
+pf-lambda-loglevel-requires-json:
+  "LogFormat":
+    value: "Text"
+    basis: deploy
+    source: "omission bench recorded in rules/pf-lambda-loglevel-requires-json/meta.yaml (omissionFails: AWS::Lambda::Function.LoggingConfig.LogFormat): the pass template with this property removed fails to deploy, so the service reads the omission as this value"
+
+pf-mediaconvert-aud-aac-cbr-combo:
+  "CodecProfile":
+    value: "LC"
+    basis: deploy
+    source: "the fail template of rules/pf-mediaconvert-aud-aac-cbr-combo omits this property and failed on a real deploy (meta.yaml repro.evidence), so the service read the omission as this value"
+  "RateControlMode":
+    value: "CBR"
+    basis: deploy
+    source: "the fail template of rules/pf-mediaconvert-aud-aac-cbr-combo omits this property and failed on a real deploy (meta.yaml repro.evidence), so the service read the omission as this value"
+
+pf-mediaconvert-cap-dvbsub-dds-coordinates:
+  "DdsHandling":
+    value: "NONE"
+    basis: deploy
+    source: "the fail template of rules/pf-mediaconvert-cap-dvbsub-dds-coordinates omits this property and failed on a real deploy (meta.yaml repro.evidence), so the service read the omission as this value"
+
+pf-mediaconvert-pkg-id3-metadata-passthrough:
+  "CmfcSettings.TimedMetadata":
+    value: "NONE"
+    basis: deploy
+    source: "the fail template of rules/pf-mediaconvert-pkg-id3-metadata-passthrough omits this property and failed on a real deploy (meta.yaml repro.evidence), so the service read the omission as this value"
+
+pf-mediaconvert-prep-clip-limits:
+  "SampleRangeConversion":
+    value: "NONE"
+    basis: deploy
+    source: "the fail template of rules/pf-mediaconvert-prep-clip-limits omits this property and failed on a real deploy (meta.yaml repro.evidence), so the service read the omission as this value"
+
+pf-mediaconvert-rc-interlace-optimize:
+  "InterlaceMode":
+    value: "PROGRESSIVE"
+    basis: deploy
+    source: "the fail template of rules/pf-mediaconvert-rc-interlace-optimize omits this property and failed on a real deploy (meta.yaml repro.evidence), so the service read the omission as this value"
+
+pf-msk-provisioned-throughput-instance-type:
+  "BrokerNodeGroupInfo.InstanceType":
+    value: ""
+    basis: deploy
+    source: "the fail template of rules/pf-msk-provisioned-throughput-instance-type omits this property and failed on a real deploy (meta.yaml repro.evidence), so the service read the omission as this value"
+  "ProvisionedThroughput.Enabled":
+    value: false
+    basis: deploy
+    source: "the fail template of rules/pf-msk-provisioned-throughput-instance-type omits this property and failed on a real deploy (meta.yaml repro.evidence), so the service read the omission as this value"
+
+pf-msk-provisioned-throughput-max-per-instance:
+  "BrokerNodeGroupInfo.InstanceType":
+    value: ""
+    basis: deploy
+    source: "the fail template of rules/pf-msk-provisioned-throughput-max-per-instance omits this property and failed on a real deploy (meta.yaml repro.evidence), so the service read the omission as this value"
+
+pf-msk-provisioned-throughput-volume-size:
+  "ProvisionedThroughput.Enabled":
+    value: false
+    basis: deploy
+    source: "the fail template of rules/pf-msk-provisioned-throughput-volume-size omits this property and failed on a real deploy (meta.yaml repro.evidence), so the service read the omission as this value"
+
+pf-msk-provisioned-throughput-without-enabled:
+  "ProvisionedThroughput.Enabled":
+    value: false
+    basis: deploy
+    source: "the fail template of rules/pf-msk-provisioned-throughput-without-enabled omits this property and failed on a real deploy (meta.yaml repro.evidence), so the service read the omission as this value"
+
+pf-msk-sasl-requires-in-cluster-encryption:
+  "ClientAuthentication.Sasl.Iam.Enabled":
+    value: false
+    basis: deploy
+    source: "the fail template of rules/pf-msk-sasl-requires-in-cluster-encryption omits this property and failed on a real deploy (meta.yaml repro.evidence), so the service read the omission as this value"
+  "EncryptionInTransit.InCluster":
+    value: true
+    basis: docs
+    source: "https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-msk-cluster-encryptionintransit.html: InCluster \"The default value is true.\""
+
+pf-msk-sasl-requires-tls-client-broker:
+  "ClientAuthentication.Sasl.Iam.Enabled":
+    value: false
+    basis: deploy
+    source: "the fail template of rules/pf-msk-sasl-requires-tls-client-broker omits this property and failed on a real deploy (meta.yaml repro.evidence), so the service read the omission as this value"
+  "EncryptionInTransit.ClientBroker":
+    value: "TLS"
+    basis: docs
+    source: "https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-msk-cluster-encryptionintransit.html: ClientBroker \"The default value is TLS.\""
+
+pf-msk-tls-plaintext-requires-unauthenticated:
+  "ClientAuthentication.Sasl.Iam.Enabled":
+    value: false
+    basis: deploy
+    source: "the fail template of rules/pf-msk-tls-plaintext-requires-unauthenticated omits this property and failed on a real deploy (meta.yaml repro.evidence), so the service read the omission as this value"
+  "ClientAuthentication.Unauthenticated.Enabled":
+    value: false
+    basis: deploy
+    source: "omission bench recorded in rules/pf-msk-tls-plaintext-requires-unauthenticated/meta.yaml (omissionFails: AWS::MSK::Cluster.ClientAuthentication.Unauthenticated): the pass template with this property removed fails to deploy, so the service reads the omission as this value"
+  "EncryptionInTransit.ClientBroker":
+    value: "TLS"
+    basis: docs
+    source: "https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-msk-cluster-encryptionintransit.html: ClientBroker \"The default value is TLS.\""
+
+pf-msk-unauthenticated-only-requires-no-tls-only:
+  "ClientAuthentication.Sasl.Iam.Enabled":
+    value: false
+    basis: deploy
+    source: "omission bench recorded in rules/pf-msk-unauthenticated-only-requires-no-tls-only/meta.yaml (omissionFails: AWS::MSK::Cluster.ClientAuthentication.Sasl.Iam): the pass template with this property removed fails to deploy, so the service reads the omission as this value"
+  "ClientAuthentication.Unauthenticated.Enabled":
+    value: true
+    basis: deploy
+    source: "the fail template of rules/pf-msk-unauthenticated-only-requires-no-tls-only omits this property and failed on a real deploy (meta.yaml repro.evidence), so the service read the omission as this value"
+
+pf-msk-vpc-connectivity-auth-not-at-create:
+  "VpcConnectivity.ClientAuthentication.*.Enabled":
+    value: false
+    basis: deploy
+    source: "the fail template of rules/pf-msk-vpc-connectivity-auth-not-at-create omits this property and failed on a real deploy (meta.yaml repro.evidence), so the service read the omission as this value"
+
+pf-route53-failover-alias-evaluate-target-health:
+  "AliasTarget.EvaluateTargetHealth":
+    value: false
+    basis: deploy
+    source: "omission bench recorded in rules/pf-route53-failover-alias-evaluate-target-health/meta.yaml (omissionFails: AWS::Route53::RecordSet.AliasTarget.EvaluateTargetHealth): the pass template with this property removed fails to deploy, so the service reads the omission as this value"
+
+pf-route53-keysigningkey-kms-keyspec:
+  "KeySpec":
+    value: "SYMMETRIC_DEFAULT"
+    basis: docs
+    source: "https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-kms-key.html: \"The default value, SYMMETRIC_DEFAULT, creates a KMS key with a 256-bit symmetric key.\""
+  "KeyUsage":
+    value: "ENCRYPT_DECRYPT"
+    basis: docs
+    source: "https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-kms-key.html: KeyUsage \"The default value is ENCRYPT_DECRYPT.\""
+
+pf-route53resolver-firewallrule-domainlist-qtype-unique:
+  "Qtype":
+    value: ""
+    basis: deploy
+    source: "the fail template of rules/pf-route53resolver-firewallrule-domainlist-qtype-unique omits this property and failed on a real deploy (meta.yaml repro.evidence), so the service read the omission as this value"
+
+pf-route53resolver-rule-targetip-sni-doh-only:
+  "TargetIps.Protocol":
+    value: ""
+    basis: deploy
+    source: "the fail template of rules/pf-route53resolver-rule-targetip-sni-doh-only omits this property and failed on a real deploy (meta.yaml repro.evidence), so the service read the omission as this value"
+
+pf-scheduler-target-ecs-fargate-network-mode:
+  "NetworkMode":
+    value: "bridge"
+    basis: docs
+    source: "https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-ecs-taskdefinition.html: \"If no network mode is specified, the default is bridge.\""
+
+pf-secretsmanager-generate-secret-string:
+  "PasswordLength":
+    value: 32
+    basis: docs
+    source: "https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-secretsmanager-secret-generatesecretstring.html: \"If you don't include this parameter, the default length is 32 characters.\""
+  "RequireEachIncludedType":
+    value: true
+    basis: docs
+    source: "https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-secretsmanager-secret-generatesecretstring.html: RequireEachIncludedType \"If you don't include this switch, the password contains at least one of every character type.\""
+
+pf-secretsmanager-target-attachment:
+  "SecretStringTemplate":
+    value: ""
+    basis: deploy
+    source: "the fail template of rules/pf-secretsmanager-target-attachment omits this property and failed on a real deploy (meta.yaml repro.evidence), so the service read the omission as this value"
+
+pf-sns-filter-policy:
+  "FilterPolicyScope":
+    value: "MessageAttributes"
+    basis: docs
+    source: "https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-sns-subscription.html: FilterPolicyScope \"MessageAttributes (default) - The filter is applied on the message attributes.\""
+
+pf-wafv2-capacity:
+  "SensitivityLevel":
+    value: "LOW"
+    basis: docs
+    source: "https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-wafv2-webacl-sqlimatchstatement.html: SensitivityLevel \"Default: LOW\""

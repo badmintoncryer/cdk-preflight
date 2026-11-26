@@ -13,6 +13,6 @@ violation contains make_diag_full("pf-lambda-imageconfig-requires-image", "ERROR
 	some name in _pf_lam_fn
 	props := _pf_lam_props(name)
 	_pf_lam_has_key(props, "ImageConfig")
-	object.get(props, "PackageType", "Zip") != "Image"
+	object.get(props, "PackageType", _pf_default("pf-lambda-imageconfig-requires-image", "PackageType")) != "Image"
 	not _pf_unknown(name, "Properties.PackageType")
 }

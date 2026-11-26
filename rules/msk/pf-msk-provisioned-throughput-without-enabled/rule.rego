@@ -16,5 +16,5 @@ violation contains make_diag_full("pf-msk-provisioned-throughput-without-enabled
 	prov := object.get(props, ["BrokerNodeGroupInfo", "StorageInfo", "EBSStorageInfo", "ProvisionedThroughput"], null)
 	is_object(prov)
 	object.get(prov, "VolumeThroughput", "__pf_absent") != "__pf_absent"
-	object.get(prov, "Enabled", false) != true
+	object.get(prov, "Enabled", _pf_default("pf-msk-provisioned-throughput-without-enabled", "ProvisionedThroughput.Enabled")) != true
 }

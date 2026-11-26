@@ -19,8 +19,8 @@ violation contains make_diag_full("pf-s3-intelligent-tiering-archive-before-deep
 	some t2 in tiers
 	is_object(t1)
 	is_object(t2)
-	object.get(t1, "AccessTier", "") == "ARCHIVE_ACCESS"
-	object.get(t2, "AccessTier", "") == "DEEP_ARCHIVE_ACCESS"
+	_pf_oval(t1, "AccessTier") == "ARCHIVE_ACCESS"
+	_pf_oval(t2, "AccessTier") == "DEEP_ARCHIVE_ACCESS"
 	rawa := object.get(t1, "Days", null)
 	rawa != null
 	rawd := object.get(t2, "Days", null)

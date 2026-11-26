@@ -5,7 +5,7 @@ import rego.v1
 _pf_fhpc_count(c) := n if {
 	pc := object.get(c, "ProcessingConfiguration", null)
 	is_object(pc)
-	coerce_to_bool(object.get(pc, "Enabled", false)) == true
+	coerce_to_bool(_pf_oval(pc, "Enabled")) == true
 	ps := object.get(pc, "Processors", [])
 	is_array(ps)
 	_pf_countable_items(ps)

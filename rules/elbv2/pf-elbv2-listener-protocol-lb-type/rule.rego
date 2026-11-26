@@ -8,7 +8,7 @@ _pf_elblpt_allow := {"application": {"HTTP", "HTTPS"}, "network": {"TCP", "QUIC"
 _pf_elblpt_type(lb) := t if {
 	props := input.resources[lb].properties
 	is_object(props)
-	t := object.get(props, "Type", "application")
+	t := _pf_oval(props, "Type")
 }
 
 violation contains make_diag_full("pf-elbv2-listener-protocol-lb-type", "ERROR", name,

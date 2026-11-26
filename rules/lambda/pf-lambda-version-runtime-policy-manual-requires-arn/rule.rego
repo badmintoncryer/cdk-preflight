@@ -12,6 +12,6 @@ violation contains make_diag_full("pf-lambda-version-runtime-policy-manual-requi
 	_pf_lvrp_fix, _pf_lvrp_url) if {
 	some name in _pf_lam_ver
 	rp := _pf_lam_obj(_pf_lam_props(name), "RuntimePolicy")
-	object.get(rp, "UpdateRuntimeOn", "") == "Manual"
+	_pf_oval(rp, "UpdateRuntimeOn") == "Manual"
 	not _pf_lam_has_key(rp, "RuntimeVersionArn")
 }

@@ -8,7 +8,7 @@ _pf_elbstp_attr(name, key) := v if {
 	some item in flatten_list(name, "Properties.TargetGroupAttributes")
 	entry := item.value
 	is_object(entry)
-	object.get(entry, "Key", "") == key
+	_pf_oval(entry, "Key") == key
 	v := object.get(entry, "Value", null)
 	is_string(v)
 }

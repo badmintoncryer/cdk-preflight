@@ -14,7 +14,7 @@ violation contains make_diag_full("pf-cloudfront-lambda-association-include-body
 	la := object.get(b.value, "LambdaFunctionAssociations", null)
 	is_array(la)
 	some a in la
-	object.get(a, "IncludeBody", false) == true
+	_pf_oval(a, "IncludeBody") == true
 	et := object.get(a, "EventType", null)
 	is_string(et)
 	not et in {"viewer-request", "origin-request"}

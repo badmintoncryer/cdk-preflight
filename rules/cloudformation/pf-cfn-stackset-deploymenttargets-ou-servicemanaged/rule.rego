@@ -6,7 +6,7 @@ import rego.v1
 # ties DeploymentTargets to the permission model.
 _pf_cfnssou_bad contains [name, idx] if {
 	some name in resources_of_type("AWS::CloudFormation::StackSet")
-	object.get(object.get(input.resources[name], "properties", {}), "PermissionModel", "SELF_MANAGED") == "SELF_MANAGED"
+	_pf_oval(object.get(input.resources[name], "properties", {}), "PermissionModel") == "SELF_MANAGED"
 	some g in flatten_list(name, "Properties.StackInstancesGroup")
 	ous := object.get(object.get(g.value, "DeploymentTargets", {}), "OrganizationalUnitIds", [])
 	_pf_unconditional_items(ous)

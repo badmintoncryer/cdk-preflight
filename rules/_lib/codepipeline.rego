@@ -16,9 +16,9 @@ _pf_cplib_lit(v) if {
 # A plain object, not an intrinsic that the preprocessor turned into a marker.
 _pf_cplib_plain(o) if {
 	is_object(o)
-	object.get(o, "__kind", "_") == "_"
-	object.get(o, "__ref", "_") == "_"
-	object.get(o, "__dynamic", "_") == "_"
+	object.get(o, "__kind", "__pf_absent") == "__pf_absent"
+	object.get(o, "__ref", "__pf_absent") == "__pf_absent"
+	object.get(o, "__dynamic", "__pf_absent") == "__pf_absent"
 }
 
 _pf_cplib_props(name) := p if {
@@ -163,7 +163,7 @@ _pf_cplib_connection_actions(name) := {an |
 	p := _pf_cplib_get(_pf_cplib_tid(a), "Provider")
 	_pf_cplib_lit(p)
 	p == "CodeStarSourceConnection"
-	an := object.get(a, "Name", "")
+	an := object.get(a, "Name", "__pf_absent")
 }
 
 # A name the preprocessor could not reduce to a literal makes the set above

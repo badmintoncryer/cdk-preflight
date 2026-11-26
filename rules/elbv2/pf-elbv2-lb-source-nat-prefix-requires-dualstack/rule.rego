@@ -12,6 +12,6 @@ violation contains make_diag_full("pf-elbv2-lb-source-nat-prefix-requires-dualst
 	_pf_elbsnd_fix, _pf_elbsnd_url) if {
 	some name in _pf_elb_lbs
 	_pf_elb_str(name, "EnablePrefixForIpv6SourceNat") == "on"
-	ipt := object.get(_pf_elb_props(name), "IpAddressType", "ipv4")
+	ipt := object.get(_pf_elb_props(name), "IpAddressType", _pf_default("pf-elbv2-lb-source-nat-prefix-requires-dualstack", "IpAddressType"))
 	ipt != "dualstack"
 }

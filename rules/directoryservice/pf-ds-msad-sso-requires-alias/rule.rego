@@ -9,7 +9,7 @@ _pf_dssso_true(name, k) if resolve(name, sprintf("Properties.%s", [k])) == true
 _pf_dssso_true(name, k) if resolve(name, sprintf("Properties.%s", [k])) == "true"
 
 _pf_dssso_unknown(name, k) if {
-	v := object.get(input.resources[name].properties, k, false)
+	v := _pf_oval(input.resources[name].properties, k)
 	is_object(v)
 }
 

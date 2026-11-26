@@ -75,7 +75,7 @@ _pf_elb_listeners := resources_of_type("AWS::ElasticLoadBalancingV2::Listener")
 
 # application unless stated otherwise (the CFN default).
 _pf_elb_lbtype(lb) := t if {
-	t := object.get(_pf_elb_props(lb), "Type", "application")
+	t := object.get(_pf_elb_props(lb), "Type", _pf_default("_lib/elbv2", "Type"))
 	is_string(t)
 }
 
@@ -159,7 +159,7 @@ _pf_elb_outside(v, lo, _) if v < lo
 _pf_elb_outside(v, _, hi) if v > hi
 
 _pf_elb_tgtype(tg) := t if {
-	t := object.get(_pf_elb_props(tg), "TargetType", "instance")
+	t := object.get(_pf_elb_props(tg), "TargetType", _pf_default("_lib/elbv2", "TargetType"))
 	is_string(t)
 }
 
@@ -182,7 +182,7 @@ _pf_elb_tgfamily(tg) := "lambda" if _pf_elb_tgtype(tg) == "lambda"
 
 _pf_elb_tgfamily(tg) := f if {
 	_pf_elb_tgtype(tg) != "lambda"
-	p := object.get(_pf_elb_props(tg), "Protocol", "")
+	p := _pf_oval(_pf_elb_props(tg), "Protocol")
 	f := _pf_elb_family_of[p]
 }
 
@@ -314,7 +314,7 @@ _pf_elb_action_listener(name) := _pf_elb_listener_of(name) if {
 	name in resources_of_type("AWS::ElasticLoadBalancingV2::ListenerRule")
 }
 
-_pf_elb_listener_proto(name) := object.get(_pf_elb_props(_pf_elb_action_listener(name)), "Protocol", "")
+_pf_elb_listener_proto(name) := _pf_oval(_pf_elb_props(_pf_elb_action_listener(name)), "Protocol")
 
 # The target groups a forward action spreads over.
 _pf_elb_fwd_tgs(a) := tgs if {
@@ -382,8 +382,8 @@ _pf_elb_cond_config := {
 _pf_elb_conditions(rule) := flatten_list(rule, "Properties.Conditions")
 
 _pf_elb_cond_cfg(cond) := c if {
-	f := object.get(cond, "Field", "")
-	c := object.get(cond, object.get(_pf_elb_cond_config, f, ""), {})
+	f := object.get(cond, "Field", "__pf_absent")
+	c := object.get(cond, object.get(_pf_elb_cond_config, f, "__pf_absent"), {})
 	is_object(c)
 }
 

@@ -17,7 +17,7 @@ violation contains make_diag_full("pf-mediaconvert-rc-interlace-optimize", "ERRO
 	"Set InterlaceMode to an interlaced value (for example TOP_FIELD), or remove ScanTypeConversionMode", _pf_mc_rc_interlace_optimize_url) if {
 	some rn in resources_of_type("AWS::MediaConvert::Preset")
 	st := _pf_mcio_h264(rn)
-	object.get(st, "InterlaceMode", "PROGRESSIVE") == "PROGRESSIVE"
+	object.get(st, "InterlaceMode", _pf_default("pf-mediaconvert-rc-interlace-optimize", "InterlaceMode")) == "PROGRESSIVE"
 }
 
 violation contains make_diag_full("pf-mediaconvert-rc-interlace-optimize", "ERROR", rn, "Properties.SettingsJson.VideoDescription.CodecSettings.H264Settings.Telecine",

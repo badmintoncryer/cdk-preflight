@@ -25,7 +25,7 @@ violation contains make_diag_full("pf-firehose-dfcc-required-configs", "ERROR", 
 	"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-kinesisfirehose-deliverystream-dataformatconversionconfiguration.html") if {
 	some name in resources_of_type("AWS::KinesisFirehose::DeliveryStream")
 	c := _pf_fhdfcc_conf(name)
-	coerce_to_bool(object.get(c, "Enabled", false)) == true
+	coerce_to_bool(_pf_oval(c, "Enabled")) == true
 	some k in {"InputFormatConfiguration", "OutputFormatConfiguration", "SchemaConfiguration"}
 	object.get(c, k, "__pf_absent") == "__pf_absent"
 }

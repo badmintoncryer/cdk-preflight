@@ -9,10 +9,10 @@ violation contains make_diag_full("pf-route53resolver-firewallrule-domainlist-qt
 	"https://docs.aws.amazon.com/Route53/latest/APIReference/API_route53resolver_CreateFirewallRule.html") if {
 	some name in resources_of_type("AWS::Route53Resolver::FirewallRuleGroup")
 	some i, r in _pf_r53r_frules(name)
-	k := sprintf("%s|%v", [_pf_r53r_key(r, "FirewallDomainListId"), object.get(r, "Qtype", "")])
+	k := sprintf("%s|%v", [_pf_r53r_key(r, "FirewallDomainListId"), object.get(r, "Qtype", _pf_default("pf-route53resolver-firewallrule-domainlist-qtype-unique", "Qtype"))])
 	dup := [1 |
 		some o in _pf_r53r_frules(name)
-		sprintf("%s|%v", [_pf_r53r_key(o, "FirewallDomainListId"), object.get(o, "Qtype", "")]) == k
+		sprintf("%s|%v", [_pf_r53r_key(o, "FirewallDomainListId"), object.get(o, "Qtype", _pf_default("pf-route53resolver-firewallrule-domainlist-qtype-unique", "Qtype"))]) == k
 	]
 	count(dup) > 1
 }

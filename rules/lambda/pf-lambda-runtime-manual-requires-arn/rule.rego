@@ -12,6 +12,6 @@ violation contains make_diag_full("pf-lambda-runtime-manual-requires-arn", "ERRO
 	_pf_lrmr_fix, _pf_lrmr_url) if {
 	some name in _pf_lam_fn
 	rmc := _pf_lam_obj(_pf_lam_props(name), "RuntimeManagementConfig")
-	object.get(rmc, "UpdateRuntimeOn", "") == "Manual"
+	_pf_oval(rmc, "UpdateRuntimeOn") == "Manual"
 	not _pf_lam_has_key(rmc, "RuntimeVersionArn")
 }

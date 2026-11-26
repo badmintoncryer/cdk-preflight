@@ -9,7 +9,7 @@ _pf_s3sla_url := "https://docs.aws.amazon.com/AmazonS3/latest/userguide/storage_
 _pf_s3sla_account(name, m) if {
 	al := resolve(name, sprintf("Properties.StorageLensConfiguration.AccountLevel.%v", [m]))
 	is_object(al)
-	object.get(al, "IsEnabled", false) == true
+	_pf_oval(al, "IsEnabled") == true
 }
 
 violation contains make_diag_full("pf-s3-storagelens-bucket-level-needs-account-level", "ERROR", name,
@@ -20,6 +20,6 @@ violation contains make_diag_full("pf-s3-storagelens-bucket-level-needs-account-
 	some m in ["AdvancedCostOptimizationMetrics", "AdvancedDataProtectionMetrics", "DetailedStatusCodesMetrics"]
 	bl := resolve(name, sprintf("Properties.StorageLensConfiguration.AccountLevel.BucketLevel.%v", [m]))
 	is_object(bl)
-	object.get(bl, "IsEnabled", false) == true
+	_pf_oval(bl, "IsEnabled") == true
 	not _pf_s3sla_account(name, m)
 }

@@ -21,7 +21,7 @@ violation contains make_diag_full("pf-elbv2-lb-idle-timeout-range", "ERROR", nam
 	some item in flatten_list(name, "Properties.LoadBalancerAttributes")
 	attr := item.value
 	is_object(attr)
-	object.get(attr, "Key", "") == "idle_timeout.timeout_seconds"
+	_pf_oval(attr, "Key") == "idle_timeout.timeout_seconds"
 	num := _pf_tonum(attr["Value"])
 	_pf_idle_timeout_out(num)
 }

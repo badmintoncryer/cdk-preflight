@@ -8,12 +8,12 @@ import rego.v1
 # so the nameless marker alone is not enough. Fire only when the resource also
 # carries a Ref/GetAtt at a *resource* of this template whose own marker is
 # absent from the properties - i.e. that reference was swallowed by the import.
-_pf_cfnivref_marker(r) := sprintf(`{"__kind":"getatt:%s","__ref":"%s"}`, [object.get(r, "attr", ""), r.target]) if {
-	object.get(r, "kind", "") == "GetAtt"
+_pf_cfnivref_marker(r) := sprintf(`{"__kind":"getatt:%s","__ref":"%s"}`, [_pf_oval(r, "attr"), r.target]) if {
+	_pf_oval(r, "kind") == "GetAtt"
 }
 
 _pf_cfnivref_marker(r) := sprintf(`{"__kind":"resource","__ref":"%s"}`, [r.target]) if {
-	object.get(r, "kind", "") == "Ref"
+	_pf_oval(r, "kind") == "Ref"
 }
 
 _pf_cfnivref_bad contains [name, target] if {

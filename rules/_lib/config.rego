@@ -39,7 +39,7 @@ _pf_cfglib_list(o, k) := v if {
 
 _pf_cfglib_group(name) := g if g := _pf_cfglib_obj(_pf_cfglib_props(name), "RecordingGroup")
 
-_pf_cfglib_all_supported(name) if object.get(_pf_cfglib_group(name), "AllSupported", false) == true
+_pf_cfglib_all_supported(name) if _pf_oval(_pf_cfglib_group(name), "AllSupported") == true
 
 _pf_cfglib_uses_only(name, want) if {
 	s := _pf_cfglib_obj(_pf_cfglib_group(name), "RecordingStrategy")

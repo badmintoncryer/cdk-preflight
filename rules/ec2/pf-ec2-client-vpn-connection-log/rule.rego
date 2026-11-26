@@ -10,6 +10,6 @@ violation contains make_diag_full("pf-ec2-client-vpn-connection-log", "ERROR", n
 	some name in resources_of_type("AWS::EC2::ClientVpnEndpoint")
 	opts := resolve(name, "Properties.ConnectionLogOptions")
 	is_object(opts)
-	object.get(opts, "Enabled", false) == true
+	_pf_oval(opts, "Enabled") == true
 	object.get(opts, "CloudwatchLogGroup", "__pf_absent") == "__pf_absent"
 }

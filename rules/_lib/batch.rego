@@ -103,7 +103,7 @@ _pf_batch_efs(v) := e if {
 _pf_batch_rrs(c, t) := [v |
 	some e in object.get(c, "ResourceRequirements", [])
 	is_object(e)
-	object.get(e, "Type", "") == t
+	object.get(e, "Type", "__pf_absent") == t
 	v := object.get(e, "Value", null)
 ]
 

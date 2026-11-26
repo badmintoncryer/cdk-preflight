@@ -7,7 +7,7 @@ import rego.v1
 _pf_ec2vgs_gateway(name) if {
 	props := input.resources[name].properties
 	is_object(props)
-	object.get(props, "VpcEndpointType", "Gateway") == "Gateway"
+	object.get(props, "VpcEndpointType", _pf_default("pf-ec2-vpce-gateway-service", "VpcEndpointType")) == "Gateway"
 }
 
 violation contains make_diag_full("pf-ec2-vpce-gateway-service", "ERROR", name,

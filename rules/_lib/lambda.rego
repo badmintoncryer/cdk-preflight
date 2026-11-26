@@ -129,7 +129,7 @@ _pf_lam_filters(name) := f if {
 
 _pf_lam_pat(f) := o if {
 	is_object(f)
-	p := object.get(f, "Pattern", "")
+	p := _pf_oval(f, "Pattern")
 	is_string(p)
 	o := json.unmarshal(p)
 	is_object(o)

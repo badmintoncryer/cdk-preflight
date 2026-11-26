@@ -34,6 +34,6 @@ violation contains make_diag_full("pf-glue-schema-definition-format", "ERROR", n
 	json.is_valid(d)
 	parsed := json.unmarshal(d)
 	is_object(parsed)
-	object.get(parsed, "type", "") == "record"
+	_pf_oval(parsed, "type") == "record"
 	object.get(parsed, "name", "__pf_absent") == "__pf_absent"
 }

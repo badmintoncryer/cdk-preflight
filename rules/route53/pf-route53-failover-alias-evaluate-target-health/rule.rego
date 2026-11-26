@@ -12,7 +12,7 @@ violation contains make_diag_full("pf-route53-failover-alias-evaluate-target-hea
 	_pf_r53lib_str(rs, "Failover") == "PRIMARY"
 	a := _pf_r53lib_alias(rs)
 	not _pf_r53lib_has(rs, "HealthCheckId")
-	object.get(a, "EvaluateTargetHealth", false) != true
+	object.get(a, "EvaluateTargetHealth", _pf_default("pf-route53-failover-alias-evaluate-target-health", "AliasTarget.EvaluateTargetHealth")) != true
 }
 
 violation contains make_diag_full("pf-route53-failover-alias-evaluate-target-health", "ERROR", name,
@@ -27,5 +27,5 @@ violation contains make_diag_full("pf-route53-failover-alias-evaluate-target-hea
 	_pf_r53lib_str(rs, "Failover") == "PRIMARY"
 	a := _pf_r53lib_alias(rs)
 	not _pf_r53lib_has(rs, "HealthCheckId")
-	object.get(a, "EvaluateTargetHealth", false) != true
+	object.get(a, "EvaluateTargetHealth", _pf_default("pf-route53-failover-alias-evaluate-target-health", "AliasTarget.EvaluateTargetHealth")) != true
 }

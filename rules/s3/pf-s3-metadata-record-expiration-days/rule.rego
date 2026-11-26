@@ -13,7 +13,7 @@ violation contains make_diag_full("pf-s3-metadata-record-expiration-days", "ERRO
 	some name in resources_of_type("AWS::S3::Bucket")
 	re := resolve(name, "Properties.MetadataConfiguration.JournalTableConfiguration.RecordExpiration")
 	is_object(re)
-	object.get(re, "Expiration", "") == "ENABLED"
+	_pf_oval(re, "Expiration") == "ENABLED"
 	raw := object.get(re, "Days", null)
 	raw != null
 	d := _pf_tonum(raw)

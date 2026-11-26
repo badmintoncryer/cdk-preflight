@@ -16,8 +16,8 @@ violation contains make_diag_full("pf-msk-provisioned-throughput-max-per-instanc
 	props := input.resources[name].properties
 	is_object(props)
 	prov := object.get(props, ["BrokerNodeGroupInfo", "StorageInfo", "EBSStorageInfo", "ProvisionedThroughput"], {})
-	object.get(prov, "Enabled", false) == true
-	itype := object.get(props, ["BrokerNodeGroupInfo", "InstanceType"], "")
+	_pf_oval(prov, "Enabled") == true
+	itype := object.get(props, ["BrokerNodeGroupInfo", "InstanceType"], _pf_default("pf-msk-provisioned-throughput-max-per-instance", "BrokerNodeGroupInfo.InstanceType"))
 	cap := object.get(_pf_mskptmax_caps, itype, null)
 	cap != null
 	v := object.get(prov, "VolumeThroughput", null)

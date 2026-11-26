@@ -9,6 +9,6 @@ violation contains make_diag_full("pf-athena-wg-managed-storage-xor-output-locat
 	"https://docs.aws.amazon.com/athena/latest/APIReference/API_WorkGroupConfiguration.html") if {
 	some name in resources_of_type("AWS::Athena::WorkGroup")
 	cfg := _pf_athlib_wgcfg(name)
-	object.get(_pf_athlib_obj(cfg, "ManagedQueryResultsConfiguration"), "Enabled", false) == true
+	_pf_oval(_pf_athlib_obj(cfg, "ManagedQueryResultsConfiguration"), "Enabled") == true
 	_pf_athlib_has(cfg, "ResultConfiguration")
 }

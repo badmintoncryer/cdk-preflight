@@ -8,7 +8,7 @@ import rego.v1
 # declare resourceTypes ["*"]: the enforce plugin prunes on exact type names too.
 _pf_cfn_custom_resources contains name if {
 	some name, r in input.resources
-	startswith(object.get(r, "resourceType", ""), "Custom::")
+	startswith(object.get(r, "resourceType", "__pf_absent"), "Custom::")
 }
 
 _pf_cfn_custom_resources contains name if {

@@ -9,6 +9,6 @@ violation contains make_diag_full("pf-athena-wg-cse-kms-requires-key", "ERROR", 
 	"https://docs.aws.amazon.com/athena/latest/APIReference/API_EncryptionConfiguration.html") if {
 	some name in resources_of_type("AWS::Athena::WorkGroup")
 	enc := _pf_athlib_obj(_pf_athlib_resultcfg(name), "EncryptionConfiguration")
-	object.get(enc, "EncryptionOption", "") == "CSE_KMS"
+	_pf_oval(enc, "EncryptionOption") == "CSE_KMS"
 	not _pf_athlib_has(enc, "KmsKey")
 }

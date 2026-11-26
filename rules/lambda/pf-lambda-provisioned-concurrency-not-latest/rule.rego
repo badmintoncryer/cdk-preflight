@@ -13,5 +13,5 @@ violation contains make_diag_full("pf-lambda-provisioned-concurrency-not-latest"
 	some name in _pf_lam_alias
 	props := _pf_lam_props(name)
 	_pf_lam_has_key(props, "ProvisionedConcurrencyConfig")
-	object.get(props, "FunctionVersion", "") == "$LATEST"
+	_pf_oval(props, "FunctionVersion") == "$LATEST"
 }

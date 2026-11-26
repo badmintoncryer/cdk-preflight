@@ -9,9 +9,9 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import * as YAML from 'yaml';
-import { boundaryProblem, crossFieldProblem, collectLibs, collectRules, docOnlyProblem, evidenceProblem, EXPECT_REQUIRED_FROM, expectProblem, headerProblem, nameCollisions, renderDocs, renderGenerated, renderSupported, severityProblem, supersededProblem, topLevelNames, uncoveredFindings } from '../scripts/bundle-rules';
+import { boundaryProblem, crossFieldProblem, collectLibs, collectRules, defaultsProblems, DEFAULTS_MODULE, docOnlyProblem, evidenceProblem, EXPECT_REQUIRED_FROM, expectProblem, headerProblem, nameCollisions, readDefaults, renderDocs, renderGenerated, renderSupported, severityProblem, supersededProblem, topLevelNames, uncoveredFindings } from '../scripts/bundle-rules';
 import { confidenceProblems, listRegistryProblems, literalLists, readLists, violationBlocks } from '../scripts/confidence';
-import { baselineProblems, lintRego, lintRules, readBaseline } from '../scripts/lint-rules';
+import { lintProblems, lintRego, lintRules } from '../scripts/lint-rules';
 import { BUNDLED_LIBS, BUNDLED_RULES } from '../src/rules.generated';
 
 const root = path.join(__dirname, '..');
@@ -558,12 +558,12 @@ test('every fixture pair sits on the boundary, or is listed as an exception', ()
 
 /**
  * 「省略を値として読む」書き方を機械で止める（scripts/lint-rules.ts）。to_number の直呼びは
- * 例外なしで禁止、object.get のインライン既定値は rules/_lint-baseline.txt の件数から増やせない。
+ * 例外なしで禁止、object.get のインライン既定値も例外なしで禁止（サービスの既定値は rules/_defaults.yaml に出典付きで書く）。
  */
 describe('rule lint (scripts/lint-rules.ts)', () => {
-  test('the rule pack has no lint problems beyond the baseline', () => {
+  test('the rule pack has no lint problems', () => {
     const rulesDir = path.join(root, 'rules');
-    expect(baselineProblems(lintRules(rulesDir), readBaseline(path.join(rulesDir, '_lint-baseline.txt')))).toEqual([]);
+    expect(lintProblems(lintRules(rulesDir))).toEqual([]);
   });
 
   test('to_number is flagged everywhere but in the value lib, comments aside', () => {
@@ -582,12 +582,10 @@ describe('rule lint (scripts/lint-rules.ts)', () => {
     expect(lintRego('f', 'x := object.get(object.get(o, "A", {}), "B", "x,y")')).toHaveLength(1);
   });
 
-  test('the baseline is a ratchet: more fails, fewer fails until the line is lowered', () => {
-    const f = (n: number) => Array.from({ length: n }, (_, i) => ({ check: 'inline-default' as const, file: 'a.rego', line: i + 1, text: 't' }));
-    const base = new Map([['inline-default a.rego', 2]]);
-    expect(baselineProblems(f(2), base)).toEqual([]);
-    expect(baselineProblems(f(3), base)[0]).toMatch(/baseline allows 2/);
-    expect(baselineProblems(f(1), base)[0]).toMatch(/lower the line/);
+  test('every finding is a problem, and an inline default points at the ledger', () => {
+    const ps = lintProblems([{ check: 'inline-default', file: 'a.rego', line: 3, text: 't' }]);
+    expect(ps).toHaveLength(1);
+    expect(ps[0]).toMatch(/a\.rego:3: .*rules\/_defaults\.yaml.*_pf_default/);
   });
 });
 
@@ -633,5 +631,33 @@ describe('severity follows the evidence (scripts/confidence.ts)', () => {
     expect(confidenceProblems({ id: 'pf-x' }, [{ ...blocks[0], severity: 'WARN' }, blocks[1]])).toEqual([]);
     expect(confidenceProblems({ id: 'pf-x', assumes: ['outside-template'] }, [blocks[1]])).toEqual([expect.stringMatching(/outside the template/)]);
     expect(confidenceProblems({ id: 'pf-x', assumes: ['typo'] }, [])).toEqual([expect.stringMatching(/unknown meta.assumes/)]);
+  });
+});
+
+/**
+ * 省略時の値の台帳（rules/_defaults.yaml）。ルールが「省略はこの値」と読んでよいのは、出典付きで
+ * 宣言したものだけ。宣言の無い _pf_default は bundle-rules が拒否し、読まれない宣言も残さない。
+ */
+describe('declared defaults (rules/_defaults.yaml)', () => {
+  test('every _pf_default call is declared by its own module and every declaration is read', () => {
+    const defaults = readDefaults(root);
+    expect(defaults.length).toBeGreaterThan(0);
+    const libs = collectLibs(root);
+    expect(libs.map((l) => l.name)).toContain(DEFAULTS_MODULE);
+    expect(defaultsProblems(defaults, [
+      ...collectRules(root).map((r) => ({ owner: r.id, rego: r.rego })),
+      ...libs.filter((l) => l.name !== DEFAULTS_MODULE).map((l) => ({ owner: l.name, rego: l.rego })),
+    ])).toEqual([]);
+    for (const d of defaults) expect(['deploy', 'docs', 'test']).toContain(d.basis);
+    for (const d of defaults.filter((x) => x.basis === 'docs')) expect(d.source).toMatch(/^https:\/\/docs\.aws\.amazon\.com\//);
+  });
+
+  test('defaultsProblems catches an undeclared call, a foreign owner and an unread declaration', () => {
+    const decl = [{ owner: 'pf-a', key: 'K', value: 1, basis: 'docs', source: 'https://docs.aws.amazon.com/x' }];
+    expect(defaultsProblems(decl, [{ owner: 'pf-a', rego: 'x := object.get(o, "K", _pf_default("pf-a", "K"))' }])).toEqual([]);
+    expect(defaultsProblems(decl, [{ owner: 'pf-a', rego: 'x := _pf_default("pf-a", "J")' }]))
+      .toEqual([expect.stringMatching(/not declared/), expect.stringMatching(/pf-a.K is not read/)]);
+    expect(defaultsProblems(decl, [{ owner: 'pf-b', rego: 'x := _pf_default("pf-a", "K")' }]))
+      .toEqual([expect.stringMatching(/declare its own under pf-b/)]);
   });
 });

@@ -7,7 +7,7 @@ _pf_asgttrd_url := "https://docs.aws.amazon.com/autoscaling/ec2/APIReference/API
 _pf_asgttrd_returning(name) := count([1 |
 	some q in _pf_aslib_arr(name, ["TargetTrackingConfiguration", "CustomizedMetricSpecification", "Metrics"])
 	is_object(q)
-	object.get(q, "ReturnData", true) == true
+	_pf_oval(q, "ReturnData") == true
 ])
 
 violation contains make_diag_full("pf-asg-tt-mq-exactly-one-returndata", "ERROR", name,

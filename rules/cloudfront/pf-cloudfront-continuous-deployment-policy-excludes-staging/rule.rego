@@ -11,6 +11,6 @@ violation contains make_diag_full("pf-cloudfront-continuous-deployment-policy-ex
 	_pf_cf_continuous_deployment_policy_excludes_staging_fix, _pf_cf_continuous_deployment_policy_excludes_staging_url) if {
 	some name in resources_of_type("AWS::CloudFront::Distribution")
 	cfg := _pf_cflib_config(name)
-	object.get(cfg, "Staging", false) == true
+	_pf_oval(cfg, "Staging") == true
 	object.get(cfg, "ContinuousDeploymentPolicyId", "__pf_absent") != "__pf_absent"
 }

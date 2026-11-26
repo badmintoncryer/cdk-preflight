@@ -18,7 +18,7 @@ violation contains make_diag_full("pf-ecs-volume-not-referenced", "ERROR", name,
 	"https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task_definition_parameters.html") if {
 	some name in resources_of_type("AWS::ECS::TaskDefinition")
 	some v in flatten_list(name, "Properties.Volumes")
-	object.get(v.value, "ConfiguredAtLaunch", false) == true
+	_pf_oval(v.value, "ConfiguredAtLaunch") == true
 	vn := object.get(v.value, "Name", null)
 	_pf_ecs_lit(vn)
 	not vn in _pf_ecs_mounted(name)

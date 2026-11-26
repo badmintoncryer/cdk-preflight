@@ -9,7 +9,7 @@ import rego.v1
 _pf_schfnm_mode(td) := m if {
 	props := input.resources[td].properties
 	is_object(props)
-	m := object.get(props, "NetworkMode", "bridge")
+	m := object.get(props, "NetworkMode", _pf_default("pf-scheduler-target-ecs-fargate-network-mode", "NetworkMode"))
 	is_string(m)
 }
 

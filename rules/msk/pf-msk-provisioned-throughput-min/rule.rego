@@ -14,7 +14,7 @@ violation contains make_diag_full("pf-msk-provisioned-throughput-min", "ERROR", 
 	props := input.resources[name].properties
 	is_object(props)
 	prov := object.get(props, ["BrokerNodeGroupInfo", "StorageInfo", "EBSStorageInfo", "ProvisionedThroughput"], {})
-	object.get(prov, "Enabled", false) == true
+	_pf_oval(prov, "Enabled") == true
 	v := object.get(prov, "VolumeThroughput", null)
 	v != null
 	t := _pf_tonum(v)

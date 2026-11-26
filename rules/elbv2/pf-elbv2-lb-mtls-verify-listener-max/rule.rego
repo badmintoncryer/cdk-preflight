@@ -16,7 +16,7 @@ violation contains make_diag_full("pf-elbv2-lb-mtls-verify-listener-max", "ERROR
 		_pf_elb_lb_of(l) == lb
 		ma := _pf_elb_oget(_pf_elb_props(l), "MutualAuthentication")
 		is_object(ma)
-		object.get(ma, "Mode", "off") == "verify"
+		_pf_oval(ma, "Mode") == "verify"
 	])
 	n > 2
 }

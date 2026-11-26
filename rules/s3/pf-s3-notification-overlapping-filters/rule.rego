@@ -32,13 +32,13 @@ _pf_s3no_rules(c) := [] if {
 }
 
 _pf_s3no_filter_val(c, kind) := v if {
-	vs := [x | some r in _pf_s3no_rules(c); is_object(r); lower(object.get(r, "Name", "")) == kind; x := object.get(r, "Value", null)]
+	vs := [x | some r in _pf_s3no_rules(c); is_object(r); lower(_pf_oval(r, "Name")) == kind; x := object.get(r, "Value", null)]
 	count(vs) > 0
 	v := vs[0]
 }
 
 _pf_s3no_filter_val(c, kind) := "" if {
-	vs := [x | some r in _pf_s3no_rules(c); is_object(r); lower(object.get(r, "Name", "")) == kind; x := object.get(r, "Value", null)]
+	vs := [x | some r in _pf_s3no_rules(c); is_object(r); lower(_pf_oval(r, "Name")) == kind; x := object.get(r, "Value", null)]
 	count(vs) == 0
 }
 

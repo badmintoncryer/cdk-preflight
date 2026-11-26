@@ -15,7 +15,7 @@ violation contains make_diag_full("pf-kinesisanalytics-encryption-key-type", "ER
 	_pf_kinenc_url) if {
 	some name in resources_of_type("AWS::KinesisAnalyticsV2::Application")
 	enc := _pf_kinenc_cfg(name)
-	object.get(enc, "KeyType", "") == "AWS_OWNED_KEY"
+	_pf_oval(enc, "KeyType") == "AWS_OWNED_KEY"
 	_pf_kinlib_has(enc, "KeyId")
 }
 
@@ -26,6 +26,6 @@ violation contains make_diag_full("pf-kinesisanalytics-encryption-key-type", "ER
 	_pf_kinenc_url) if {
 	some name in resources_of_type("AWS::KinesisAnalyticsV2::Application")
 	enc := _pf_kinenc_cfg(name)
-	object.get(enc, "KeyType", "") == "CUSTOMER_MANAGED_KEY"
+	_pf_oval(enc, "KeyType") == "CUSTOMER_MANAGED_KEY"
 	not _pf_kinlib_has(enc, "KeyId")
 }

@@ -12,6 +12,6 @@ violation contains make_diag_full("pf-elbv2-listener-mtls-https-only", "ERROR", 
 	_pf_elblmh_fix, _pf_elblmh_url) if {	some name in _pf_elb_listeners
 	ma := resolve(name, "Properties.MutualAuthentication")
 	is_object(ma)
-	proto := object.get(_pf_elb_props(name), "Protocol", "GENEVE")
+	proto := object.get(_pf_elb_props(name), "Protocol", _pf_default("pf-elbv2-listener-mtls-https-only", "Protocol"))
 	proto != "HTTPS"
 }

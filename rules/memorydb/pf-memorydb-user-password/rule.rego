@@ -36,6 +36,6 @@ violation contains make_diag_full("pf-memorydb-user-password", "ERROR", name,
 	_pf_mdbup_fix, _pf_mdbup_url) if {
 	some name in resources_of_type("AWS::MemoryDB::User")
 	mode := _pf_mdbup_mode(name)
-	lower(object.get(mode, "Type", "")) == "password"
+	lower(_pf_oval(mode, "Type")) == "password"
 	count(object.get(mode, "Passwords", [])) == 0
 }

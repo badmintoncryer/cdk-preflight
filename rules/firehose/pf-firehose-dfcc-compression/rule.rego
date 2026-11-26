@@ -10,7 +10,7 @@ violation contains make_diag_full("pf-firehose-dfcc-compression", "ERROR", name,
 	some [name, path, c] in _pf_fhlib_dests
 	dfcc := object.get(c, "DataFormatConversionConfiguration", null)
 	is_object(dfcc)
-	coerce_to_bool(object.get(dfcc, "Enabled", false)) == true
+	coerce_to_bool(_pf_oval(dfcc, "Enabled")) == true
 	f := object.get(c, "CompressionFormat", null)
 	_pf_fhlib_lit(f)
 	f != "UNCOMPRESSED"

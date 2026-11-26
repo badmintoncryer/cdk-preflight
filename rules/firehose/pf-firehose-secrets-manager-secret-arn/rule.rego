@@ -10,6 +10,6 @@ violation contains make_diag_full("pf-firehose-secrets-manager-secret-arn", "ERR
 	some [name, path, c] in _pf_fhlib_dests
 	s := object.get(c, "SecretsManagerConfiguration", null)
 	is_object(s)
-	coerce_to_bool(object.get(s, "Enabled", false)) == true
+	coerce_to_bool(_pf_oval(s, "Enabled")) == true
 	object.get(s, "SecretARN", "__pf_absent") == "__pf_absent"
 }

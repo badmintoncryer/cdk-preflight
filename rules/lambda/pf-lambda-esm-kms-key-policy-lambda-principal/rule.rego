@@ -9,7 +9,7 @@ _pf_lekkp_url := "https://docs.aws.amazon.com/lambda/latest/dg/invocation-eventf
 _pf_lekkp_allows(k) if {
 	some st in _pf_lam_list(object.get(_pf_lam_obj(_pf_lam_props(k), "KeyPolicy"), "Statement", []))
 	is_object(st)
-	object.get(st, "Effect", "") == "Allow"
+	_pf_oval(st, "Effect") == "Allow"
 	some p in _pf_lam_list(object.get(_pf_lam_obj(st, "Principal"), "Service", []))
 	p == "lambda.amazonaws.com"
 }

@@ -7,7 +7,7 @@ import rego.v1
 _pf_gluemlfm_params(name) := p if {
 	p := _pf_gluelib_get(name, "TransformParameters")
 	is_object(p)
-	object.get(p, "TransformType", "") == "FIND_MATCHES"
+	_pf_oval(p, "TransformType") == "FIND_MATCHES"
 }
 
 violation contains make_diag_full("pf-glue-ml-transform-find-matches-parameters", "ERROR", name,

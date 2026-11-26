@@ -16,21 +16,21 @@ _pf_smgss_gen(name) := g if {
 	is_object(g)
 }
 
-_pf_smgss_flag(g, k) if object.get(g, k, false) in {true, "true"}
+_pf_smgss_flag(g, k) if _pf_oval(g, k) in {true, "true"}
 
 _pf_smgss_types := ["ExcludeLowercase", "ExcludeUppercase", "ExcludeNumbers", "ExcludePunctuation"]
 
 _pf_smgss_included(g) := 4 - count({k | some k in _pf_smgss_types; _pf_smgss_flag(g, k)})
 
-_pf_smgss_require(g) if object.get(g, "RequireEachIncludedType", true) in {true, "true"}
+_pf_smgss_require(g) if object.get(g, "RequireEachIncludedType", _pf_default("pf-secretsmanager-generate-secret-string", "RequireEachIncludedType")) in {true, "true"}
 
 _pf_smgss_len(g) := n if {
-	n := object.get(g, "PasswordLength", 32)
+	n := object.get(g, "PasswordLength", _pf_default("pf-secretsmanager-generate-secret-string", "PasswordLength"))
 	is_number(n)
 }
 
 _pf_smgss_len(g) := _pf_tonum(v) if {
-	v := object.get(g, "PasswordLength", 32)
+	v := object.get(g, "PasswordLength", _pf_default("pf-secretsmanager-generate-secret-string", "PasswordLength"))
 	is_string(v)
 	regex.match("^[0-9]+$", v)
 }

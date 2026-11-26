@@ -26,7 +26,7 @@ _pf_ec2iaa_img(name) := d if {
 	is_object(props)
 	raw := object.get(props, "ImageId", "__pf_absent")
 	is_object(raw)
-	d := object.get(raw, "__dynamic", "")
+	d := _pf_oval(raw, "__dynamic")
 	is_string(d)
 	contains(d, "{{resolve:ssm:")
 }

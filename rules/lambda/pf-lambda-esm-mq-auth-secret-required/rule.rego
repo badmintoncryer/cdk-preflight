@@ -9,7 +9,7 @@ _pf_lemas_url := "https://docs.aws.amazon.com/lambda/latest/dg/with-mq.html"
 _pf_lemas_basic(name) if {
 	some c in _pf_lam_list(_pf_lam_get(name, "SourceAccessConfigurations"))
 	is_object(c)
-	object.get(c, "Type", "") == "BASIC_AUTH"
+	_pf_oval(c, "Type") == "BASIC_AUTH"
 }
 
 violation contains make_diag_full("pf-lambda-esm-mq-auth-secret-required", "ERROR", name,

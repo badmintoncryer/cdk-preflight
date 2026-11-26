@@ -16,7 +16,7 @@ violation contains make_diag_full("pf-elbv2-action-forward-same-ip-type", "ERROR
 	vals := {v |
 		some tg in tgs
 		g := _pf_elb_tuple_tg(tg)
-		v := object.get(_pf_elb_props(g), "IpAddressType", "ipv4")
+		v := object.get(_pf_elb_props(g), "IpAddressType", _pf_default("pf-elbv2-action-forward-same-ip-type", "IpAddressType"))
 	}
 	count(vals) > 1
 	seen := concat(", ", sort(vals))

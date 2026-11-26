@@ -6,8 +6,8 @@ import rego.v1
 _pf_cfnsscallas_bad contains name if {
 	some name in resources_of_type("AWS::CloudFormation::StackSet")
 	props := object.get(input.resources[name], "properties", {})
-	object.get(props, "CallAs", "SELF") == "DELEGATED_ADMIN"
-	object.get(props, "PermissionModel", "SELF_MANAGED") != "SERVICE_MANAGED"
+	_pf_oval(props, "CallAs") == "DELEGATED_ADMIN"
+	_pf_oval(props, "PermissionModel") != "SERVICE_MANAGED"
 }
 
 violation contains make_diag_full("pf-cfn-stackset-callas-delegated-servicemanaged-only", "ERROR", name,

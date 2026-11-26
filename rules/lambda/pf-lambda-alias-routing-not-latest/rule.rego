@@ -12,6 +12,6 @@ violation contains make_diag_full("pf-lambda-alias-routing-not-latest", "ERROR",
 	_pf_ladrl_fix, _pf_ladrl_url) if {
 	some name in _pf_lam_alias
 	props := _pf_lam_props(name)
-	object.get(props, "FunctionVersion", "") == "$LATEST"
+	_pf_oval(props, "FunctionVersion") == "$LATEST"
 	_pf_lam_has_key(props, "RoutingConfig")
 }

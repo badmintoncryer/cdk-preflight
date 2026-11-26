@@ -12,7 +12,7 @@ violation contains make_diag_full("pf-config-aggregator-account-source-regions-e
 	some name in resources_of_type("AWS::Config::ConfigurationAggregator")
 	_pf_static_list(name, "Properties.AccountAggregationSources")
 	some s in flatten_list(name, "Properties.AccountAggregationSources")
-	object.get(s.value, "AllAwsRegions", false) == true
+	_pf_oval(s.value, "AllAwsRegions") == true
 	regions := _pf_cfglib_list(s.value, "AwsRegions")
 	count(regions) > 0
 }

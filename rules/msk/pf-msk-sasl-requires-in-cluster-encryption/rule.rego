@@ -15,11 +15,11 @@ violation contains make_diag_full("pf-msk-sasl-requires-in-cluster-encryption", 
 	props := input.resources[name].properties
 	is_object(props)
 	_pf_msksrice_authenticated(props)
-	object.get(props, ["EncryptionInfo", "EncryptionInTransit", "InCluster"], true) == false
+	object.get(props, ["EncryptionInfo", "EncryptionInTransit", "InCluster"], _pf_default("pf-msk-sasl-requires-in-cluster-encryption", "EncryptionInTransit.InCluster")) == false
 }
 
-_pf_msksrice_authenticated(props) if object.get(props, ["ClientAuthentication", "Sasl", "Iam", "Enabled"], false) == true
+_pf_msksrice_authenticated(props) if object.get(props, ["ClientAuthentication", "Sasl", "Iam", "Enabled"], _pf_default("pf-msk-sasl-requires-in-cluster-encryption", "ClientAuthentication.Sasl.Iam.Enabled")) == true
 
-_pf_msksrice_authenticated(props) if object.get(props, ["ClientAuthentication", "Sasl", "Scram", "Enabled"], false) == true
+_pf_msksrice_authenticated(props) if _pf_oval(props, ["ClientAuthentication", "Sasl", "Scram", "Enabled"]) == true
 
-_pf_msksrice_authenticated(props) if object.get(props, ["ClientAuthentication", "Tls", "Enabled"], false) == true
+_pf_msksrice_authenticated(props) if _pf_oval(props, ["ClientAuthentication", "Tls", "Enabled"]) == true

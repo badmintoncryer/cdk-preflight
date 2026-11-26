@@ -8,7 +8,7 @@ import rego.v1
 _pf_cfnssad_bad contains name if {
 	some name in resources_of_type("AWS::CloudFormation::StackSet")
 	props := object.get(input.resources[name], "properties", {})
-	object.get(props, "PermissionModel", "SELF_MANAGED") == "SELF_MANAGED"
+	_pf_oval(props, "PermissionModel") == "SELF_MANAGED"
 	is_object(object.get(props, "AutoDeployment", null))
 }
 

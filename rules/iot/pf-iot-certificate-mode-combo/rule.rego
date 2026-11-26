@@ -13,7 +13,7 @@ violation contains make_diag_full("pf-iot-certificate-mode-combo", "ERROR", name
 	"Register the certificate with one of the three accepted property sets",
 	"https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-iot-certificate.html") if {
 	some name in resources_of_type("AWS::IoT::Certificate")
-	mode := object.get(_pf_iotlib_props(name), "CertificateMode", "DEFAULT")
+	mode := object.get(_pf_iotlib_props(name), "CertificateMode", _pf_default("pf-iot-certificate-mode-combo", "CertificateMode"))
 	mode in {"DEFAULT", "SNI_ONLY"}
 	shape := {k |
 		some k in ["CertificatePem", "CACertificatePem", "CertificateSigningRequest"]

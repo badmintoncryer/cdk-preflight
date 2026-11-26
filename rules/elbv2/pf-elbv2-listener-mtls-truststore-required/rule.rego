@@ -12,6 +12,6 @@ violation contains make_diag_full("pf-elbv2-listener-mtls-truststore-required", 
 	_pf_elblmt_fix, _pf_elblmt_url) if {	some name in _pf_elb_listeners
 	ma := resolve(name, "Properties.MutualAuthentication")
 	is_object(ma)
-	object.get(ma, "Mode", "off") == "verify"
+	_pf_oval(ma, "Mode") == "verify"
 	not _pf_elb_ohas(ma, "TrustStoreArn")
 }

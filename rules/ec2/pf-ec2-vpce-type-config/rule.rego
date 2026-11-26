@@ -7,7 +7,7 @@ _pf_ec2vtc_url := "https://docs.aws.amazon.com/AWSCloudFormation/latest/Template
 _pf_ec2vtc_type(name) := t if {
 	props := input.resources[name].properties
 	is_object(props)
-	t := object.get(props, "VpcEndpointType", "Gateway")
+	t := _pf_oval(props, "VpcEndpointType")
 }
 
 _pf_ec2vtc_has(name, key) if {

@@ -13,7 +13,7 @@ violation contains make_diag_full("pf-kinesisanalytics-monitoring-configuration-
 	"https://docs.aws.amazon.com/managed-flink/latest/apiv2/API_MonitoringConfiguration.html") if {
 	some name in resources_of_type("AWS::KinesisAnalyticsV2::Application")
 	cfg := _pf_kinlib_obj(_pf_kinlib_flinkcfg(name), "MonitoringConfiguration")
-	object.get(cfg, "ConfigurationType", "") == "DEFAULT"
+	_pf_oval(cfg, "ConfigurationType") == "DEFAULT"
 	some k in _pf_kinmon_keys
 	_pf_kinlib_has(cfg, k)
 }
