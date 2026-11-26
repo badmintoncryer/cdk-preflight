@@ -1,11 +1,42 @@
 {
   "Resources": {
+    "Vpc": {
+      "Type": "AWS::EC2::VPC",
+      "Properties": {
+        "CidrBlock": "10.0.0.0/16"
+      }
+    },
+    "Igw": {
+      "Type": "AWS::EC2::InternetGateway"
+    },
+    "Att": {
+      "Type": "AWS::EC2::VPCGatewayAttachment",
+      "Properties": {
+        "VpcId": {
+          "Ref": "Vpc"
+        },
+        "InternetGatewayId": {
+          "Ref": "Igw"
+        }
+      }
+    },
+    "Rt": {
+      "Type": "AWS::EC2::RouteTable",
+      "Properties": {
+        "VpcId": {
+          "Ref": "Vpc"
+        }
+      }
+    },
     "X": {
       "Type": "AWS::EC2::Route",
       "Properties": {
-        "RouteTableId": "rtb-11112222",
+        "RouteTableId": {
+          "Ref": "Rt"
+        },
         "DestinationCidrBlock": "0.0.0.0/0"
-      }
+      },
+      "DependsOn": "Att"
     }
   }
 }

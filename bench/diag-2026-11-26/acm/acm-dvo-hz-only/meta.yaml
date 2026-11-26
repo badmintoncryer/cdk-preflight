@@ -1,0 +1,4 @@
+id: acm-dvo-hz-only
+service: acm
+benchRegion: us-east-1
+resourceTypes: [AWS::CertificateManager::Certificate]

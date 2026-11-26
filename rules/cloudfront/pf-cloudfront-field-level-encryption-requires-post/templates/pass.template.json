@@ -10,17 +10,17 @@
               "Id": "o1",
               "DomainName": "example.com",
               "CustomOriginConfig": {
-                "OriginProtocolPolicy": "http-only"
+                "OriginProtocolPolicy": "https-only"
               }
             }
           ],
           "DefaultCacheBehavior": {
             "TargetOriginId": "o1",
-            "ViewerProtocolPolicy": "allow-all",
+            "ViewerProtocolPolicy": "redirect-to-https",
             "ForwardedValues": {
               "QueryString": false
             },
-            "FieldLevelEncryptionId": "E1EXAMPLE",
+            "FieldLevelEncryptionId": "{{resolve:ssm:/cdkpf/fixtures/cloudfront/fle-config-id}}",
             "AllowedMethods": [
               "GET",
               "HEAD",

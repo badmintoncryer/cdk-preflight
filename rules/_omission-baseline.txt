@@ -19,12 +19,10 @@ pf-eks-cluster-automode-all-three AWS::EKS::Cluster.KubernetesNetworkConfig
 pf-eks-cluster-automode-all-three AWS::EKS::Cluster.StorageConfig.BlockStorage.Enabled
 pf-eks-nodegroup-custom-ami-type-needs-lt AWS::EKS::Nodegroup.LaunchTemplate
 pf-elbv2-tcp-health-check-path AWS::ElasticLoadBalancingV2::TargetGroup.HealthCheckProtocol
-pf-eventschemas-registry-policy AWS::EventSchemas::RegistryPolicy.Policy.Version
 pf-firehose-dfcc-required-configs AWS::KinesisFirehose::DeliveryStream.ExtendedS3DestinationConfiguration.DataFormatConversionConfiguration.InputFormatConfiguration
 pf-firehose-dfcc-required-configs AWS::KinesisFirehose::DeliveryStream.ExtendedS3DestinationConfiguration.DataFormatConversionConfiguration.OutputFormatConfiguration
 pf-lambda-code-s3-pair AWS::Lambda::Function.Code.S3Bucket
 pf-lambda-code-s3-pair AWS::Lambda::Function.Code.S3Key
-pf-lambda-efs-requires-vpc AWS::Lambda::Function.VpcConfig
 pf-lambda-scaling-min-max-pair AWS::Lambda::Function.FunctionScalingConfig.MaxExecutionEnvironments
 pf-lambda-scaling-min-max-pair AWS::Lambda::Function.FunctionScalingConfig.MinExecutionEnvironments
 pf-networkfirewall-policy-rule-order-match AWS::NetworkFirewall::FirewallPolicy.FirewallPolicy.StatefulEngineOptions
@@ -45,6 +43,3 @@ pf-route53resolver-firewallrule-override-requires-all-three AWS::Route53Resolver
 pf-route53resolver-firewallrule-override-requires-all-three AWS::Route53Resolver::FirewallRuleGroup.FirewallRules.*.BlockOverrideTtl
 pf-s3express-lifecycle-rule-no-action AWS::S3Express::DirectoryBucket.LifecycleConfiguration.Rules.*.ExpirationInDays
 pf-sfn-logging-destination AWS::StepFunctions::StateMachine.LoggingConfiguration.Destinations.*.CloudWatchLogsLogGroup
-pf-ssm-parameter-tier AWS::SSM::Parameter.Tier
-pf-xray-group-notifications-require-insights AWS::XRay::Group.InsightsConfiguration.InsightsEnabled
-pf-xray-samplingrule-name-or-arn-required AWS::XRay::SamplingRule.SamplingRule.RuleName

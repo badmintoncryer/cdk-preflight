@@ -1,0 +1,22 @@
+{
+    "Resources": {
+        "C": {
+            "Type": "AWS::CertificateManager::Certificate",
+            "Properties": {
+                "DomainName": "cdkpf-dvo-diag.appnao.com",
+                "ValidationMethod": "DNS",
+                "DomainValidationOptions": [
+                    {
+                        "DomainName": "cdkpf-dvo-diag.appnao.com",
+                        "HostedZoneId": "__APPNAO_ZONE__"
+                    },
+                    {
+                        "DomainName": "other-dvo-diag.appnao.com",
+                        "ValidationDomain": "appnao.com",
+                        "HostedZoneId": "__APPNAO_ZONE__"
+                    }
+                ]
+            }
+        }
+    }
+}

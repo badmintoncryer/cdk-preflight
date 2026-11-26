@@ -1,5 +1,46 @@
 {
   "Resources": {
+    "Vpc": {
+      "Type": "AWS::EC2::VPC",
+      "Properties": {
+        "CidrBlock": "10.0.0.0/16"
+      }
+    },
+    "SubnetA": {
+      "Type": "AWS::EC2::Subnet",
+      "Properties": {
+        "VpcId": {
+          "Ref": "Vpc"
+        },
+        "CidrBlock": "10.0.0.0/24",
+        "AvailabilityZone": {
+          "Fn::Select": [
+            0,
+            {
+              "Fn::GetAZs": ""
+            }
+          ]
+        }
+      }
+    },
+    "Ep": {
+      "Type": "AWS::EC2::VPCEndpoint",
+      "Properties": {
+        "VpcId": {
+          "Ref": "Vpc"
+        },
+        "VpcEndpointType": "Interface",
+        "ServiceName": {
+          "Fn::Sub": "com.amazonaws.${AWS::Region}.execute-api"
+        },
+        "SubnetIds": [
+          {
+            "Ref": "SubnetA"
+          }
+        ],
+        "PrivateDnsEnabled": false
+      }
+    },
     "Api": {
       "Type": "AWS::ApiGateway::RestApi",
       "Properties": {
@@ -9,7 +50,9 @@
             "REGIONAL"
           ],
           "VpcEndpointIds": [
-            "vpce-0123456789abcdef0"
+            {
+              "Ref": "Ep"
+            }
           ]
         }
       }

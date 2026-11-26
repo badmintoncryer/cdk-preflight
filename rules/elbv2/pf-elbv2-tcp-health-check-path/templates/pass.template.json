@@ -1,11 +1,19 @@
 {
   "Resources": {
+    "Vpc": {
+      "Type": "AWS::EC2::VPC",
+      "Properties": {
+        "CidrBlock": "10.0.0.0/16"
+      }
+    },
     "T": {
       "Type": "AWS::ElasticLoadBalancingV2::TargetGroup",
       "Properties": {
         "Protocol": "TCP",
         "Port": 80,
-        "VpcId": "vpc-11112222",
+        "VpcId": {
+          "Ref": "Vpc"
+        },
         "TargetType": "instance",
         "HealthCheckProtocol": "HTTP",
         "HealthCheckPath": "/health"

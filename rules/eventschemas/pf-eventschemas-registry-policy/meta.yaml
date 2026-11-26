@@ -8,5 +8,7 @@ upstream: none
 benchRegion: us-east-1
 repro:
   method: real-deploy
-  evidence: "bench 2026-09-07 us-east-1: a registry policy with only Statement -> ROLLBACK_COMPLETE, but the CloudFormation handler reports only \"Error occurred during operation 'CreateRegistryPolicy'.\" and does not name the constraint. The constraint itself was named by calling schemas:PutResourcePolicy directly the same day: \"Provided registry policy is invalid: Missing required field Version.\" Adding \"Version\": \"2012-10-17\" makes the same policy deploy through CloudFormation."
+  evidence: "bench 2026-09-07 us-east-1: a registry policy with only Statement -> ROLLBACK_COMPLETE, but the CloudFormation handler reports only \"Error occurred during operation 'CreateRegistryPolicy'.\" and does not name the constraint. The constraint itself was named by calling schemas:PutResourcePolicy directly the same day: \"Provided registry policy is invalid: Missing required field Version.\" Adding \"Version\": \"2012-10-17\" makes the same policy deploy through CloudFormation.; omission bench 2026-11-26 us-east-1: pass template without AWS::EventSchemas::RegistryPolicy.Policy.Version (the same shape as the fail template) -> ROLLBACK_COMPLETE with \"Error occurred during operation 'CreateRegistryPolicy'.\", the handler's masked form of the \"Missing required field Version\" named above; with Version the same policy deploys"
 addedOn: 2026-09-07
+omissionFails:
+  - "AWS::EventSchemas::RegistryPolicy.Policy.Version"
