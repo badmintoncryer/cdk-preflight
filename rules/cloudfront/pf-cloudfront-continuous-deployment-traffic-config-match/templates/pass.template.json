@@ -1,12 +1,40 @@
 {
   "Resources": {
+    "Stg": {
+      "Type": "AWS::CloudFront::Distribution",
+      "Properties": {
+        "DistributionConfig": {
+          "Enabled": true,
+          "Staging": true,
+          "Origins": [
+            {
+              "Id": "o1",
+              "DomainName": "example.com",
+              "CustomOriginConfig": {
+                "OriginProtocolPolicy": "https-only"
+              }
+            }
+          ],
+          "DefaultCacheBehavior": {
+            "TargetOriginId": "o1",
+            "ViewerProtocolPolicy": "redirect-to-https",
+            "CachePolicyId": "658327ea-f89d-4fab-a63d-7e88639e58f6"
+          }
+        }
+      }
+    },
     "R": {
       "Type": "AWS::CloudFront::ContinuousDeploymentPolicy",
       "Properties": {
         "ContinuousDeploymentPolicyConfig": {
           "Enabled": true,
           "StagingDistributionDnsNames": [
-            "a.cloudfront.net"
+            {
+              "Fn::GetAtt": [
+                "Stg",
+                "DomainName"
+              ]
+            }
           ],
           "TrafficConfig": {
             "Type": "SingleWeight",

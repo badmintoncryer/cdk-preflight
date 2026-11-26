@@ -8,5 +8,7 @@ constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateR
 upstream: none
 repro:
   method: real-deploy
-  evidence: "bench 2026-09-10 us-east-1: fail template -> Invalid request provided: CreateFirewallRuleRequest(CreatorRequestId=rslvr-frg-9b2972340f274a4a:rslvr-fdl-e9e3c282b8994cae, FirewallRuleGroupId=rslvr-frg-9b2972340f274a4a, FirewallDomainListId=rslvr-fdl-e9e3c282b8994cae, Priority=101, Action=BLOCK, Name=rule-for-rslvr-fdl-e9e3c282b8994cae) (ROLLBACK_COMPLETE)"
+  evidence: "bench 2026-09-10 us-east-1: fail template -> Invalid request provided: CreateFirewallRuleRequest(CreatorRequestId=rslvr-frg-9b2972340f274a4a:rslvr-fdl-e9e3c282b8994cae, FirewallRuleGroupId=rslvr-frg-9b2972340f274a4a, FirewallDomainListId=rslvr-fdl-e9e3c282b8994cae, Priority=101, Action=BLOCK, Name=rule-for-rslvr-fdl-e9e3c282b8994cae) (ROLLBACK_COMPLETE); bench 2026-11-26 us-east-1: fail -> the same InvalidRequest echo (ROLLBACK_COMPLETE); pass -> CREATE_COMPLETE. api 2026-11-26 us-east-1 CreateFirewallRule with Action BLOCK and no BlockResponse -> ValidationException \"[RSLVR-02016] Your block option BLOCK RESPONSE is not valid.\"; omission bench 2026-11-26 us-east-1: pass template without AWS::Route53Resolver::FirewallRuleGroup.FirewallRules.*.BlockResponse -> ROLLBACK_COMPLETE with \"Invalid request provided: CreateFirewallRuleRequest(... Action=BLOCK ...)\"; the handler echoes the request without BlockResponse, and CreateFirewallRule names it (\"[RSLVR-02016] Your block option BLOCK RESPONSE is not valid.\", api above)"
 addedOn: 2026-09-10
+omissionFails:
+  - "AWS::Route53Resolver::FirewallRuleGroup.FirewallRules.*.BlockResponse"

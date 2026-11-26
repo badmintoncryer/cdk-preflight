@@ -5,7 +5,7 @@
 import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
-import { App, CfnCondition, CfnParameter, Fn, Stack, Stage, Validations, aws_ec2 as ec2, aws_eks as eks, aws_iam as iam, aws_kinesis as kinesis, aws_lambda as lambda, aws_logs as logs, aws_sns as sns, aws_sqs as sqs } from 'aws-cdk-lib';
+import { App, CfnCondition, CfnParameter, Fn, Stack, Stage, Validations, aws_apigateway as apigateway, aws_ec2 as ec2, aws_eks as eks, aws_iam as iam, aws_kinesis as kinesis, aws_logs as logs, aws_sns as sns, aws_sqs as sqs } from 'aws-cdk-lib';
 import { Preflight } from '../src';
 import {
   ENGINE_ERROR_RULE,
@@ -75,20 +75,11 @@ function addSupersededViolation(stack: Stack): void {
 }
 
 /**
- * doc-only ルール（pf-lambda-scaling-min-zero-requires-max-zero）に違反する関数。
- * FunctionScalingConfig は L2 を通らないので addPropertyOverride で入れる。
+ * WARN のルール（pf-apigw-resource-path-part）に違反するリソース。
  */
-function addDocOnlyViolation(stack: Stack): void {
-  const fn = new lambda.CfnFunction(stack, 'F', {
-    role: 'arn:aws:iam::123456789012:role/lambda-role',
-    code: { zipFile: 'def handler(e, c):\n    return 0\n' },
-    runtime: 'python3.13',
-    handler: 'index.handler',
-  });
-  fn.addPropertyOverride('FunctionScalingConfig', {
-    MinExecutionEnvironments: 0,
-    MaxExecutionEnvironments: 5,
-  });
+function addWarnViolation(stack: Stack): void {
+  const api = new apigateway.CfnRestApi(stack, 'Api', { name: 'p' });
+  new apigateway.CfnResource(stack, 'R', { restApiId: api.ref, parentId: api.attrRootResourceId, pathPart: 'bad path!' });
 }
 
 /** 組み込みエンジンだけが検出する違反（enum 外の RetentionInDays → W3030） */
@@ -262,12 +253,12 @@ describe('enforce mode (default)', () => {
     expect(() => app.synth()).not.toThrow();
   });
 
-  test('a doc-only rule is reported as a warning and does not fail synthesis', () => {
+  test('a WARN rule is reported as a warning and does not fail synthesis', () => {
     const app = makeApp();
     Preflight.apply(app);
-    addDocOnlyViolation(new Stack(app, 'S'));
+    addWarnViolation(new Stack(app, 'S'));
     expect(() => app.synth()).not.toThrow();
-    const v = readReport(app).filter((x) => x.ruleName === 'pf-lambda-scaling-min-zero-requires-max-zero');
+    const v = readReport(app).filter((x) => x.ruleName === 'pf-apigw-resource-path-part');
     expect(v).toHaveLength(1);
     expect(v[0].severity).toBe('warning');
   });
@@ -276,7 +267,7 @@ describe('enforce mode (default)', () => {
     const app = makeApp();
     Preflight.apply(app);
     const stack = new Stack(app, 'S');
-    addDocOnlyViolation(stack);
+    addWarnViolation(stack);
     addBadSecurityGroup(stack);
     expect(() => app.synth()).toThrow(/cdk-preflight/);
   });

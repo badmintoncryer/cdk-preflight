@@ -7,5 +7,7 @@ constraintSource: https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_Cre
 upstream: none
 repro:
   method: real-deploy
-  evidence: "bench 2026-09-03 ap-northeast-1: io1 without Iops (e04) -> \"The parameter iops must be specified for io1 volumes.\"; io2 without Iops (e04b) -> same for io2. Both ROLLBACK_COMPLETE."
+  evidence: "bench 2026-09-03 ap-northeast-1: io1 without Iops (e04) -> \"The parameter iops must be specified for io1 volumes.\"; io2 without Iops (e04b) -> same for io2. Both ROLLBACK_COMPLETE.; bench 2026-11-26 ap-northeast-1, fixtures now taking the region's first AZ instead of a literal us-east-1a: fail -> \"The parameter iops must be specified for io1 volumes.\" (ROLLBACK_COMPLETE); pass -> CREATE_COMPLETE; omission bench 2026-11-26 ap-northeast-1: pass template without AWS::EC2::Volume.Iops -> ROLLBACK_COMPLETE with \"The parameter iops must be specified for io1 volumes.\""
 addedOn: 2026-09-03
+omissionFails:
+  - "AWS::EC2::Volume.Iops"

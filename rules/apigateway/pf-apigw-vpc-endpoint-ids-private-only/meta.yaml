@@ -8,6 +8,8 @@ constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateR
 upstream: none
 repro:
   method: real-deploy
-  evidence: "bench 2026-09-08 us-east-1: fail template -> \"VPCEndpoints can only be specified with PRIVATE apis.\" (ROLLBACK_COMPLETE)"
+  evidence: "bench 2026-09-08 us-east-1: fail template -> \"VPCEndpoints can only be specified with PRIVATE apis.\" (ROLLBACK_COMPLETE); bench 2026-11-26 us-east-1, fixtures now naming a real execute-api interface endpoint built in the stack: fail -> \"VPCEndpoints can only be specified with PRIVATE apis.\" (ROLLBACK_COMPLETE); pass (PRIVATE) -> CREATE_COMPLETE; omission bench 2026-11-26 us-east-1: pass template without AWS::ApiGateway::RestApi.EndpointConfiguration.Types -> ROLLBACK_COMPLETE with \"Internal error occurred.\"; the handler does not name the cause, but this is the pass template with only Types removed, and the pass template (a real execute-api endpoint) reaches CREATE_COMPLETE in the same run"
   expect: "VPCEndpoints can only be specified with PRIVATE apis"
 addedOn: 2026-09-08
+omissionFails:
+  - "AWS::ApiGateway::RestApi.EndpointConfiguration.Types"

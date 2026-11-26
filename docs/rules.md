@@ -912,7 +912,6 @@
 | `pf-cloudfront-custom-error-response-page-path-pair` | AWS::CloudFront::Distribution | ResponsePagePath and ResponseCode must be specified together | ERROR | none |
 | `pf-cloudfront-edge-lambda-region` | AWS::CloudFront::Distribution | Lambda@Edge functions associated with a distribution must be in us-east-1 | ERROR | none |
 | `pf-cloudfront-edge-lambda-version` | AWS::CloudFront::Distribution | Lambda@Edge associations must reference a version ARN, not an alias or $LATEST | ERROR | none |
-| `pf-cloudfront-field-level-encryption-requires-post` | AWS::CloudFront::Distribution | FieldLevelEncryptionId requires POST or PUT in AllowedMethods | ERROR | none |
 | `pf-cloudfront-function-association-event-type` | AWS::CloudFront::Distribution | CloudFront Functions only support viewer-request and viewer-response | ERROR | none |
 | `pf-cloudfront-function-association-event-type-unique` | AWS::CloudFront::Distribution | Each CloudFront Function EventType can appear only once per cache behavior | ERROR | none |
 | `pf-cloudfront-function-code-size` | AWS::CloudFront::Function | CloudFront Function code is limited to 10 KB | ERROR | none |
@@ -978,7 +977,6 @@
 | `pf-cloudfront-viewer-protocol-policy-enum` | AWS::CloudFront::Distribution | ViewerProtocolPolicy must be allow-all, https-only or redirect-to-https | ERROR | pending-engine |
 | `pf-cloudfront-vpc-origin-arn-type` | AWS::CloudFront::VpcOrigin | A VPC origin ARN must point at an ALB, NLB or EC2 instance | ERROR | none |
 | `pf-cloudfront-vpc-origin-port-range` | AWS::CloudFront::VpcOrigin | VPC origin ports must be 80, 443 or 1024-65535 | ERROR | none |
-| `pf-cloudfront-vpc-origin-ssl-protocols-required` | AWS::CloudFront::VpcOrigin | An HTTPS-capable VPC origin must list OriginSSLProtocols | ERROR | none |
 | `pf-cloudfront-wafv2-webacl-scope` | AWS::CloudFront::Distribution | A WAFv2 web ACL attached to CloudFront must be globally scoped | ERROR | none |
 | `pf-cloudtrail-eds-context-key-requires-large-event-size` | AWS::CloudTrail::EventDataStore | Context key selectors require MaxEventSize Large | ERROR | none |
 | `pf-cloudtrail-trail-aes-conditions-max` | AWS::CloudTrail::Trail | A trail holds at most 500 advanced event selector condition values | ERROR | none |
@@ -2332,8 +2330,6 @@
 | `pf-lambda-runtime-version-arn-region` | AWS::Lambda::Function | A runtime version ARN names the deploy region | ERROR | none |
 | `pf-lambda-s3-storage-mode-zip-only` | AWS::Lambda::Function | S3ObjectStorageMode belongs to .zip functions | ERROR | none |
 | `pf-lambda-s3files-config-requires-s3files-arn` | AWS::Lambda::Function | FileSystemConfigs S3FilesConfig needs an S3 Files file system, not EFS | ERROR | none |
-| `pf-lambda-scaling-min-max-pair` | AWS::Lambda::Function | FunctionScalingConfig takes both bounds | WARN | none |
-| `pf-lambda-scaling-min-zero-requires-max-zero` | AWS::Lambda::Function | Scaling to zero means both bounds are zero | WARN | none |
 | `pf-lambda-system-log-level-enum` | AWS::Lambda::Function | SystemLogLevel takes DEBUG, INFO or WARN | ERROR | pending-engine |
 | `pf-lambda-tenancy-no-function-url` | AWS::Lambda::Function | A tenant-isolated function cannot have a function URL | ERROR | none |
 | `pf-lambda-tenancy-no-provisioned-concurrency` | AWS::Lambda::Function | A tenant-isolated function cannot use provisioned concurrency | ERROR | none |

@@ -18,7 +18,49 @@
               "Action": "sts:AssumeRole"
             }
           ]
-        }
+        },
+        "Policies": [
+          {
+            "PolicyName": "fh",
+            "PolicyDocument": {
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "s3:AbortMultipartUpload",
+                    "s3:GetBucketLocation",
+                    "s3:GetObject",
+                    "s3:ListBucket",
+                    "s3:ListBucketMultipartUploads",
+                    "s3:PutObject"
+                  ],
+                  "Resource": [
+                    {
+                      "Fn::GetAtt": [
+                        "B",
+                        "Arn"
+                      ]
+                    },
+                    {
+                      "Fn::Sub": "${B.Arn}/*"
+                    }
+                  ]
+                },
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "glue:GetTable",
+                    "glue:GetTableVersion",
+                    "glue:GetTableVersions",
+                    "glue:GetDatabase"
+                  ],
+                  "Resource": "*"
+                }
+              ]
+            }
+          }
+        ]
       }
     },
     "DS": {
@@ -50,9 +92,97 @@
               }
             },
             "SchemaConfiguration": {
-              "DatabaseName": "db",
-              "TableName": "tbl",
-              "RoleARN": "arn:aws:iam::123456789012:role/firehose-role"
+              "DatabaseName": {
+                "Ref": "Db"
+              },
+              "TableName": {
+                "Ref": "Tbl"
+              },
+              "RoleARN": {
+                "Fn::GetAtt": [
+                  "R",
+                  "Arn"
+                ]
+              }
+            }
+          },
+          "BufferingHints": {
+            "SizeInMBs": 64,
+            "IntervalInSeconds": 60
+          }
+        }
+      },
+      "DependsOn": [
+        "Tbl"
+      ]
+    },
+    "Db": {
+      "Type": "AWS::Glue::Database",
+      "Properties": {
+        "CatalogId": {
+          "Ref": "AWS::AccountId"
+        },
+        "DatabaseInput": {
+          "Name": {
+            "Fn::Join": [
+              "_",
+              [
+                "cdkpf_fh",
+                {
+                  "Fn::Select": [
+                    0,
+                    {
+                      "Fn::Split": [
+                        "-",
+                        {
+                          "Fn::Select": [
+                            2,
+                            {
+                              "Fn::Split": [
+                                "/",
+                                {
+                                  "Ref": "AWS::StackId"
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            ]
+          }
+        }
+      }
+    },
+    "Tbl": {
+      "Type": "AWS::Glue::Table",
+      "Properties": {
+        "CatalogId": {
+          "Ref": "AWS::AccountId"
+        },
+        "DatabaseName": {
+          "Ref": "Db"
+        },
+        "TableInput": {
+          "Name": "tbl",
+          "TableType": "EXTERNAL_TABLE",
+          "StorageDescriptor": {
+            "Columns": [
+              {
+                "Name": "id",
+                "Type": "string"
+              }
+            ],
+            "Location": {
+              "Fn::Sub": "s3://${B}/tbl/"
+            },
+            "InputFormat": "org.apache.hadoop.hive.ql.io.parquet.MapredParquetInputFormat",
+            "OutputFormat": "org.apache.hadoop.hive.ql.io.parquet.MapredParquetOutputFormat",
+            "SerdeInfo": {
+              "SerializationLibrary": "org.apache.hadoop.hive.ql.io.parquet.serde.ParquetHiveSerDe"
             }
           }
         }
