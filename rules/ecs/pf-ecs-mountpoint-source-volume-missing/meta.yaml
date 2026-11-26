@@ -8,6 +8,8 @@ constraintSource: https://docs.aws.amazon.com/AmazonECS/latest/developerguide/ta
 upstream: none
 repro:
   method: real-deploy
-  evidence: "bench 2026-09-08 us-east-1: fail template -> ROLLBACK_COMPLETE (Create TaskDefinition: Unknown volume 'nope'.), pass template -> CREATE_COMPLETE. Log: bench/logs/pf-ecs-mountpoint-source-volume-missing.log"
+  evidence: "bench 2026-09-08 us-east-1: fail template -> ROLLBACK_COMPLETE (Create TaskDefinition: Unknown volume 'nope'.), pass template -> CREATE_COMPLETE. Log: bench/logs/pf-ecs-mountpoint-source-volume-missing.log; omission bench 2026-11-26 us-east-1: pass template without AWS::ECS::TaskDefinition.Volumes -> ROLLBACK_COMPLETE with \"Invalid request provided: Create TaskDefinition: Unknown volume 'v'.\""
   expect: "Create TaskDefinition: Unknown volume 'nope"
 addedOn: 2026-09-08
+omissionFails:
+  - "AWS::ECS::TaskDefinition.Volumes"

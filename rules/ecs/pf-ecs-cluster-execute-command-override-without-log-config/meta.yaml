@@ -8,6 +8,8 @@ constraintSource: https://docs.aws.amazon.com/AmazonECS/latest/APIReference/API_
 upstream: none
 repro:
   method: real-deploy
-  evidence: "bench 2026-09-08 us-east-1: fail template -> ROLLBACK_COMPLETE (CreateCluster Invalid Request: A CloudWatch log group name or S3 bucket name must be specified when overriding the default log configuration.), pass template -> CREATE_COMPLETE. Log: bench/logs/pf-ecs-cluster-execute-command-override-without-log-config.log"
+  evidence: "bench 2026-09-08 us-east-1: fail template -> ROLLBACK_COMPLETE (CreateCluster Invalid Request: A CloudWatch log group name or S3 bucket name must be specified when overriding the default log configuration.), pass template -> CREATE_COMPLETE. Log: bench/logs/pf-ecs-cluster-execute-command-override-without-log-config.log; omission bench 2026-11-26 us-east-1: pass template without AWS::ECS::Cluster.Configuration.ExecuteCommandConfiguration.LogConfiguration -> ROLLBACK_COMPLETE with \"Invalid request provided: CreateCluster Invalid Request: A CloudWatch log group name or S3 bucket name must be specified when overriding the default log conf...\""
   expect: "CreateCluster Invalid Request: A CloudWatch log group name or S3 bucket name must be specified when overriding the default log configuration"
 addedOn: 2026-09-08
+omissionFails:
+  - "AWS::ECS::Cluster.Configuration.ExecuteCommandConfiguration.LogConfiguration"

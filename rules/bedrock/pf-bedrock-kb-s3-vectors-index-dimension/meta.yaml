@@ -8,6 +8,8 @@ constraintSource: https://docs.aws.amazon.com/bedrock/latest/APIReference/API_ag
 upstream: none
 repro:
   method: real-deploy
-  evidence: "bench 2026-09-06 us-east-1 (API/CFN probe): Titan V2 with Dimensions 512 on a 1024-dimension index -> CreateKnowledgeBase 400 ValidationException: The knowledge base storage configuration provided is invalid... Query vector contains invalid values or is invalid for this index (Service: S3Vectors, Status Code: 400); same for Titan G1 (1536) on a 1024 index; matching sizes deploy; verify-rule.sh 2026-09-06 us-east-1: fail ROLLBACK_COMPLETE, pass CREATE_COMPLETE and deleted. Log: bench/logs/pf-bedrock-kb-s3-vectors-index-dimension.log"
+  evidence: "bench 2026-09-06 us-east-1 (API/CFN probe): Titan V2 with Dimensions 512 on a 1024-dimension index -> CreateKnowledgeBase 400 ValidationException: The knowledge base storage configuration provided is invalid... Query vector contains invalid values or is invalid for this index (Service: S3Vectors, Status Code: 400); same for Titan G1 (1536) on a 1024 index; matching sizes deploy; verify-rule.sh 2026-09-06 us-east-1: fail ROLLBACK_COMPLETE, pass CREATE_COMPLETE and deleted. Log: bench/logs/pf-bedrock-kb-s3-vectors-index-dimension.log; omission bench 2026-11-26 us-east-1: pass template without AWS::Bedrock::KnowledgeBase.KnowledgeBaseConfiguration.VectorKnowledgeBaseConfiguration.EmbeddingModelConfiguration -> ROLLBACK_COMPLETE with \"The knowledge base storage configuration provided is invalid... Query vector contains invalid values or is invalid for this index\""
   expect: "The knowledge base storage configuration provided is invalid... Query vector contains invalid values or is invalid for this index"
 addedOn: 2026-09-06
+omissionFails:
+  - "AWS::Bedrock::KnowledgeBase.KnowledgeBaseConfiguration.VectorKnowledgeBaseConfiguration.EmbeddingModelConfiguration"

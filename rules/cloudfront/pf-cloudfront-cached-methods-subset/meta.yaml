@@ -8,6 +8,8 @@ constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateR
 upstream: none
 repro:
   method: real-deploy
-  evidence: "bench 2026-09-02 us-east-1: ROLLBACK_COMPLETE, \"The parameter CachedMethods OPTIONS does not exists in AllowedMethods. (Service: CloudFront, Status Code: 400)\""
+  evidence: "bench 2026-09-02 us-east-1: ROLLBACK_COMPLETE, \"The parameter CachedMethods OPTIONS does not exists in AllowedMethods. (Service: CloudFront, Status Code: 400)\"; omission bench 2026-11-26 us-east-1: pass template without AWS::CloudFront::Distribution.DistributionConfig.DefaultCacheBehavior.AllowedMethods -> ROLLBACK_COMPLETE with \"Invalid request provided: AWS::CloudFront::Distribution: The parameter CachedMethods OPTIONS does not exists in AllowedMethods.\""
   expect: "The parameter CachedMethods OPTIONS does not exists in AllowedMethods"
 addedOn: 2026-09-02
+omissionFails:
+  - "AWS::CloudFront::Distribution.DistributionConfig.DefaultCacheBehavior.AllowedMethods"

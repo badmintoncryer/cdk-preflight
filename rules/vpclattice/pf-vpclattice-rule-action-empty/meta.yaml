@@ -8,6 +8,8 @@ constraintSource: https://docs.aws.amazon.com/vpc-lattice/latest/APIReference/AP
 upstream: none
 repro:
   method: real-deploy
-  evidence: "bench 2026-10-18 us-east-1 (#363 c2/verify.sh): fail rule with Action {} on an HTTPS listener -> ROLLBACK_FAILED (Action is required in Rule's action field.); pass Action FixedResponse 404 -> CREATE_COMPLETE."
+  evidence: "bench 2026-10-18 us-east-1 (#363 c2/verify.sh): fail rule with Action {} on an HTTPS listener -> ROLLBACK_FAILED (Action is required in Rule's action field.); pass Action FixedResponse 404 -> CREATE_COMPLETE; omission bench 2026-11-26 us-east-1: pass template without AWS::VpcLattice::Rule.Action.FixedResponse -> ROLLBACK_COMPLETE with \"Action is required in Rule's action field.\""
   expect: "Action is required in Rule"
 addedOn: 2026-10-18
+omissionFails:
+  - "AWS::VpcLattice::Rule.Action.FixedResponse"

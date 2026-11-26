@@ -8,6 +8,8 @@ constraintSource: https://docs.aws.amazon.com/codepipeline/latest/APIReference/A
 upstream: none
 repro:
   method: real-deploy
-  evidence: "bench 2026-09-14 us-east-1: the fail stack declares all three violations and rolled back on Authentication IP with an empty AuthenticationConfiguration -> \"Optional['authenticationConfig' should contain only one property: 'AllowedIPRange']\" (ROLLBACK_COMPLETE); api-probe 2026-09-14 us-east-1 covers the other two: GITHUB_HMAC with SecretToken+AllowedIPRange -> \"...only one property: 'SecretToken'\", UNAUTHENTICATED with SecretToken -> \"...should be empty\"; pass with the matching property on each of the three modes -> CREATE_COMPLETE"
+  evidence: "bench 2026-09-14 us-east-1: the fail stack declares all three violations and rolled back on Authentication IP with an empty AuthenticationConfiguration -> \"Optional['authenticationConfig' should contain only one property: 'AllowedIPRange']\" (ROLLBACK_COMPLETE); api-probe 2026-09-14 us-east-1 covers the other two: GITHUB_HMAC with SecretToken+AllowedIPRange -> \"...only one property: 'SecretToken'\", UNAUTHENTICATED with SecretToken -> \"...should be empty\"; pass with the matching property on each of the three modes -> CREATE_COMPLETE; omission bench 2026-11-26 us-east-1: pass template without AWS::CodePipeline::Webhook.AuthenticationConfiguration.AllowedIPRange -> ROLLBACK_COMPLETE with \"Optional['authenticationConfig' should contain only one property: 'AllowedIPRange']\"; omission bench 2026-11-26 us-east-1: pass template without AWS::CodePipeline::Webhook.AuthenticationConfiguration.SecretToken (GITHUB_HMAC) -> CREATE_COMPLETE, so a missing SecretToken is not judged"
   expect: "Optional['authenticationConfig' should contain only one property: 'AllowedIPRange"
 addedOn: 2026-09-14
+omissionFails:
+  - "AWS::CodePipeline::Webhook.AuthenticationConfiguration.AllowedIPRange"

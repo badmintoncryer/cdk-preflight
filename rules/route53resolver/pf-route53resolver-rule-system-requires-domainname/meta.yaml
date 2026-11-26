@@ -8,6 +8,8 @@ constraintSource: https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/reso
 upstream: none
 repro:
   method: real-deploy
-  evidence: "bench 2026-09-10 us-east-1: fail template -> [RSLVR-00707] Cannot specify resolver endpoint ID and target IP for SYSTEM type resolver rule. (ROLLBACK_COMPLETE)"
+  evidence: "bench 2026-09-10 us-east-1: fail template -> [RSLVR-00707] Cannot specify resolver endpoint ID and target IP for SYSTEM type resolver rule. (ROLLBACK_COMPLETE); omission bench 2026-11-26 us-east-1: pass template without AWS::Route53Resolver::ResolverRule.DomainName -> ROLLBACK_COMPLETE with \"[RSLVR-00707] Cannot specify resolver endpoint ID and target IP for SYSTEM type resolver rule.\""
   expect: "RSLVR-00707] Cannot specify resolver endpoint ID and target IP for SYSTEM type resolver rule"
 addedOn: 2026-09-10
+omissionFails:
+  - "AWS::Route53Resolver::ResolverRule.DomainName"

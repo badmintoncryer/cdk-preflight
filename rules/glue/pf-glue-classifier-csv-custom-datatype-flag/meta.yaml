@@ -8,6 +8,9 @@ constraintSource: https://docs.aws.amazon.com/glue/latest/dg/custom-classifier.h
 upstream: none
 repro:
   method: real-deploy
-  evidence: "bench 2026-09-14 us-east-1: fail template (one classifier with ContainsCustomDatatype and no CustomDatatypeConfigured, one with CustomDatatypeConfigured true and no list) -> \"Must enable using custom datatypes and pass in the list of datatypes\" (ROLLBACK_COMPLETE); pass template (the pair set together, plus a plain CSV classifier with neither) -> CREATE_COMPLETE. A CreateClassifier probe the same day gave the same sentence for CustomDatatypeConfigured false next to a list."
+  evidence: "bench 2026-09-14 us-east-1: fail template (one classifier with ContainsCustomDatatype and no CustomDatatypeConfigured, one with CustomDatatypeConfigured true and no list) -> \"Must enable using custom datatypes and pass in the list of datatypes\" (ROLLBACK_COMPLETE); pass template (the pair set together, plus a plain CSV classifier with neither) -> CREATE_COMPLETE. A CreateClassifier probe the same day gave the same sentence for CustomDatatypeConfigured false next to a list; omission bench 2026-11-26 us-east-1: pass template without AWS::Glue::Classifier.CsvClassifier.CustomDatatypeConfigured -> ROLLBACK_COMPLETE with \"Must enable using custom datatypes and pass in the list of datatypes\"; omission bench 2026-11-26 us-east-1: pass template without AWS::Glue::Classifier.CsvClassifier.ContainsCustomDatatype -> ROLLBACK_COMPLETE with \"Must enable using custom datatypes and pass in the list of datatypes\""
   expect: "Must enable using custom datatypes and pass in the list of datatypes"
 addedOn: 2026-09-14
+omissionFails:
+  - "AWS::Glue::Classifier.CsvClassifier.CustomDatatypeConfigured"
+  - "AWS::Glue::Classifier.CsvClassifier.ContainsCustomDatatype"

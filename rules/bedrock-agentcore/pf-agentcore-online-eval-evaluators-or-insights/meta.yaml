@@ -8,6 +8,8 @@ constraintSource: https://docs.aws.amazon.com/bedrock-agentcore-control/latest/A
 upstream: none
 repro:
   method: real-deploy
-  evidence: "bench 2026-09-05 us-east-1 (probe): Evaluators: [] and no Insights -> CREATE_FAILED (AgentCoreEvaluationControlPlane 400 ValidationException: Exactly one of evaluators or insights must be provided) -> ROLLBACK_COMPLETE; verify-rule.sh 2026-09-05 us-east-1: fail ROLLBACK_COMPLETE, pass CREATE_COMPLETE and deleted. Log: bench/logs/pf-agentcore-online-eval-evaluators-or-insights.log"
+  evidence: "bench 2026-09-05 us-east-1 (probe): Evaluators: [] and no Insights -> CREATE_FAILED (AgentCoreEvaluationControlPlane 400 ValidationException: Exactly one of evaluators or insights must be provided) -> ROLLBACK_COMPLETE; verify-rule.sh 2026-09-05 us-east-1: fail ROLLBACK_COMPLETE, pass CREATE_COMPLETE and deleted. Log: bench/logs/pf-agentcore-online-eval-evaluators-or-insights.log; omission bench 2026-11-26 us-east-1: pass template without AWS::BedrockAgentCore::OnlineEvaluationConfig.Evaluators -> ROLLBACK_COMPLETE with \"Exactly one of evaluators or insights must be provided\""
   expect: "Exactly one of evaluators or insights must be provided"
 addedOn: 2026-09-05
+omissionFails:
+  - "AWS::BedrockAgentCore::OnlineEvaluationConfig.Evaluators"

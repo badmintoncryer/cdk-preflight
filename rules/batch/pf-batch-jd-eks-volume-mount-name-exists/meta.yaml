@@ -8,6 +8,8 @@ constraintSource: https://docs.aws.amazon.com/batch/latest/APIReference/API_EksC
 upstream: none
 repro:
   method: real-deploy
-  evidence: "bench 2026-09-12 us-east-1: fail template -> \"The volumeMounts name is required for eksProperties.\" (ROLLBACK_COMPLETE); pass template CREATE_COMPLETE. The fail template does name the mount (\"other\"); the handler answers \"name is required\" when the name matches no volume. The pass template differs only by naming the declared volume."
+  evidence: "bench 2026-09-12 us-east-1: fail template -> \"The volumeMounts name is required for eksProperties.\" (ROLLBACK_COMPLETE); pass template CREATE_COMPLETE. The fail template does name the mount (\"other\"); the handler answers \"name is required\" when the name matches no volume. The pass template differs only by naming the declared volume; omission bench 2026-11-26 us-east-1: pass template without AWS::Batch::JobDefinition.EksProperties.PodProperties.Volumes -> ROLLBACK_COMPLETE with \"Error executing request, Exception : The volumeMounts name is required for eksProperties., RequestId: 47f6faef-0c54-483d-8fbd-cbd6096d06fe\""
   expect: "The volumeMounts name is required for eksProperties"
 addedOn: 2026-09-12
+omissionFails:
+  - "AWS::Batch::JobDefinition.EksProperties.PodProperties.Volumes"

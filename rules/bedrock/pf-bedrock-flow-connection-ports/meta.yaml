@@ -8,6 +8,8 @@ constraintSource: https://docs.aws.amazon.com/bedrock/latest/APIReference/API_ag
 upstream: none
 repro:
   method: real-deploy
-  evidence: "bench 2026-09-06 us-east-1 (API/CFN probe): SourceOutput nope -> CloudFormation CREATE_FAILED: Prepare of AWS::Bedrock::Flow failed to stabilize. Validation messages: […references an unknown source output 'nope'…]; TargetInput nope -> […references an unknown target input 'nope'…]; a Data connection out of a Condition node fails the same way (it has no outputs); verify-rule.sh 2026-09-06 us-east-1: fail ROLLBACK_COMPLETE, pass CREATE_COMPLETE and deleted. Log: bench/logs/pf-bedrock-flow-connection-ports.log"
+  evidence: "bench 2026-09-06 us-east-1 (API/CFN probe): SourceOutput nope -> CloudFormation CREATE_FAILED: Prepare of AWS::Bedrock::Flow failed to stabilize. Validation messages: […references an unknown source output 'nope'…]; TargetInput nope -> […references an unknown target input 'nope'…]; a Data connection out of a Condition node fails the same way (it has no outputs); verify-rule.sh 2026-09-06 us-east-1: fail ROLLBACK_COMPLETE, pass CREATE_COMPLETE and deleted. Log: bench/logs/pf-bedrock-flow-connection-ports.log; omission bench 2026-11-26 us-east-1: pass template without AWS::Bedrock::Flow.Definition.Nodes.*.Outputs -> ROLLBACK_COMPLETE with \"Prepare of AWS::Bedrock::Flow [6VNNHZCPIE] failed to stabilize. Validation messages: [The node 'FlowInputNode' is missing the required output 'document'. Add...\""
   expect: "failed to stabilize. Validation messages"
 addedOn: 2026-09-06
+omissionFails:
+  - "AWS::Bedrock::Flow.Definition.Nodes.*.Outputs"

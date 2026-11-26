@@ -8,5 +8,7 @@ constraintSource: https://docs.aws.amazon.com/AmazonS3/latest/userguide/storage_
 upstream: none
 repro:
   method: real-deploy
-  evidence: "bench 2026-09-06 us-east-1: fail template -> ROLLBACK_COMPLETE \"(Service: S3Control, Status Code: 400, Request ID: GKDJ2XT1Q5DJWY2R, Extended Request ID: uoP5OTAwA5FZOxp+Dam2cFn/5qgt0bdncRDKZ7iYYJKElYk2mbhr/jhHllGJB0cr3KYZvi8UBO67Y9WCkFzQ9zJH8C4TxZO9)\"; pass template -> CREATE_COMPLETE"
+  evidence: "bench 2026-09-06 us-east-1: fail template -> ROLLBACK_COMPLETE \"(Service: S3Control, Status Code: 400, Request ID: GKDJ2XT1Q5DJWY2R, Extended Request ID: uoP5OTAwA5FZOxp+Dam2cFn/5qgt0bdncRDKZ7iYYJKElYk2mbhr/jhHllGJB0cr3KYZvi8UBO67Y9WCkFzQ9zJH8C4TxZO9)\"; pass template -> CREATE_COMPLETE; omission bench 2026-11-26 us-east-1: pass template without AWS::S3::StorageLens.StorageLensConfiguration.AccountLevel.AdvancedDataProtectionMetrics -> ROLLBACK_COMPLETE with \"\""
 addedOn: 2026-09-06
+omissionFails:
+  - "AWS::S3::StorageLens.StorageLensConfiguration.AccountLevel.AdvancedDataProtectionMetrics"

@@ -8,6 +8,8 @@ upstream: none
 benchRegion: us-east-1
 repro:
   method: real-deploy
-  evidence: "bench 2026-09-13 us-east-1: TaskCount 11 -> \"Parameter(s) TaskCount not valid for target: t1.\" ROLLBACK_COMPLETE (the same target carries 17 subnets and 6 security groups); pass TaskCount 10 with 16 subnets and 5 security groups -> CREATE_COMPLETE. PutTargets does not resolve the cluster, task definition, subnet or security group ids, so the fixture can use placeholders and still exercise the counts."
+  evidence: "bench 2026-09-13 us-east-1: TaskCount 11 -> \"Parameter(s) TaskCount not valid for target: t1.\" ROLLBACK_COMPLETE (the same target carries 17 subnets and 6 security groups); pass TaskCount 10 with 16 subnets and 5 security groups -> CREATE_COMPLETE. PutTargets does not resolve the cluster, task definition, subnet or security group ids, so the fixture can use placeholders and still exercise the counts; omission bench 2026-11-26 us-east-1: pass template without AWS::Events::Rule.Targets.*.EcsParameters.NetworkConfiguration -> ROLLBACK_COMPLETE with \"Parameter NetworkConfiguration must be specified for target t1 when launch type is FARGATE\""
   expect: "Parameter(s) TaskCount not valid for target: t1"
 addedOn: 2026-09-07
+omissionFails:
+  - "AWS::Events::Rule.Targets.*.EcsParameters.NetworkConfiguration"

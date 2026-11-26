@@ -8,6 +8,8 @@ constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateR
 upstream: none
 repro:
   method: real-deploy
-  evidence: "bench 2026-09-14 us-east-1: fail template (Artifacts.Type S3 with no Location) -> \"Invalid artifacts: location is required\" (ROLLBACK_COMPLETE); pass template (Artifacts.Type S3 with a Location) -> CREATE_COMPLETE."
+  evidence: "bench 2026-09-14 us-east-1: fail template (Artifacts.Type S3 with no Location) -> \"Invalid artifacts: location is required\" (ROLLBACK_COMPLETE); pass template (Artifacts.Type S3 with a Location) -> CREATE_COMPLETE; omission bench 2026-11-26 us-east-1: pass template without AWS::CodeBuild::Project.Artifacts.Location -> ROLLBACK_COMPLETE with \"Invalid artifacts: location is required\""
   expect: "Invalid artifacts: location is required"
 addedOn: 2026-09-14
+omissionFails:
+  - "AWS::CodeBuild::Project.Artifacts.Location"

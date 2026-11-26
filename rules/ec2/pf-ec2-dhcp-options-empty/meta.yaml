@@ -7,6 +7,8 @@ constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateR
 upstream: none
 repro:
   method: real-deploy
-  evidence: "api 2026-09-08 ap-northeast-1: CreateDhcpOptions with an empty configuration list -> \"The request must contain the parameter dhcpConfigurations\". bench 2026-09-08 ap-northeast-1: a DHCPOptions with only Tags -> ROLLBACK_COMPLETE with the same message; one DomainNameServers entry -> CREATE_COMPLETE."
+  evidence: "api 2026-09-08 ap-northeast-1: CreateDhcpOptions with an empty configuration list -> \"The request must contain the parameter dhcpConfigurations\". bench 2026-09-08 ap-northeast-1: a DHCPOptions with only Tags -> ROLLBACK_COMPLETE with the same message; one DomainNameServers entry -> CREATE_COMPLETE; omission bench 2026-11-26 ap-northeast-1: pass template without AWS::EC2::DHCPOptions.DomainNameServers -> ROLLBACK_COMPLETE with \"The request must contain the parameter dhcpConfigurations\""
   expect: "The request must contain the parameter dhcpConfigurations"
 addedOn: 2026-09-08
+omissionFails:
+  - "AWS::EC2::DHCPOptions.DomainNameServers"

@@ -8,6 +8,8 @@ constraintSource: https://docs.aws.amazon.com/glue/latest/webapi/API_CreateTable
 upstream: pending-engine
 repro:
   method: real-deploy
-  evidence: "bench 2026-09-14 us-east-1: fail template (OpenTableFormatInput.IcebergInput {}) -> \"Metadata information must be present\" (ROLLBACK_COMPLETE); pass template (IcebergInput with MetadataOperation CREATE) -> CREATE_COMPLETE. CreateTable the same day: the botocore model already refuses the empty input (\"Missing required parameter in OpenTableFormatInput.IcebergInput: MetadataOperation\") and CREATE is the only accepted value."
+  evidence: "bench 2026-09-14 us-east-1: fail template (OpenTableFormatInput.IcebergInput {}) -> \"Metadata information must be present\" (ROLLBACK_COMPLETE); pass template (IcebergInput with MetadataOperation CREATE) -> CREATE_COMPLETE. CreateTable the same day: the botocore model already refuses the empty input (\"Missing required parameter in OpenTableFormatInput.IcebergInput: MetadataOperation\") and CREATE is the only accepted value; omission bench 2026-11-26 us-east-1: pass template without AWS::Glue::Table.OpenTableFormatInput.IcebergInput.MetadataOperation -> ROLLBACK_COMPLETE with \"Metadata information must be present\""
   expect: "Metadata information must be present"
 addedOn: 2026-09-14
+omissionFails:
+  - "AWS::Glue::Table.OpenTableFormatInput.IcebergInput.MetadataOperation"

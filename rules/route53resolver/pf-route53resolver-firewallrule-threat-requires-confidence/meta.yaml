@@ -8,6 +8,9 @@ constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateR
 upstream: none
 repro:
   method: real-deploy
-  evidence: "bench 2026-09-10 us-east-1: fail template -> Invalid request provided: FirewallRule must specify one of: FirewallRuleType, DnsThreatProtection with ConfidenceThreshold, or FirewallDomainListId. (ROLLBACK_COMPLETE)"
+  evidence: "bench 2026-09-10 us-east-1: fail template -> Invalid request provided: FirewallRule must specify one of: FirewallRuleType, DnsThreatProtection with ConfidenceThreshold, or FirewallDomainListId. (ROLLBACK_COMPLETE); omission bench 2026-11-26 us-east-1: pass template without AWS::Route53Resolver::FirewallRuleGroup.FirewallRules.*.DnsThreatProtection -> ROLLBACK_COMPLETE with \"Invalid request provided: FirewallRule must specify one of: FirewallRuleType, DnsThreatProtection with ConfidenceThreshold, or FirewallDomainListId.\"; omission bench 2026-11-26 us-east-1: pass template without AWS::Route53Resolver::FirewallRuleGroup.FirewallRules.*.ConfidenceThreshold -> ROLLBACK_COMPLETE with \"Invalid request provided: FirewallRule must specify one of: FirewallRuleType, DnsThreatProtection with ConfidenceThreshold, or FirewallDomainListId.\""
   expect: "FirewallRule must specify one of: FirewallRuleType, DnsThreatProtection with ConfidenceThreshold, or FirewallDomainListId"
 addedOn: 2026-09-10
+omissionFails:
+  - "AWS::Route53Resolver::FirewallRuleGroup.FirewallRules.*.DnsThreatProtection"
+  - "AWS::Route53Resolver::FirewallRuleGroup.FirewallRules.*.ConfidenceThreshold"

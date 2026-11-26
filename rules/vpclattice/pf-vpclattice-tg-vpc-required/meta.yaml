@@ -8,6 +8,9 @@ constraintSource: https://docs.aws.amazon.com/vpc-lattice/latest/APIReference/AP
 upstream: none
 repro:
   method: real-deploy
-  evidence: "bench 2026-10-17 us-east-1 (#363 c1/verify.sh): fail INSTANCE TG with Port and Protocol but no VpcIdentifier -> ROLLBACK_COMPLETE (Config fields port|protocol|vpcIdentifier must not be null for INSTANCE Target Group); pass INSTANCE TG with VpcIdentifier -> CREATE_COMPLETE. Variant no Config -> ROLLBACK_COMPLETE (INSTANCE Target Group must include a config). Variant IP type -> ROLLBACK_COMPLETE (Config fields port|protocol|vpcIdentifier must not be null for IP Target Group). Variant ALB type -> ROLLBACK_COMPLETE (Config fields port|protocol|vpcIdentifier must not be null for ALB Target Group)."
+  evidence: "bench 2026-10-17 us-east-1 (#363 c1/verify.sh): fail INSTANCE TG with Port and Protocol but no VpcIdentifier -> ROLLBACK_COMPLETE (Config fields port|protocol|vpcIdentifier must not be null for INSTANCE Target Group); pass INSTANCE TG with VpcIdentifier -> CREATE_COMPLETE. Variant no Config -> ROLLBACK_COMPLETE (INSTANCE Target Group must include a config). Variant IP type -> ROLLBACK_COMPLETE (Config fields port|protocol|vpcIdentifier must not be null for IP Target Group). Variant ALB type -> ROLLBACK_COMPLETE (Config fields port|protocol|vpcIdentifier must not be null for ALB Target Group); omission bench 2026-11-26 us-east-1: pass template without AWS::VpcLattice::TargetGroup.Config -> ROLLBACK_COMPLETE with \"INSTANCE Target Group must include a config\"; omission bench 2026-11-26 us-east-1: pass template without AWS::VpcLattice::TargetGroup.Config.VpcIdentifier -> ROLLBACK_COMPLETE with \"Config fields port|protocol|vpcIdentifier must not be null for INSTANCE Target Group\""
   expect: "vpcIdentifier must not be null for"
 addedOn: 2026-10-17
+omissionFails:
+  - "AWS::VpcLattice::TargetGroup.Config"
+  - "AWS::VpcLattice::TargetGroup.Config.VpcIdentifier"

@@ -8,6 +8,8 @@ constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateR
 upstream: none
 repro:
   method: real-deploy
-  evidence: "real-deploy 2026-09-12 us-east-1: Resource handler returned message: \"Code not supported when using templates.\" (RequestToken: 471f5fd7-e98b-1a1b-fdd5-07072ceb33ac, HandlerErrorCode: InvalidRequest)"
+  evidence: "real-deploy 2026-09-12 us-east-1: Resource handler returned message: \"Code not supported when using templates.\" (RequestToken: 471f5fd7-e98b-1a1b-fdd5-07072ceb33ac, HandlerErrorCode: InvalidRequest); omission bench 2026-11-26 us-east-1: pass template without AWS::AppSync::Resolver.Runtime -> ROLLBACK_COMPLETE with \"Code not supported when using templates.\""
   expect: "Code not supported when using templates"
 addedOn: 2026-09-12
+omissionFails:
+  - "AWS::AppSync::Resolver.Runtime"

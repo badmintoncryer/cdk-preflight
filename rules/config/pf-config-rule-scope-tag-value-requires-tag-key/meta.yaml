@@ -8,6 +8,8 @@ constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateR
 upstream: none
 repro:
   method: real-deploy
-  evidence: "bench 2026-09-24 us-east-1: fail -> ROLLBACK_COMPLETE \"Tag key should not be empty when tag value is provided in scope\"; pass -> CREATE_COMPLETE"
+  evidence: "bench 2026-09-24 us-east-1: fail -> ROLLBACK_COMPLETE \"Tag key should not be empty when tag value is provided in scope\"; pass -> CREATE_COMPLETE; omission bench 2026-11-26 us-east-1: pass template without AWS::Config::ConfigRule.Scope.TagKey -> ROLLBACK_COMPLETE with \"Tag key should not be empty when tag value is provided in scope\""
   expect: "Tag key should not be empty when tag value is provided in scope"
 addedOn: 2026-09-24
+omissionFails:
+  - "AWS::Config::ConfigRule.Scope.TagKey"

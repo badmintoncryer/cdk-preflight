@@ -8,6 +8,8 @@ constraintSource: https://docs.aws.amazon.com/batch/latest/APIReference/API_Laun
 upstream: none
 repro:
   method: real-deploy
-  evidence: "bench 2026-09-12 us-east-1: fail template -> \"One of LaunchTemplateId and LaunchTemplateName or LaunchTemplate.Overrides is required.\" (ROLLBACK_COMPLETE); pass template CREATE_COMPLETE."
+  evidence: "bench 2026-09-12 us-east-1: fail template -> \"One of LaunchTemplateId and LaunchTemplateName or LaunchTemplate.Overrides is required.\" (ROLLBACK_COMPLETE); pass template CREATE_COMPLETE; omission bench 2026-11-26 us-east-1: pass template without AWS::Batch::ComputeEnvironment.ComputeResources.LaunchTemplate.LaunchTemplateId -> ROLLBACK_COMPLETE with \"Error executing request, Exception : One of LaunchTemplateId and LaunchTemplateName or LaunchTemplate.Overrides is required., RequestId: 8d66e18e-ab1a-4dca-a...\""
   expect: "One of LaunchTemplateId and LaunchTemplateName or LaunchTemplate.Overrides is required"
 addedOn: 2026-09-12
+omissionFails:
+  - "AWS::Batch::ComputeEnvironment.ComputeResources.LaunchTemplate.LaunchTemplateId"

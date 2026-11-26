@@ -7,5 +7,8 @@ constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateR
 upstream: none
 repro:
   method: real-deploy
-  evidence: "bench 2026-09-03 ap-northeast-1: AllowedOAuthFlowsUserPoolClient true with scopes missing (c10) and with flows missing (c10c) -> both \"AllowedOAuthFlows and AllowedOAuthScopes are required if user pool client is allowed to use OAuth flows.\" ROLLBACK_COMPLETE."
+  evidence: "bench 2026-09-03 ap-northeast-1: AllowedOAuthFlowsUserPoolClient true with scopes missing (c10) and with flows missing (c10c) -> both \"AllowedOAuthFlows and AllowedOAuthScopes are required if user pool client is allowed to use OAuth flows.\" ROLLBACK_COMPLETE; omission bench 2026-11-26 ap-northeast-1: pass template without AWS::Cognito::UserPoolClient.AllowedOAuthFlows -> ROLLBACK_COMPLETE with \"AllowedOAuthFlows and AllowedOAuthScopes are required if user pool client is allowed to use OAuth flows.\"; omission bench 2026-11-26 ap-northeast-1: pass template without AWS::Cognito::UserPoolClient.AllowedOAuthScopes -> ROLLBACK_COMPLETE with \"AllowedOAuthFlows and AllowedOAuthScopes are required if user pool client is allowed to use OAuth flows.\""
 addedOn: 2026-09-03
+omissionFails:
+  - "AWS::Cognito::UserPoolClient.AllowedOAuthFlows"
+  - "AWS::Cognito::UserPoolClient.AllowedOAuthScopes"

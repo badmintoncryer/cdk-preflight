@@ -7,6 +7,8 @@ constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateR
 upstream: none
 repro:
   method: real-deploy
-  evidence: "bench 2026-09-05 ap-northeast-1: fail template -> ROLLBACK_COMPLETE with \"Property validation failed. Required key [DefinitionS3Location], [DefinitionString] or [Definition] not found.\"; pass template -> CREATE_COMPLETE"
+  evidence: "bench 2026-09-05 ap-northeast-1: fail template -> ROLLBACK_COMPLETE with \"Property validation failed. Required key [DefinitionS3Location], [DefinitionString] or [Definition] not found.\"; pass template -> CREATE_COMPLETE; omission bench 2026-11-26 ap-northeast-1: pass template without AWS::StepFunctions::StateMachine.DefinitionString -> ROLLBACK_COMPLETE with \"Property validation failed. Required key [DefinitionS3Location], [DefinitionString] or [Definition] not found.\""
   expect: "DefinitionString] or [Definition] not found"
 addedOn: 2026-09-05
+omissionFails:
+  - "AWS::StepFunctions::StateMachine.DefinitionString"

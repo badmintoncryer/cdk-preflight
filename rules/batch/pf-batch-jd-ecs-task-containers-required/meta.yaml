@@ -7,6 +7,8 @@ constraintSource: https://docs.aws.amazon.com/batch/latest/APIReference/API_EcsT
 upstream: none
 repro:
   method: real-deploy
-  evidence: "bench 2026-09-12 us-east-1: fail template -> \"Number of containers must be between 1 and 10\" (ROLLBACK_COMPLETE); pass template CREATE_COMPLETE."
+  evidence: "bench 2026-09-12 us-east-1: fail template -> \"Number of containers must be between 1 and 10\" (ROLLBACK_COMPLETE); pass template CREATE_COMPLETE; omission bench 2026-11-26 ap-northeast-1: pass template without AWS::Batch::JobDefinition.EcsProperties.TaskProperties.*.Containers -> ROLLBACK_COMPLETE with \"Error executing request, Exception : Number of containers must be between 1 and 10, RequestId: a238782a-ade5-4221-be1e-84d4777a6661\""
   expect: "Number of containers must be between 1 and 10"
 addedOn: 2026-09-12
+omissionFails:
+  - "AWS::Batch::JobDefinition.EcsProperties.TaskProperties.*.Containers"

@@ -8,6 +8,9 @@ constraintSource: https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/
 upstream: none
 repro:
   method: real-deploy
-  evidence: "bench 2026-10-17 us-east-1 (c3/verify.sh): fail MaxLifetime 3601 on a provider with MaxLifetime 3600 -> CREATE_FAILED (Resource handler returned message: Invalid request provided: maxLifeTime must be less than or equal to the CapacityProvider instance maxLifetime (3600 seconds), HandlerErrorCode InvalidRequest) -> ROLLBACK_COMPLETE; pass MaxLifetime 3600 -> CREATE_COMPLETE and deleted. Variant (fail-only) LifecycleConfiguration omitted (default 28800) -> the same text."
+  evidence: "bench 2026-10-17 us-east-1 (c3/verify.sh): fail MaxLifetime 3601 on a provider with MaxLifetime 3600 -> CREATE_FAILED (Resource handler returned message: Invalid request provided: maxLifeTime must be less than or equal to the CapacityProvider instance maxLifetime (3600 seconds), HandlerErrorCode InvalidRequest) -> ROLLBACK_COMPLETE; pass MaxLifetime 3600 -> CREATE_COMPLETE and deleted. Variant (fail-only) LifecycleConfiguration omitted (default 28800) -> the same text; omission bench 2026-11-26 us-east-1: pass template without AWS::BedrockAgentCore::Runtime.LifecycleConfiguration -> ROLLBACK_COMPLETE with \"Invalid request provided: maxLifeTime must be less than or equal to the CapacityProvider instance maxLifetime (3600 seconds)\"; omission bench 2026-11-26 us-east-1: pass template without AWS::BedrockAgentCore::Runtime.LifecycleConfiguration.MaxLifetime -> ROLLBACK_COMPLETE with \"Invalid request provided: maxLifeTime must be less than or equal to the CapacityProvider instance maxLifetime (3600 seconds)\""
   expect: "must be less than or equal to the CapacityProvider instance maxLifetime"
 addedOn: 2026-10-17
+omissionFails:
+  - "AWS::BedrockAgentCore::Runtime.LifecycleConfiguration"
+  - "AWS::BedrockAgentCore::Runtime.LifecycleConfiguration.MaxLifetime"

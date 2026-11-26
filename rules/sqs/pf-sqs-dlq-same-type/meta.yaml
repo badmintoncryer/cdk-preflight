@@ -7,6 +7,8 @@ constraintSource: https://docs.aws.amazon.com/AWSSimpleQueueService/latest/APIRe
 upstream: none
 repro:
   method: real-deploy
-  evidence: "bench 2026-09-05 ap-northeast-1: fail template -> ROLLBACK_COMPLETE with \"Value {\"maxReceiveCount\":\"5\",\"deadLetterTargetArn\":\"arn:aws:sqs:ap-northeast-1:214794239830:cdkpf-dlq-type-fail.fifo\"} for parameter RedrivePolicy is invalid. Reason: Dead-letter queue must be same type of queue as the source..\"; pass template -> CREATE_COMPLETE"
+  evidence: "bench 2026-09-05 ap-northeast-1: fail template -> ROLLBACK_COMPLETE with \"Value {\"maxReceiveCount\":\"5\",\"deadLetterTargetArn\":\"arn:aws:sqs:ap-northeast-1:214794239830:cdkpf-dlq-type-fail.fifo\"} for parameter RedrivePolicy is invalid. Reason: Dead-letter queue must be same type of queue as the source..\"; pass template -> CREATE_COMPLETE; omission bench 2026-11-26 ap-northeast-1: pass template without AWS::SQS::Queue.FifoQueue -> ROLLBACK_COMPLETE with \"Value {\"maxReceiveCount\":\"5\",\"deadLetterTargetArn\":\"arn:aws:sqs:ap-northeast-1:214794239830:cdkpf-dlq-type-pass.fifo\"} for parameter RedrivePolicy is invalid...\""
   expect: "for parameter RedrivePolicy is invalid. Reason: Dead-letter queue must be same type of queue as the source"
 addedOn: 2026-09-05
+omissionFails:
+  - "AWS::SQS::Queue.FifoQueue"

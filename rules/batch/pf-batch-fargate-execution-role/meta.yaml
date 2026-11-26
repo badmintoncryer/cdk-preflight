@@ -7,6 +7,8 @@ constraintSource: https://docs.aws.amazon.com/batch/latest/APIReference/API_Regi
 upstream: none
 repro:
   method: real-deploy
-  evidence: "bench 2026-09-03 ap-northeast-1: FARGATE platform without ContainerProperties.ExecutionRoleArn (d04) -> \"executionRoleArn is required for Fargate jobs.\" ROLLBACK_COMPLETE. Re-benched 2026-09-12 us-east-1 after the fixture swapped the dummy cross-account execution role for the bench one: fail -> \"executionRoleArn is required for Fargate jobs.\" (ROLLBACK_COMPLETE), pass CREATE_COMPLETE. With the dummy role the pass template could never have deployed."
+  evidence: "bench 2026-09-03 ap-northeast-1: FARGATE platform without ContainerProperties.ExecutionRoleArn (d04) -> \"executionRoleArn is required for Fargate jobs.\" ROLLBACK_COMPLETE. Re-benched 2026-09-12 us-east-1 after the fixture swapped the dummy cross-account execution role for the bench one: fail -> \"executionRoleArn is required for Fargate jobs.\" (ROLLBACK_COMPLETE), pass CREATE_COMPLETE. With the dummy role the pass template could never have deployed; omission bench 2026-11-26 ap-northeast-1: pass template without AWS::Batch::JobDefinition.ContainerProperties.ExecutionRoleArn -> ROLLBACK_COMPLETE with \"Error executing request, Exception : executionRoleArn is required for Fargate jobs., RequestId: b494796c-5c1d-4b02-837f-f7438edfa5e2\""
   expect: "executionRoleArn is required for Fargate jobs"
 addedOn: 2026-09-03
+omissionFails:
+  - "AWS::Batch::JobDefinition.ContainerProperties.ExecutionRoleArn"

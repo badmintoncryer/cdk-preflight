@@ -8,6 +8,8 @@ constraintSource: https://docs.aws.amazon.com/bedrock/latest/userguide/guardrail
 upstream: none
 repro:
   method: real-deploy
-  evidence: "bench 2026-09-06 us-east-1 (API/CFN probe): AutomatedReasoningPolicyConfig with an in-Region policy and no CrossRegionConfig -> CreateGuardrail 400 ValidationException: To use Automated Reasoning checks, your guardrail must have a cross-Region inference profile; verify-rule.sh 2026-09-06 us-east-1: fail ROLLBACK_COMPLETE, pass CREATE_COMPLETE and deleted. Log: bench/logs/pf-bedrock-guardrail-automated-reasoning-cross-region.log"
+  evidence: "bench 2026-09-06 us-east-1 (API/CFN probe): AutomatedReasoningPolicyConfig with an in-Region policy and no CrossRegionConfig -> CreateGuardrail 400 ValidationException: To use Automated Reasoning checks, your guardrail must have a cross-Region inference profile; verify-rule.sh 2026-09-06 us-east-1: fail ROLLBACK_COMPLETE, pass CREATE_COMPLETE and deleted. Log: bench/logs/pf-bedrock-guardrail-automated-reasoning-cross-region.log; omission bench 2026-11-26 us-east-1: pass template without AWS::Bedrock::Guardrail.CrossRegionConfig -> ROLLBACK_COMPLETE with \"To use Automated Reasoning checks, your guardrail must have a cross-Region inference profile.\""
   expect: "To use Automated Reasoning checks, your guardrail must have a cross-Region inference profile"
 addedOn: 2026-09-06
+omissionFails:
+  - "AWS::Bedrock::Guardrail.CrossRegionConfig"

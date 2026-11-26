@@ -8,6 +8,8 @@ constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateR
 upstream: none
 repro:
   method: real-deploy
-  evidence: "bench 2026-09-08 us-east-1: fail -> ROLLBACK_COMPLETE, \"One or more parameter values were invalid: ProjectionType is ALL, but NonKeyAttributes is specified\"; pass -> CREATE_COMPLETE."
+  evidence: "bench 2026-09-08 us-east-1: fail -> ROLLBACK_COMPLETE, \"One or more parameter values were invalid: ProjectionType is ALL, but NonKeyAttributes is specified\"; pass -> CREATE_COMPLETE; omission bench 2026-11-26 us-east-1: pass template without AWS::DynamoDB::GlobalTable.GlobalSecondaryIndexes.*.Projection.NonKeyAttributes -> ROLLBACK_COMPLETE with \"One or more parameter values were invalid: ProjectionType is INCLUDE, but NonKeyAttributes is not specified\""
   expect: "One or more parameter values were invalid: ProjectionType is ALL, but NonKeyAttributes is specified"
 addedOn: 2026-09-08
+omissionFails:
+  - "AWS::DynamoDB::GlobalTable.GlobalSecondaryIndexes.*.Projection.NonKeyAttributes"

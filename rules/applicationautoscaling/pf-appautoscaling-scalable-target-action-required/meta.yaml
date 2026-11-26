@@ -8,6 +8,8 @@ constraintSource: https://docs.aws.amazon.com/autoscaling/application/APIReferen
 upstream: none
 repro:
   method: real-deploy
-  evidence: "bench 2026-09-24 us-east-1: a scheduled action with no ScalableTargetAction at all (CloudFormation documents it as Required: No and the engine's schema agrees) -> \"ScalableTargetAction must be set\" (ROLLBACK_COMPLETE); pass two actions that carry one -> CREATE_COMPLETE"
+  evidence: "bench 2026-09-24 us-east-1: a scheduled action with no ScalableTargetAction at all (CloudFormation documents it as Required: No and the engine's schema agrees) -> \"ScalableTargetAction must be set\" (ROLLBACK_COMPLETE); pass two actions that carry one -> CREATE_COMPLETE; omission bench 2026-11-26 us-east-1: pass template without AWS::ApplicationAutoScaling::ScalableTarget.ScheduledActions.*.ScalableTargetAction -> ROLLBACK_COMPLETE with \"ScalableTargetAction must be set\""
   expect: "ScalableTargetAction must be set"
 addedOn: 2026-09-24
+omissionFails:
+  - "AWS::ApplicationAutoScaling::ScalableTarget.ScheduledActions.*.ScalableTargetAction"

@@ -8,6 +8,8 @@ upstream: none
 benchRegion: us-east-1
 repro:
   method: real-deploy
-  evidence: "bench 2026-09-09 us-east-1: Scaling increment must be specified for a SimpleScaling policy -> ROLLBACK_COMPLETE. pass template CREATE_COMPLETE."
+  evidence: "bench 2026-09-09 us-east-1: Scaling increment must be specified for a SimpleScaling policy -> ROLLBACK_COMPLETE. pass template CREATE_COMPLETE; omission bench 2026-11-26 us-east-1: pass template without AWS::AutoScaling::ScalingPolicy.ScalingAdjustment -> ROLLBACK_COMPLETE with \"Scaling increment must be specified for a SimpleScaling policy\""
   expect: "Scaling increment must be specified for a SimpleScaling policy"
 addedOn: 2026-09-09
+omissionFails:
+  - "AWS::AutoScaling::ScalingPolicy.ScalingAdjustment"

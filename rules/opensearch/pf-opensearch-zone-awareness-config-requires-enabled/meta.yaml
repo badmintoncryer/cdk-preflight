@@ -8,6 +8,8 @@ constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateR
 upstream: none
 repro:
   method: real-deploy
-  evidence: "bench 2026-09-25 us-east-1: fail (ClusterConfig.ZoneAwarenessConfig.AvailabilityZoneCount 2 with no ZoneAwarenessEnabled) -> \"ZoneAwarenessEnabled must be set to True to specify the ZoneAwarenessSettings\" (ROLLBACK_COMPLETE); pass (the same config with ZoneAwarenessEnabled true and 2 data nodes) not deployed (--fail-only)."
+  evidence: "bench 2026-09-25 us-east-1: fail (ClusterConfig.ZoneAwarenessConfig.AvailabilityZoneCount 2 with no ZoneAwarenessEnabled) -> \"ZoneAwarenessEnabled must be set to True to specify the ZoneAwarenessSettings\" (ROLLBACK_COMPLETE); pass (the same config with ZoneAwarenessEnabled true and 2 data nodes) not deployed (--fail-only); omission bench 2026-11-26 us-east-1: pass template without AWS::OpenSearchService::Domain.ClusterConfig.ZoneAwarenessEnabled -> ROLLBACK_COMPLETE with \"Invalid request provided: ZoneAwarenessEnabled must be set to True to specify the ZoneAwarenessSettings\""
   expect: "ZoneAwarenessEnabled must be set to True to specify the ZoneAwarenessSettings"
 addedOn: 2026-09-25
+omissionFails:
+  - "AWS::OpenSearchService::Domain.ClusterConfig.ZoneAwarenessEnabled"

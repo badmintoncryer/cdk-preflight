@@ -8,6 +8,8 @@ constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateR
 upstream: none
 repro:
   method: real-deploy
-  evidence: "bench 2026-09-25 us-east-1: fail (CustomEndpointEnabled true with EnforceHTTPS and neither the name nor the certificate) -> \"Please provide both CustomEndpoint and CustomEndpointCertificateArn fields to create a custom endpoint.\" (ROLLBACK_COMPLETE); pass not deployed (--fail-only), but the same fixture with both fields set reached CREATE_COMPLETE under pf-opensearch-custom-endpoint-cert-account."
+  evidence: "bench 2026-09-25 us-east-1: fail (CustomEndpointEnabled true with EnforceHTTPS and neither the name nor the certificate) -> \"Please provide both CustomEndpoint and CustomEndpointCertificateArn fields to create a custom endpoint.\" (ROLLBACK_COMPLETE); pass not deployed (--fail-only), but the same fixture with both fields set reached CREATE_COMPLETE under pf-opensearch-custom-endpoint-cert-account; omission bench 2026-11-26 us-east-1: pass template without AWS::OpenSearchService::Domain.DomainEndpointOptions.CustomEndpoint -> ROLLBACK_COMPLETE with \"Invalid request provided: Please provide both CustomEndpoint and CustomEndpointCertificateArn fields to create a custom endpoint.\""
   expect: "Please provide both CustomEndpoint and CustomEndpointCertificateArn fields to create a custom endpoint"
 addedOn: 2026-09-25
+omissionFails:
+  - "AWS::OpenSearchService::Domain.DomainEndpointOptions.CustomEndpoint"

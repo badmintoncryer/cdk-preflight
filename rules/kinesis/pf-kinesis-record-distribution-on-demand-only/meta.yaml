@@ -8,6 +8,8 @@ constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateR
 upstream: pending-engine
 repro:
   method: real-deploy
-  evidence: "bench 2026-11-16 us-east-1: PROVISIONED stream with RecordDistributionStrategy AUTO -> RecordDistributionStrategy can only be set for ON_DEMAND streams (HandlerErrorCode: InvalidRequest) (ROLLBACK_COMPLETE); pass ON_DEMAND with AUTO -> CREATE_COMPLETE"
+  evidence: "bench 2026-11-16 us-east-1: PROVISIONED stream with RecordDistributionStrategy AUTO -> RecordDistributionStrategy can only be set for ON_DEMAND streams (HandlerErrorCode: InvalidRequest) (ROLLBACK_COMPLETE); pass ON_DEMAND with AUTO -> CREATE_COMPLETE; omission bench 2026-11-26 us-east-1: pass template without AWS::Kinesis::Stream.StreamModeDetails -> ROLLBACK_COMPLETE with \"RecordDistributionStrategy can only be set for ON_DEMAND streams\""
   expect: "RecordDistributionStrategy can only be set for ON_DEMAND streams"
 addedOn: 2026-11-20
+omissionFails:
+  - "AWS::Kinesis::Stream.StreamModeDetails"

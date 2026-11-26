@@ -7,6 +7,8 @@ constraintSource: https://docs.aws.amazon.com/efs/latest/APIReference/API_PutLif
 upstream: none
 repro:
   method: real-deploy
-  evidence: "bench 2026-09-06 ap-northeast-1: fail template -> ROLLBACK_COMPLETE with \"One or more LifecyclePolicy objects specified are malformed.\"; pass template -> CREATE_COMPLETE"
+  evidence: "bench 2026-09-06 ap-northeast-1: fail template -> ROLLBACK_COMPLETE with \"One or more LifecyclePolicy objects specified are malformed.\"; pass template -> CREATE_COMPLETE; omission bench 2026-11-26 ap-northeast-1: pass template without AWS::EFS::FileSystem.ThroughputMode -> ROLLBACK_COMPLETE with \"The ThroughputMode value for the file system does not support TransitionToArchive. Either change the ThroughputMode value to Elastic or remove the Transition...\""
   expect: "One or more LifecyclePolicy objects specified are malformed"
 addedOn: 2026-09-06
+omissionFails:
+  - "AWS::EFS::FileSystem.ThroughputMode"

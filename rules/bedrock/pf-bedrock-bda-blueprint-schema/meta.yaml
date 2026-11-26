@@ -8,6 +8,10 @@ constraintSource: https://docs.aws.amazon.com/bedrock/latest/userguide/bda-bluep
 upstream: none
 repro:
   method: real-deploy
-  evidence: "bench 2026-09-06 us-east-1 (API/CFN probe): Schema {} / a schema without class / a schema without properties -> CreateBlueprint 400 ValidationException: Request has invalid blueprint schema; a schema with class, description, type object and one property deploys; verify-rule.sh 2026-09-06 us-east-1: fail ROLLBACK_COMPLETE, pass CREATE_COMPLETE and deleted. Log: bench/logs/pf-bedrock-bda-blueprint-schema.log"
+  evidence: "bench 2026-09-06 us-east-1 (API/CFN probe): Schema {} / a schema without class / a schema without properties -> CreateBlueprint 400 ValidationException: Request has invalid blueprint schema; a schema with class, description, type object and one property deploys; verify-rule.sh 2026-09-06 us-east-1: fail ROLLBACK_COMPLETE, pass CREATE_COMPLETE and deleted. Log: bench/logs/pf-bedrock-bda-blueprint-schema.log; omission bench 2026-11-26 us-east-1: pass template without AWS::Bedrock::Blueprint.Schema.class -> ROLLBACK_COMPLETE with \"Request has invalid blueprint schema.\"; omission bench 2026-11-26 us-east-1: pass template without AWS::Bedrock::Blueprint.Schema.description -> ROLLBACK_COMPLETE with \"Request has invalid blueprint schema.\"; omission bench 2026-11-26 us-east-1: pass template without AWS::Bedrock::Blueprint.Schema.properties -> ROLLBACK_COMPLETE with \"Request has invalid blueprint schema.\""
   expect: "Request has invalid blueprint schema"
 addedOn: 2026-09-06
+omissionFails:
+  - "AWS::Bedrock::Blueprint.Schema.class"
+  - "AWS::Bedrock::Blueprint.Schema.description"
+  - "AWS::Bedrock::Blueprint.Schema.properties"

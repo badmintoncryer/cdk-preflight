@@ -8,6 +8,8 @@ constraintSource: https://docs.aws.amazon.com/batch/latest/APIReference/API_Comp
 upstream: none
 repro:
   method: real-deploy
-  evidence: "bench 2026-09-12 us-east-1: fail template -> \"Security group ids are required.\" (ROLLBACK_COMPLETE); pass template CREATE_COMPLETE."
+  evidence: "bench 2026-09-12 us-east-1: fail template -> \"Security group ids are required.\" (ROLLBACK_COMPLETE); pass template CREATE_COMPLETE; omission bench 2026-11-26 us-east-1: pass template without AWS::Batch::ComputeEnvironment.ComputeResources.SecurityGroupIds -> ROLLBACK_COMPLETE with \"Error executing request, Exception : Security group ids are required., RequestId: 5d3ac801-0dfc-4f99-829c-12ceaeeb3b20\""
   expect: "Security group ids are required"
 addedOn: 2026-09-12
+omissionFails:
+  - "AWS::Batch::ComputeEnvironment.ComputeResources.SecurityGroupIds"

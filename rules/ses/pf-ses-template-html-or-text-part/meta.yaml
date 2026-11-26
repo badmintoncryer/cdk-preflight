@@ -8,6 +8,8 @@ constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateR
 upstream: none
 repro:
   method: real-deploy
-  evidence: "bench 2026-09-24 us-east-1: fail template (SubjectPart only) -> ROLLBACK_COMPLETE with \"Template must specify at least one of the parts.\"; pass template (SubjectPart + TextPart) -> CREATE_COMPLETE."
+  evidence: "bench 2026-09-24 us-east-1: fail template (SubjectPart only) -> ROLLBACK_COMPLETE with \"Template must specify at least one of the parts.\"; pass template (SubjectPart + TextPart) -> CREATE_COMPLETE; omission bench 2026-11-26 us-east-1: pass template without AWS::SES::Template.Template.TextPart -> ROLLBACK_COMPLETE with \"Template must specify at least one of the parts.\""
   expect: "Template must specify at least one of the parts"
 addedOn: 2026-09-24
+omissionFails:
+  - "AWS::SES::Template.Template.TextPart"

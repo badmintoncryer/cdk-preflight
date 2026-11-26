@@ -8,6 +8,8 @@ constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateR
 upstream: none
 repro:
   method: real-deploy
-  evidence: "bench 2026-11-25 us-east-1: MicrosoftAD without Password -> Directory CREATE_FAILED \"Password is a required proerty\" (InvalidRequest, AWS spelling kept; ROLLBACK_COMPLETE). Pass not deployed (30-min billed directory); same shape as the verified pf-ds-msad-password-no-admin pass."
+  evidence: "bench 2026-11-25 us-east-1: MicrosoftAD without Password -> Directory CREATE_FAILED \"Password is a required proerty\" (InvalidRequest, AWS spelling kept; ROLLBACK_COMPLETE). Pass not deployed (30-min billed directory); same shape as the verified pf-ds-msad-password-no-admin pass; omission bench 2026-11-26 us-east-1: pass template without AWS::DirectoryService::MicrosoftAD.Password -> ROLLBACK_COMPLETE with \"Password is a required proerty\""
   expect: "Password is a required proerty"
 addedOn: 2026-11-25
+omissionFails:
+  - "AWS::DirectoryService::MicrosoftAD.Password"

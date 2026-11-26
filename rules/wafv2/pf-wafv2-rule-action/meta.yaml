@@ -7,6 +7,10 @@ constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateR
 upstream: none
 repro:
   method: real-deploy
-  evidence: "bench 2026-09-05 ap-northeast-1: fail template -> ROLLBACK_COMPLETE with \"Error reason: A reference in your rule statement is not valid., field: RULE, parameter: Statement\"; pass template -> CREATE_COMPLETE"
+  evidence: "bench 2026-09-05 ap-northeast-1: fail template -> ROLLBACK_COMPLETE with \"Error reason: A reference in your rule statement is not valid., field: RULE, parameter: Statement\"; pass template -> CREATE_COMPLETE; omission bench 2026-11-26 ap-northeast-1: pass template without AWS::WAFv2::WebACL.DefaultAction.Allow -> ROLLBACK_COMPLETE with \"Error reason: You have used none or multiple values for a field that requires exactly one value., field: DEFAULT_ACTION, parameter: DefaultAction\"; omission bench 2026-11-26 ap-northeast-1: pass template without AWS::WAFv2::WebACL.Rules.*.OverrideAction -> ROLLBACK_COMPLETE with \"Error reason: You have used none or multiple values for a field that requires exactly one value., field: RULE, parameter: Rule\"; omission bench 2026-11-26 ap-northeast-1: pass template without AWS::WAFv2::WebACL.Rules.*.OverrideAction.None -> ROLLBACK_COMPLETE with \"Error reason: EXACTLY_ONE_CONDITION_REQUIRED, field: OVERRIDE_ACTION, parameter: OverrideAction\""
   expect: "Error reason: A reference in your rule statement is not valid., field: RULE, parameter: Statement"
 addedOn: 2026-09-05
+omissionFails:
+  - "AWS::WAFv2::WebACL.DefaultAction.Allow"
+  - "AWS::WAFv2::WebACL.Rules.*.OverrideAction"
+  - "AWS::WAFv2::WebACL.Rules.*.OverrideAction.None"

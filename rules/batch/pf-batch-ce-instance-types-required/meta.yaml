@@ -8,6 +8,8 @@ constraintSource: https://docs.aws.amazon.com/batch/latest/APIReference/API_Comp
 upstream: none
 repro:
   method: real-deploy
-  evidence: "bench 2026-09-12 us-east-1: fail template -> \"Resource instanceTypes are required.\" (ROLLBACK_COMPLETE); pass template CREATE_COMPLETE."
+  evidence: "bench 2026-09-12 us-east-1: fail template -> \"Resource instanceTypes are required.\" (ROLLBACK_COMPLETE); pass template CREATE_COMPLETE; omission bench 2026-11-26 us-east-1: pass template without AWS::Batch::ComputeEnvironment.ComputeResources.InstanceTypes -> ROLLBACK_COMPLETE with \"Error executing request, Exception : Resource instanceTypes are required., RequestId: 6db9aa88-eb8e-4948-adea-2af619789e85\""
   expect: "Resource instanceTypes are required"
 addedOn: 2026-09-12
+omissionFails:
+  - "AWS::Batch::ComputeEnvironment.ComputeResources.InstanceTypes"

@@ -8,6 +8,8 @@ constraintSource: https://docs.aws.amazon.com/eks/latest/APIReference/API_Create
 upstream: none
 repro:
   method: real-deploy
-  evidence: "bench 2026-09-25 us-east-1: Policy set with DisableSessionTags left out -> ROLLBACK_COMPLETE, \"When policy is specified, disableSessionTags must be set to true\". Phase B hit \"Trust policy of the role provided is invalid.\" first until the role trusted pods.eks.amazonaws.com for both sts:AssumeRole and sts:TagSession, so the fixture role carries both. fail-only; the fixture builds its own cluster."
+  evidence: "bench 2026-09-25 us-east-1: Policy set with DisableSessionTags left out -> ROLLBACK_COMPLETE, \"When policy is specified, disableSessionTags must be set to true\". Phase B hit \"Trust policy of the role provided is invalid.\" first until the role trusted pods.eks.amazonaws.com for both sts:AssumeRole and sts:TagSession, so the fixture role carries both. fail-only; the fixture builds its own cluster; omission bench 2026-11-26 us-east-1: pass template without AWS::EKS::PodIdentityAssociation.DisableSessionTags -> ROLLBACK_COMPLETE with \"When policy is specified, disableSessionTags must be set to true\""
   expect: "When policy is specified, disableSessionTags must be set to true"
 addedOn: 2026-09-25
+omissionFails:
+  - "AWS::EKS::PodIdentityAssociation.DisableSessionTags"

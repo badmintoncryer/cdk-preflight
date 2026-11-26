@@ -8,6 +8,8 @@ constraintSource: https://docs.aws.amazon.com/vpc-lattice/latest/APIReference/AP
 upstream: none
 repro:
   method: real-deploy
-  evidence: "bench 2026-10-18 us-east-1 (#363 c3/verify.sh): fail SPECIFIED_DOMAINS_ONLY without PrivateDnsSpecifiedDomains -> ROLLBACK_COMPLETE (privateDnsSpecifiedDomains must be specified if privateDnsPreference is VERIFIED_DOMAINS_AND_SPECIFIED_DOMAINS/SPECIFIED_DOMAINS_ONLY); pass SPECIFIED_DOMAINS_ONLY with [example.com] -> CREATE_COMPLETE. Variant VERIFIED_DOMAINS_AND_SPECIFIED_DOMAINS without domains -> ROLLBACK_COMPLETE (privateDnsSpecifiedDomains must be specified if privateDnsPreference is VERIFIED_DOMAINS_AND_SPECIFIED_DOMAINS/SPECIFIED_DOMAINS_ONLY)."
+  evidence: "bench 2026-10-18 us-east-1 (#363 c3/verify.sh): fail SPECIFIED_DOMAINS_ONLY without PrivateDnsSpecifiedDomains -> ROLLBACK_COMPLETE (privateDnsSpecifiedDomains must be specified if privateDnsPreference is VERIFIED_DOMAINS_AND_SPECIFIED_DOMAINS/SPECIFIED_DOMAINS_ONLY); pass SPECIFIED_DOMAINS_ONLY with [example.com] -> CREATE_COMPLETE. Variant VERIFIED_DOMAINS_AND_SPECIFIED_DOMAINS without domains -> ROLLBACK_COMPLETE (privateDnsSpecifiedDomains must be specified if privateDnsPreference is VERIFIED_DOMAINS_AND_SPECIFIED_DOMAINS/SPECIFIED_DOMAINS_ONLY); omission bench 2026-11-26 us-east-1: pass template without AWS::VpcLattice::ServiceNetworkVpcAssociation.DnsOptions.PrivateDnsSpecifiedDomains -> ROLLBACK_COMPLETE with \"privateDnsSpecifiedDomains must be specified if privateDnsPreference is VERIFIED_DOMAINS_AND_SPECIFIED_DOMAINS/SPECIFIED_DOMAINS_ONLY\""
   expect: "privateDnsSpecifiedDomains must be specified if privateDnsPreference is VERIFIED_DOMAINS_AND_SPECIFIED_DOMAINS/SPECIFIED_DOMAINS_ONLY"
 addedOn: 2026-10-18
+omissionFails:
+  - "AWS::VpcLattice::ServiceNetworkVpcAssociation.DnsOptions.PrivateDnsSpecifiedDomains"

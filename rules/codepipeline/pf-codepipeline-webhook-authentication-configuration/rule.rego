@@ -20,7 +20,8 @@ violation contains make_diag_full("pf-codepipeline-webhook-authentication-config
 	extra != want
 }
 
-# ... and the property it does take is mandatory.
+# ... and IP needs its AllowedIPRange. GITHUB_HMAC without SecretToken deployed
+# (omission bench 2026-11-26 us-east-1: CREATE_COMPLETE), so only IP is judged.
 violation contains make_diag_full("pf-codepipeline-webhook-authentication-configuration", "ERROR", name,
 	"Properties.AuthenticationConfiguration",
 	sprintf("Authentication %v requires AuthenticationConfiguration.%v; PutWebhook fails with \"InvalidWebhookAuthenticationParametersException: Optional['authenticationConfig' should contain only one property: '%v']\"", [auth, want, want]),
@@ -31,7 +32,7 @@ violation contains make_diag_full("pf-codepipeline-webhook-authentication-config
 	auth := _pf_cplib_get(p, "Authentication")
 	_pf_cplib_lit(auth)
 	want := _pf_cplib_webhook_auth_key[auth]
-	want != ""
+	auth == "IP"
 	cfg := object.get(p, "AuthenticationConfiguration", {})
 	_pf_cplib_plain(cfg)
 	_pf_cplib_absent(cfg, want)

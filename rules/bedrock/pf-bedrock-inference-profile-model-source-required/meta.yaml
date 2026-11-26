@@ -8,5 +8,7 @@ constraintSource: https://docs.aws.amazon.com/bedrock/latest/APIReference/API_Cr
 upstream: none
 repro:
   method: real-deploy
-  evidence: "bench 2026-09-06 us-east-1 (API/CFN probe): profile with only InferenceProfileName -> CloudFormation CREATE_FAILED (handler NullPointerException on getModelSource(); the API requires modelSource); verify-rule.sh 2026-09-06 us-east-1: fail ROLLBACK_COMPLETE, pass CREATE_COMPLETE and deleted. Log: bench/logs/pf-bedrock-inference-profile-model-source-required.log"
+  evidence: "bench 2026-09-06 us-east-1 (API/CFN probe): profile with only InferenceProfileName -> CloudFormation CREATE_FAILED (handler NullPointerException on getModelSource(); the API requires modelSource); verify-rule.sh 2026-09-06 us-east-1: fail ROLLBACK_COMPLETE, pass CREATE_COMPLETE and deleted. Log: bench/logs/pf-bedrock-inference-profile-model-source-required.log; omission bench 2026-11-26 us-east-1: pass template without AWS::Bedrock::ApplicationInferenceProfile.ModelSource -> ROLLBACK_COMPLETE with \"Cannot invoke \"software.amazon.bedrock.applicationinferenceprofile.InferenceProfileModelSource.getCopyFrom()\" because the return value of \"software.amazon.be...\""
 addedOn: 2026-09-06
+omissionFails:
+  - "AWS::Bedrock::ApplicationInferenceProfile.ModelSource"

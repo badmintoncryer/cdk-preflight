@@ -8,6 +8,8 @@ constraintSource: https://docs.aws.amazon.com/AmazonECS/latest/developerguide/ta
 upstream: none
 repro:
   method: real-deploy
-  evidence: "bench 2026-09-08 us-east-1: fail template -> ROLLBACK_COMPLETE (Create TaskDefinition: EFS IAM authorization requires TransitEncryption to be enabled.), pass template -> CREATE_COMPLETE. Log: bench/logs/pf-ecs-efs-iam-without-transit-encryption.log"
+  evidence: "bench 2026-09-08 us-east-1: fail template -> ROLLBACK_COMPLETE (Create TaskDefinition: EFS IAM authorization requires TransitEncryption to be enabled.), pass template -> CREATE_COMPLETE. Log: bench/logs/pf-ecs-efs-iam-without-transit-encryption.log; omission bench 2026-11-26 us-east-1: pass template without AWS::ECS::TaskDefinition.Volumes.*.EFSVolumeConfiguration.TransitEncryption -> ROLLBACK_COMPLETE with \"Invalid request provided: Create TaskDefinition: EFS IAM authorization requires TransitEncryption to be enabled.\""
   expect: "Create TaskDefinition: EFS IAM authorization requires TransitEncryption to be enabled"
 addedOn: 2026-09-08
+omissionFails:
+  - "AWS::ECS::TaskDefinition.Volumes.*.EFSVolumeConfiguration.TransitEncryption"

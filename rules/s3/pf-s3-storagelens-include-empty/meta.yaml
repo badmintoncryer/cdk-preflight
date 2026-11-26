@@ -8,5 +8,7 @@ constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateR
 upstream: none
 repro:
   method: real-deploy
-  evidence: "bench 2026-09-06 us-east-1: fail template -> ROLLBACK_COMPLETE \"(Service: S3Control, Status Code: 400, Request ID: ETZBRHFK70PV1BTM, Extended Request ID: WpFagB82Q63UEC19gaWxPRzb9TDEdqYp9yinjguK02uqBUWmpyTisgr2M9w1jSmQvFd4q+XSItw=)\"; pass template -> CREATE_COMPLETE"
+  evidence: "bench 2026-09-06 us-east-1: fail template -> ROLLBACK_COMPLETE \"(Service: S3Control, Status Code: 400, Request ID: ETZBRHFK70PV1BTM, Extended Request ID: WpFagB82Q63UEC19gaWxPRzb9TDEdqYp9yinjguK02uqBUWmpyTisgr2M9w1jSmQvFd4q+XSItw=)\"; pass template -> CREATE_COMPLETE; omission bench 2026-11-26 us-east-1: pass template without AWS::S3::StorageLens.StorageLensConfiguration.Include.Buckets -> ROLLBACK_COMPLETE with \"\""
 addedOn: 2026-09-06
+omissionFails:
+  - "AWS::S3::StorageLens.StorageLensConfiguration.Include.Buckets"

@@ -8,6 +8,8 @@ constraintSource: https://docs.aws.amazon.com/opensearch-service/latest/develope
 upstream: none
 repro:
   method: real-deploy
-  evidence: "bench 2026-09-25 us-east-1: fail (the FGAC scaffold with NodeToNodeEncryptionOptions.Enabled false) -> \"You must enable node-to-node encryption to use advanced security options.\" (ROLLBACK_COMPLETE); pass (OpenSearch_2.19, m6g.large.search x1, gp3 10 GiB / 3000 IOPS / 125 MiB/s, encryption at rest + node-to-node + EnforceHTTPS + internal user database with a master name and password) -> CREATE_COMPLETE. This is the canonical FGAC scaffold the other AdvancedSecurityOptions rules' pass fixtures share."
+  evidence: "bench 2026-09-25 us-east-1: fail (the FGAC scaffold with NodeToNodeEncryptionOptions.Enabled false) -> \"You must enable node-to-node encryption to use advanced security options.\" (ROLLBACK_COMPLETE); pass (OpenSearch_2.19, m6g.large.search x1, gp3 10 GiB / 3000 IOPS / 125 MiB/s, encryption at rest + node-to-node + EnforceHTTPS + internal user database with a master name and password) -> CREATE_COMPLETE. This is the canonical FGAC scaffold the other AdvancedSecurityOptions rules' pass fixtures share; omission bench 2026-11-26 us-east-1: pass template without AWS::OpenSearchService::Domain.NodeToNodeEncryptionOptions -> ROLLBACK_COMPLETE with \"Invalid request provided: You must enable node-to-node encryption to use advanced security options.\""
   expect: "You must enable node-to-node encryption to use advanced security options"
 addedOn: 2026-09-25
+omissionFails:
+  - "AWS::OpenSearchService::Domain.NodeToNodeEncryptionOptions"

@@ -8,6 +8,9 @@ constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateR
 upstream: none
 repro:
   method: real-deploy
-  evidence: "api-probe 2026-09-13 us-east-1: CreateDataCatalog -> \"InvalidRequestException: Hive catalog parameters cannot be empty.\"; bench 2026-09-13 us-east-1: fail -> \"Hive catalog parameters cannot be empty.\" (ROLLBACK_COMPLETE); pass -> CREATE_COMPLETE"
+  evidence: "api-probe 2026-09-13 us-east-1: CreateDataCatalog -> \"InvalidRequestException: Hive catalog parameters cannot be empty.\"; bench 2026-09-13 us-east-1: fail -> \"Hive catalog parameters cannot be empty.\" (ROLLBACK_COMPLETE); pass -> CREATE_COMPLETE; omission bench 2026-11-26 us-east-1: pass template without AWS::Athena::DataCatalog.Parameters -> ROLLBACK_COMPLETE with \"Hive catalog parameters cannot be empty.\"; omission bench 2026-11-26 us-east-1: pass template without AWS::Athena::DataCatalog.Parameters.metadata-function -> ROLLBACK_COMPLETE with \"Hive catalog parameters cannot be empty.\""
   expect: "Hive catalog parameters cannot be empty"
 addedOn: 2026-09-13
+omissionFails:
+  - "AWS::Athena::DataCatalog.Parameters"
+  - "AWS::Athena::DataCatalog.Parameters.metadata-function"

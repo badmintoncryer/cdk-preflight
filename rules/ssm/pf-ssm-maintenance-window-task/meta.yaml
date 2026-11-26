@@ -7,6 +7,10 @@ constraintSource: https://docs.aws.amazon.com/systems-manager/latest/APIReferenc
 upstream: none
 repro:
   method: real-deploy
-  evidence: "bench 2026-09-05 ap-northeast-1: fail template -> ROLLBACK_COMPLETE with \"For Run Command tasks, you must specify at least one resource as the target of the task. You can specify between 1 and 50 instance IDs, or between 1 and 10 maintenance window target IDs.\"; pass template -> CREATE_COMPLETE"
+  evidence: "bench 2026-09-05 ap-northeast-1: fail template -> ROLLBACK_COMPLETE with \"For Run Command tasks, you must specify at least one resource as the target of the task. You can specify between 1 and 50 instance IDs, or between 1 and 10 maintenance window target IDs.\"; pass template -> CREATE_COMPLETE; omission bench 2026-11-26 ap-northeast-1: pass template without AWS::SSM::MaintenanceWindowTask.Targets -> ROLLBACK_COMPLETE with \"Maintenance window tasks without targets do not support MaxErrors values. For Run Command tasks, you must specify at least one resource as the target of the ...\"; omission bench 2026-11-26 ap-northeast-1: pass template without AWS::SSM::MaintenanceWindowTask.MaxConcurrency -> ROLLBACK_COMPLETE with \"Max Concurrency must be a number greater than 0, or a percentage between 1 and 100\"; omission bench 2026-11-26 ap-northeast-1: pass template without AWS::SSM::MaintenanceWindowTask.MaxErrors -> ROLLBACK_COMPLETE with \"Max Errors must be a number of at least 0, or a percentage between 0 and 100\""
   expect: "For Run Command tasks, you must specify at least one resource as the target of the task. You can specify between 1 and 50 instance IDs, or between 1 and 10 maintenance window target IDs"
 addedOn: 2026-09-05
+omissionFails:
+  - "AWS::SSM::MaintenanceWindowTask.Targets"
+  - "AWS::SSM::MaintenanceWindowTask.MaxConcurrency"
+  - "AWS::SSM::MaintenanceWindowTask.MaxErrors"
