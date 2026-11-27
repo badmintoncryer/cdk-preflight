@@ -7,5 +7,6 @@ constraintSource: https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/placement-
 upstream: none
 repro:
   method: real-deploy
-  evidence: "bench 2026-09-03 ap-northeast-1: cluster placement group + t3.micro (e11), t4g.micro (e11b), t2.micro (e11c), t3a.micro (e11d) each -> \"Cluster placement groups are not supported by the '<type>' instance type.\" ROLLBACK_COMPLETE. All four claimed families benched individually; nothing launches (failure precedes RunInstances success)."
+  evidence: "bench 2026-09-03 ap-northeast-1: cluster placement group + t3.micro (e11), t4g.micro (e11b), t2.micro (e11c), t3a.micro (e11d) each -> \"Cluster placement groups are not supported by the '<type>' instance type.\" ROLLBACK_COMPLETE. All four claimed families benched individually; nothing launches (failure precedes RunInstances success). bench 2026-11-27 ap-northeast-1: fail template -> ROLLBACK_COMPLETE with \"\"Cluster placement groups are not supported by the 't3.micro' instance type. Specify a supported instance type or change the placement group strategy, and try again. (Service: Ec2, Status Code: 400, Request ID: de60add6-0bc4-4e09-8593-1cecb5dccd50) (SDK Attempt Count: 1)\" (RequestToken: 7aecaf93-442e-edb7-3f99-985bd58def22, HandlerErrorCode: InvalidRequest)\""
+  expect: "Cluster placement groups are not supported by the 't3.micro' instance type"
 addedOn: 2026-09-03

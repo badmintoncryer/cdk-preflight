@@ -8,5 +8,6 @@ upstream: none
 benchRegion: us-east-1
 repro:
   method: real-deploy
-  evidence: "bench 2026-09-07 us-east-1: a .fifo SNS topic as Target -> ROLLBACK_COMPLETE, \"SNS FIFO\" named in the validation errors. The same topic without the .fifo suffix is accepted."
+  evidence: "bench 2026-09-07 us-east-1: a .fifo SNS topic as Target -> ROLLBACK_COMPLETE, \"SNS FIFO\" named in the validation errors. The same topic without the .fifo suffix is accepted. bench 2026-11-27 us-east-1: fail template -> ROLLBACK_COMPLETE with \"\"{\"ValidationErrorFields\":[{\"Name\":\"Target\",\"Message\":\"Invalid pipe target ARN\"},{\"Name\":\"Target\",\"Message\":\"SNS FIFO is not a supported service for a target.\"}]} (Service: Pipes, Status Code: 400, Request ID: 794d6510-ac16-41bb-afae-511b6581452f) (SDK Attempt Count: 1)\" (RequestToken: 4c3b747e-63e1-a143-c701-f7e794ee8679, HandlerErrorCode: InvalidRequest)\""
+  expect: "SNS FIFO is not a supported service for a target."
 addedOn: 2026-09-07

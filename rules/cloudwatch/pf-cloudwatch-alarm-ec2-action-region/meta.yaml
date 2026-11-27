@@ -8,4 +8,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-08 ap-northeast-1: fail -> ROLLBACK_COMPLETE with \"Invalid region eu-west-1 specified. Only ap-northeast-1 is supported.\"; pass -> CREATE_COMPLETE. api probe 2026-09-08 us-east-1: PutMetricAlarm with AlarmActions [\"arn:aws:automate:eu-west-1:ec2:stop\"] -> \"Invalid region eu-west-1 specified. Only us-east-1 is supported.\"; the same ARN with the caller's region succeeded. Bare engine clean."
+  expect: "Invalid region eu-west-1 specified. Only ap-northeast-1 is supported."
 addedOn: 2026-09-08

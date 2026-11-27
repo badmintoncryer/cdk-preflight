@@ -13,4 +13,5 @@ benchRegion: us-east-1
 repro:
   method: real-deploy
   evidence: "bench 2026-09-08 us-east-1: fail template -> ROLLBACK_COMPLETE with \"Invalid request provided: AWS::Cognito::UserPoolDomain\"; the API names it: \"Custom domain is not a valid subdomain: Was not able to resolve a DNS A record for the parent domain or domain parent is a top-level domain.\"; pass template -> CREATE_COMPLETE"
+  expect: "Invalid request provided: AWS::Cognito::UserPoolDomain"
 addedOn: 2026-09-08

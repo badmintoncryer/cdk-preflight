@@ -7,5 +7,6 @@ constraintSource: https://docs.aws.amazon.com/apigateway/latest/developerguide/s
 upstream: none
 repro:
   method: real-deploy
-  evidence: "bench 2026-09-03 ap-northeast-1: Stage AccessLogSetting.Format \"hello-no-request-id\" (a06) -> \"Access Log format must include either $context.requestId or $context.extendedRequestId : 'hello-no-request-id'\". ROLLBACK_COMPLETE. V2 stages unmeasured."
+  evidence: "bench 2026-09-03 ap-northeast-1: Stage AccessLogSetting.Format \"hello-no-request-id\" (a06) -> \"Access Log format must include either $context.requestId or $context.extendedRequestId : 'hello-no-request-id'\". ROLLBACK_COMPLETE. V2 stages unmeasured. bench 2026-11-27 ap-northeast-1: fail template -> ROLLBACK_COMPLETE with \"\"Invalid ARN specified in the request. The ARN must be a valid CloudWatch Logs log group or Kinesis Data Firehose delivery stream ARN. (Service: ApiGateway, Status Code: 400, Request ID: 5c31693b-1c3e-485c-8577-fbf5afddf276) (SDK Attempt Count: 1)\" (RequestToken: 90026286-8d34-f49d-ce69-c6b5123f3b29, HandlerErrorCode: InvalidRequest)\""
+  expect: "Invalid ARN specified in the request. The ARN must be a valid CloudWatch Logs log group or Kinesis Data Firehose delivery stream ARN."
 addedOn: 2026-09-03

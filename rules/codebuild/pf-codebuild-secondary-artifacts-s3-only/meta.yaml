@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-14 us-east-1: fail template (two projects, one with a CODEPIPELINE secondary artifact and one with a NO_ARTIFACTS secondary artifact) -> \"Invalid input: artifactType NO_ARTIFACTS is not allowed for secondaryArtifacts\" (ROLLBACK_COMPLETE; the log keeps one CREATE_FAILED reason, and CreateProject answers the CODEPIPELINE half with \"Invalid input: artifactType CODEPIPELINE is not allowed for secondaryArtifacts\" - S3 is the only type secondary artifacts take); pass template (an S3 secondary artifact) -> CREATE_COMPLETE."
+  expect: "Invalid input: artifactType CODEPIPELINE is not allowed for secondaryArtifacts"
 addedOn: 2026-09-14

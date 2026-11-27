@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-06 us-east-1 (API/CFN probe): ContextEnrichmentConfiguration on a knowledge base with S3_VECTORS storage -> CreateDataSource 400 ValidationException: ContextEnrichmentConfiguration is only supported when using Neptune Analytics as a Knowledge Base; verify-rule.sh 2026-09-06 us-east-1: fail ROLLBACK_COMPLETE, pass CREATE_COMPLETE and deleted. Log: bench/logs/pf-bedrock-datasource-context-enrichment-neptune.log"
+  expect: "ContextEnrichmentConfiguration is only supported when using Neptune Analytics"
 addedOn: 2026-09-06

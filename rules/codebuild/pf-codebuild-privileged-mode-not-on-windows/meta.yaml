@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-14 us-east-1: fail template (Environment.PrivilegedMode true on WINDOWS_SERVER_2022_CONTAINER and on WINDOWS_SERVER_2019_CONTAINER) -> \"PrivilegedMode is not supported for WINDOWS_SERVER_2022_CONTAINER projects\" (ROLLBACK_COMPLETE; CreateProject names the 2019 environment the same way); pass template (the same Windows environment without PrivilegedMode) -> CREATE_COMPLETE. PrivilegedMode is what starts the Docker daemon LOCAL_DOCKER_LAYER_CACHE needs, so the Linux-only limit lands on PrivilegedMode itself."
+  expect: "PrivilegedMode is not supported for WINDOWS_SERVER_2022_CONTAINER projects"
 addedOn: 2026-09-14

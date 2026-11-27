@@ -8,5 +8,6 @@ constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateR
 upstream: cfn-schema
 repro:
   method: real-deploy
-  evidence: "bench 2026-09-24 us-east-1: fail (RecoveryPointTypes [\"ARCHIVE\"]) -> \"Validation failed with 1 error(s). Call DescribeEvents to retrieve the full list of issues with resource and property details, resolve each error, then retry the operation.\" (ROLLBACK_COMPLETE; CreateStack-time raw-schema validation that names no property); pass (RecoveryPointTypes [\"SNAPSHOT\"], one property apart) -> CREATE_COMPLETE"
+  evidence: "bench 2026-09-24 us-east-1: fail (RecoveryPointTypes [\"ARCHIVE\"]) -> \"Validation failed with 1 error(s). Call DescribeEvents to retrieve the full list of issues with resource and property details, resolve each error, then retry the operation.\" (ROLLBACK_COMPLETE; CreateStack-time raw-schema validation that names no property); pass (RecoveryPointTypes [\"SNAPSHOT\"], one property apart) -> CREATE_COMPLETE bench 2026-11-27 us-east-1: fail template -> ROLLBACK_COMPLETE with \"Validation failed with 1 error(s). Call DescribeEvents to retrieve the full list of issues with resource and property details, resolve each error, then retry the operation. [DescribeEvents: PROPERTY_VALIDATION Rtp /Resources/Rtp/Properties/RecoveryPointSelection/RecoveryPointTypes/0: ARCHIVE is not a valid enum value. Supported values: [SNAPSHOT, CONTINUOUS]]\""
+  expect: "RecoveryPointSelection/RecoveryPointTypes/0: ARCHIVE is not a valid enum value"
 addedOn: 2026-09-24

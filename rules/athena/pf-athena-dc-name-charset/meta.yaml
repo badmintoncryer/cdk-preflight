@@ -9,4 +9,5 @@ upstream: pending-engine
 repro:
   method: real-deploy
   evidence: "api-probe 2026-09-13 us-east-1: CreateDataCatalog -> \"InvalidRequestException: DataCatalog name pf.catalog is invalid.\"; bench 2026-09-13 us-east-1: fail -> \"DataCatalog name cdkpf.dc.charset is invalid.\" (ROLLBACK_COMPLETE); pass -> CREATE_COMPLETE"
+  expect: "DataCatalog name cdkpf.dc.charset is invalid."
 addedOn: 2026-09-13

@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-10 us-east-1: fail template -> CREATE_FAILED, but the CloudFormation handler for AWS::Route53::HealthCheck only says \"Invalid request provided: AWS::Route53::HealthCheck\"; the same HealthCheckConfig put straight to CreateHealthCheck answers InvalidInput: \"Invalid parameter : Basic health checks must not have an insufficient data health state specified.\" (ROLLBACK_COMPLETE)"
+  expect: "Invalid parameter : Basic health checks must not have an insufficient data health state specified."
 addedOn: 2026-09-10

@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-10 us-east-1: a WeightedOverride with weights 30 and 30 -> ROLLBACK_COMPLETE, \"Traffic split weights must sum to exactly 100, but sum is 60 (BedrockAgentCoreControl, 400 InvalidRequest)\". The schema carries the per-entry 1..99 range and the exactly-two-entries shape, never the sum."
+  expect: "Traffic split weights must sum to exactly 100, but sum is 60"
 addedOn: 2026-09-10

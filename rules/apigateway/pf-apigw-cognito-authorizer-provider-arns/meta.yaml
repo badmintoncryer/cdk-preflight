@@ -8,6 +8,7 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-03 ap-northeast-1: Type COGNITO_USER_POOLS without ProviderARNs (a04) -> \"ProviderARNs cannot be empty\". ROLLBACK_COMPLETE; omission bench 2026-11-26 ap-northeast-1: pass template without AWS::ApiGateway::Authorizer.ProviderARNs -> ROLLBACK_COMPLETE with \"ProviderARNs cannot be empty\""
+  expect: "ProviderARNs cannot be empty"
 addedOn: 2026-09-03
 omissionFails:
   - "AWS::ApiGateway::Authorizer.ProviderARNs"

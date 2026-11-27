@@ -12,4 +12,5 @@ supersededBy:
 repro:
   method: real-deploy
   evidence: "bench 2026-09-02 ap-northeast-1: ROLLBACK_COMPLETE, \"Number of attributes in KeySchema does not exactly match number of attributes defined in AttributeDefinitions\" (HandlerErrorCode InvalidRequest). Reverse direction of the engine's E3039."
+  expect: "Number of attributes in KeySchema does not exactly match number of attributes defined in AttributeDefinitions"
 addedOn: 2026-09-02

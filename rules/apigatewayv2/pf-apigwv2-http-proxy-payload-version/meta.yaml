@@ -8,4 +8,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-03 ap-northeast-1: HTTP_PROXY integration on an HTTP API with PayloadFormatVersion \"2.0\" (v05) -> \"PayloadFormatVersion 2.0 is not supported for integration of type HTTP_PROXY\". ROLLBACK_COMPLETE."
+  expect: "PayloadFormatVersion 2.0 is not supported for integration of type HTTP_PROXY"
 addedOn: 2026-09-03

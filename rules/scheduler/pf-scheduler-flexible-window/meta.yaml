@@ -8,6 +8,7 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-02 ap-northeast-1: Mode FLEXIBLE without window (ev08) -> \"MaximumWindowInMinutes must be provided when FlexibleTimeWindowMode is set to FLEXIBLE\"; Mode OFF with window (ev09) -> \"MaximumWindowInMinutes must not be provided when FlexibleTimeWindowMode is set to OFF\". Both ROLLBACK_COMPLETE; omission bench 2026-11-26 ap-northeast-1: pass template without AWS::Scheduler::Schedule.FlexibleTimeWindow.MaximumWindowInMinutes -> ROLLBACK_COMPLETE with \"Invalid request provided: MaximumWindowInMinutes must be provided when FlexibleTimeWindowMode is set to FLEXIBLE.\""
+  expect: "Invalid request provided: MaximumWindowInMinutes must be provided when FlexibleTimeWindowMode is set to FLEXIBLE."
 addedOn: 2026-09-02
 omissionFails:
   - "AWS::Scheduler::Schedule.FlexibleTimeWindow.MaximumWindowInMinutes"

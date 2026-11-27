@@ -8,5 +8,6 @@ constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateR
 upstream: cfn-schema
 repro:
   method: real-deploy
-  evidence: "bench 2026-09-10 us-east-1: CloudFormation stops it before provisioning (stack CREATE_FAILED, DetailedStatus VALIDATION_FAILED, \"Validation failed with 1 error(s)\"), so the message names no property; the same record put straight to the Route 53 API names the constraint: \"cvc-enumeration-valid: Value 'BACKUP' is not facet-valid with respect to enumeration '[PRIMARY, SECONDARY]'\". The bundled engine (1.7.0-beta) is silent on it, hence upstream: pending-engine."
+  evidence: "bench 2026-09-10 us-east-1: CloudFormation stops it before provisioning (stack CREATE_FAILED, DetailedStatus VALIDATION_FAILED, \"Validation failed with 1 error(s)\"), so the message names no property; the same record put straight to the Route 53 API names the constraint: \"cvc-enumeration-valid: Value 'BACKUP' is not facet-valid with respect to enumeration '[PRIMARY, SECONDARY]'\". The bundled engine (1.7.0-beta) is silent on it, hence upstream: pending-engine. bench 2026-11-27 us-east-1: fail template -> ROLLBACK_COMPLETE with \"Validation failed with 1 error(s). Call DescribeEvents to retrieve the full list of issues with resource and property details, resolve each error, then retry the operation. [DescribeEvents: PROPERTY_VALIDATION Rec /Resources/Rec/Properties/Failover: BACKUP is not a valid enum value. Supported values: [PRIMARY, SECONDARY]]\""
+  expect: "Failover: BACKUP is not a valid enum value"
 addedOn: 2026-09-10

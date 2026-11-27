@@ -8,4 +8,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-02 ap-northeast-1 (w09): Period 45 -> \"Period must be 10, 20, 30 or a multiple of 60\". ROLLBACK_COMPLETE. Registry schema has no constraint on the field. bench 2026-09-03 (w11): MetricStat.Period 45 -> the same error, so the MetricStat path is covered too."
+  expect: "Period must be 10, 20, 30 or a multiple of 60"
 addedOn: 2026-09-02

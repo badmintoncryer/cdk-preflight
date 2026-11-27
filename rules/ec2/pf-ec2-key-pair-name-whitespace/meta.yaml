@@ -8,4 +8,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "api 2026-09-08 ap-northeast-1: CreateKeyPair --key-name \" cdkpf-probe-kp \" -> \"Invalid value ' cdkpf-probe-kp ' for keyName. It should be trimmed\"; the trimmed name created cleanly. bench 2026-09-08 ap-northeast-1: KeyName \" cdkpf-fixture \" -> ROLLBACK_COMPLETE; the trimmed name -> CREATE_COMPLETE."
+  expect: "for keyName. It should be trimmed"
 addedOn: 2026-09-08

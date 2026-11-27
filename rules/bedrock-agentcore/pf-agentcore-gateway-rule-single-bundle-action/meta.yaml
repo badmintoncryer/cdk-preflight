@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-10 us-east-1: Actions with two ConfigurationBundle entries -> ROLLBACK_COMPLETE, \"At most one configurationBundle action is allowed per rule (BedrockAgentCoreControl, 400 InvalidRequest)\". The schema allows two Actions entries and says nothing about their kinds."
+  expect: "At most one configurationBundle action is allowed per rule"
 addedOn: 2026-09-10

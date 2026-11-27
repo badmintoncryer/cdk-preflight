@@ -7,5 +7,6 @@ constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateR
 upstream: none
 repro:
   method: real-deploy
-  evidence: "api 2026-09-08 ap-northeast-1: CreateSecurityGroup --group-name default -> \"Cannot use reserved security group name: default\". The survey first recorded this as engine-detected, but that E1151 came from a malformed fixture VPC id; with a well-formed id the engine is silent. bench 2026-09-08 ap-northeast-1: GroupName default -> ROLLBACK_COMPLETE with the same message; another name -> CREATE_COMPLETE."
+  evidence: "api 2026-09-08 ap-northeast-1: CreateSecurityGroup --group-name default -> \"Cannot use reserved security group name: default\". The survey first recorded this as engine-detected, but that E1151 came from a malformed fixture VPC id; with a well-formed id the engine is silent. bench 2026-09-08 ap-northeast-1: GroupName default -> ROLLBACK_COMPLETE with the same message; another name -> CREATE_COMPLETE. bench 2026-11-27 ap-northeast-1: fail template -> ROLLBACK_COMPLETE with \"\"Security Group with default already exists\" (RequestToken: 3a7d5b69-cc82-9c9a-4486-b472ecbb236a, HandlerErrorCode: AlreadyExists)\""
+  expect: "Security Group with default already exists"
 addedOn: 2026-09-08

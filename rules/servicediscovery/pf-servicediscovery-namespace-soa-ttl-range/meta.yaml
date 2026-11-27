@@ -12,5 +12,6 @@ supersededBy:
   engineRules: [F3034]
 repro:
   method: real-deploy
-  evidence: "bench 2026-09-22 us-east-1: SOA.TTL 2147483648 -> \"Validation failed with 1 error(s). Call DescribeEvents to retrieve the full list of issues with resource and property details, resolve each error, then retry the operation.\" (ROLLBACK_COMPLETE); SOA.TTL 2147483647 -> CREATE_COMPLETE"
+  evidence: "bench 2026-09-22 us-east-1: SOA.TTL 2147483648 -> \"Validation failed with 1 error(s). Call DescribeEvents to retrieve the full list of issues with resource and property details, resolve each error, then retry the operation.\" (ROLLBACK_COMPLETE); SOA.TTL 2147483647 -> CREATE_COMPLETE bench 2026-11-27 us-east-1: fail template -> ROLLBACK_COMPLETE with \"Validation failed with 1 error(s). Call DescribeEvents to retrieve the full list of issues with resource and property details, resolve each error, then retry the operation. [DescribeEvents: PROPERTY_VALIDATION Ns /Resources/Ns/Properties/Properties/DnsProperties/SOA/TTL: #/Properties/DnsProperties/SOA/TTL: 2147483648 is not less or equal to 2147483647]\""
+  expect: "Properties/DnsProperties/SOA/TTL: #/Properties/DnsProperties/SOA/TTL: 2147483648 is not less or equal to 2147483647"
 addedOn: 2026-09-22

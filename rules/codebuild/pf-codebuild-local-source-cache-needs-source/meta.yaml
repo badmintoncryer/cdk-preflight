@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-14 us-east-1: fail template (Cache.Modes LOCAL_SOURCE_CACHE on a NO_SOURCE project) -> \"Cache mode LOCAL_SOURCE_CACHE is not available for source type NO_SOURCE\" (ROLLBACK_COMPLETE); pass template (the same cache on an S3 source) -> CREATE_COMPLETE."
+  expect: "Cache mode LOCAL_SOURCE_CACHE is not available for source type NO_SOURCE"
 addedOn: 2026-09-14

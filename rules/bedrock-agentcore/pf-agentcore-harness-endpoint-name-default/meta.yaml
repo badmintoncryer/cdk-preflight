@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-10 us-east-1: EndpointName DEFAULT -> ROLLBACK_COMPLETE, \"Endpoint name 'DEFAULT' is reserved. Use a different name.\" (Bedrock AgentCore Control CreateHarnessEndpoint, 400 ValidationException). The schema only checks the name pattern, which DEFAULT satisfies."
+  expect: "Endpoint name 'DEFAULT' is reserved. Use a different name."
 addedOn: 2026-09-10

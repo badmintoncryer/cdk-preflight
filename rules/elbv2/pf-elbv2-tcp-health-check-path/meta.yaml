@@ -8,6 +8,7 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-03 ap-northeast-1: HealthCheckProtocol TCP + HealthCheckPath (e04) -> \"Health check paths are not supported for TCP health checks\"; Protocol TCP with HealthCheckProtocol omitted (defaults to TCP) + HealthCheckPath (e04b) -> same error. Both ROLLBACK_COMPLETE.; bench 2026-11-26 ap-northeast-1, fixtures now building their own VPC: fail -> \"Health check paths are not supported for TCP health checks\" (ROLLBACK_COMPLETE); pass -> CREATE_COMPLETE; omission bench 2026-11-26 ap-northeast-1: pass template without AWS::ElasticLoadBalancingV2::TargetGroup.HealthCheckProtocol -> ROLLBACK_COMPLETE with \"Health check paths are not supported for TCP health checks\""
+  expect: "Health check paths are not supported for TCP health checks"
 addedOn: 2026-09-03
 omissionFails:
   - "AWS::ElasticLoadBalancingV2::TargetGroup.HealthCheckProtocol"

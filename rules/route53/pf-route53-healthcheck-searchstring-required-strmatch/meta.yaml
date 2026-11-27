@@ -9,6 +9,7 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-10 us-east-1: fail template -> CREATE_FAILED, but the CloudFormation handler for AWS::Route53::HealthCheck only says \"Invalid request provided: AWS::Route53::HealthCheck\"; the same HealthCheckConfig put straight to CreateHealthCheck answers InvalidInput: \"String match health checks must have a search string specified.\" (ROLLBACK_COMPLETE); omission bench 2026-11-26 us-east-1: pass template without AWS::Route53::HealthCheck.HealthCheckConfig.SearchString -> ROLLBACK_COMPLETE with \"String match health checks must have a search string specified.\""
+  expect: "String match health checks must have a search string specified."
 addedOn: 2026-09-10
 omissionFails:
   - "AWS::Route53::HealthCheck.HealthCheckConfig.SearchString"

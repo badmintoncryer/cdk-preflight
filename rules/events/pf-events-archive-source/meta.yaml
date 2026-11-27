@@ -8,5 +8,6 @@ upstream: none
 benchRegion: us-east-1
 repro:
   method: real-deploy
-  evidence: "bench 2026-09-07 us-east-1: SourceArn pointing at an SQS queue -> ROLLBACK_COMPLETE, eventSourceArn fails its pattern constraint. The Region half was isolated the same day via events:CreateArchive by actually creating a bus in us-west-2: archiving it from us-east-1 still reports \"Event bus cdkpf-bus-west does not exist\", while a same-Region bus is accepted."
+  evidence: "bench 2026-09-07 us-east-1: SourceArn pointing at an SQS queue -> ROLLBACK_COMPLETE, eventSourceArn fails its pattern constraint. The Region half was isolated the same day via events:CreateArchive by actually creating a bus in us-west-2: archiving it from us-east-1 still reports \"Event bus cdkpf-bus-west does not exist\", while a same-Region bus is accepted. bench 2026-11-27 us-east-1: fail template -> ROLLBACK_COMPLETE with \"\"Invalid request provided: 1 validation error detected: Value 'arn:aws:sqs:us-east-1:214794239830:Q' at 'eventSourceArn' failed to satisfy constraint: Member must satisfy regular expression pattern: ^arn:aws([a-z]|\\-)*:events:([a-z]|\\d|\\-)*:([0-9]{12})?:.+\\/.+$\" (RequestToken: 664b0378-41de-7081-b3e8-2b3949a4aa71, HandlerErrorCode: InvalidRequest)\""
+  expect: "at 'eventSourceArn' failed to satisfy constraint"
 addedOn: 2026-09-07

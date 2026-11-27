@@ -7,5 +7,6 @@ constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateR
 upstream: none
 repro:
   method: real-deploy
-  evidence: "bench 2026-09-08 ap-northeast-1: gp3 with MultiAttachEnabled -> ROLLBACK_COMPLETE; io2 with Iops and MultiAttachEnabled -> CREATE_COMPLETE. The API probe could not decide it: CreateVolume --dry-run returned DryRunOperation for both the violating and the control call."
+  evidence: "bench 2026-09-08 ap-northeast-1: gp3 with MultiAttachEnabled -> ROLLBACK_COMPLETE; io2 with Iops and MultiAttachEnabled -> CREATE_COMPLETE. The API probe could not decide it: CreateVolume --dry-run returned DryRunOperation for both the violating and the control call. bench 2026-11-27 ap-northeast-1: fail template -> ROLLBACK_COMPLETE with \"\"The parameter multi-attach-enabled is not supported for gp3 volumes. (Service: Ec2, Status Code: 400, Request ID: d3994058-6606-4b77-b804-e3ad95716b51) (SDK Attempt Count: 1)\" (RequestToken: 0041e8ee-c38f-f1d0-278e-f1cf15c9c4e9, HandlerErrorCode: InvalidRequest)\""
+  expect: "The parameter multi-attach-enabled is not supported for gp3 volumes."
 addedOn: 2026-09-08

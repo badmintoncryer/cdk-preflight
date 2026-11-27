@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-10 us-east-1: two endpoints named prod on the same harness -> ROLLBACK_COMPLETE, \"Failed to tag harness endpoint: A resource with the same resourceName but a different internalId already exists (Bedrock AgentCore Control CreateHarnessEndpoint, 400 ValidationException, HandlerErrorCode: AlreadyExists)\". HarnessId and EndpointName are createOnly but the primaryIdentifier is the read-only Arn, so E3019 does not fire."
+  expect: "Failed to tag harness endpoint: A resource with the same resourceName but a different internalId already exists"
 addedOn: 2026-09-10
