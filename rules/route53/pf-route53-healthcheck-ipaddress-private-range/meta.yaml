@@ -8,5 +8,6 @@ constraintSource: https://docs.aws.amazon.com/Route53/latest/APIReference/API_He
 upstream: none
 repro:
   method: real-deploy
-  evidence: "bench 2026-09-10 us-east-1: fail template -> CREATE_FAILED, the CloudFormation handler only says \"Invalid request provided: AWS::Route53::HealthCheck\"; the same config put straight to CreateHealthCheck answers InvalidInput: IPv4 address 10.0.0.10 is forbidden. The documentation ranges are forbidden too (203.0.113.10 answers the same), which is why the pass template checks a FullyQualifiedDomainName instead (ROLLBACK_COMPLETE)"
+  evidence: "bench 2026-09-10 us-east-1: fail template -> CREATE_FAILED, the CloudFormation handler only says \"Invalid request provided: AWS::Route53::HealthCheck\"; the same config put straight to CreateHealthCheck answers InvalidInput: IPv4 address 10.0.0.10 is forbidden. The documentation ranges are forbidden too (203.0.113.10 answers the same), which is why the pass template checks a FullyQualifiedDomainName instead (ROLLBACK_COMPLETE) bench 2026-11-27 us-east-1: fail template -> ROLLBACK_COMPLETE with \"\"Invalid parameter : PrivateIP supplied for a non private endpoint health check: 10.0.0.10 (Service: Route53, Status Code: 400, Request ID: ef1aef86-8cf4-4d9e-a364-2f1b0be24a8b) (SDK Attempt Count: 1)\" (RequestToken: e201014e-4b3f-6072-e913-99035dec844d, HandlerErrorCode: InvalidRequest)\""
+  expect: "Invalid parameter : PrivateIP supplied for a non private endpoint health check: 10.0.0.10"
 addedOn: 2026-09-10

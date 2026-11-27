@@ -8,5 +8,6 @@ constraintSource: https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/heal
 upstream: none
 repro:
   method: real-deploy
-  evidence: "bench 2026-09-10 us-east-1: fail template -> CREATE_FAILED, but the CloudFormation handler for AWS::Route53::HealthCheck only says \"Invalid request provided: AWS::Route53::HealthCheck\"; the same HealthCheckConfig put straight to CreateHealthCheck answers InvalidInput: \"Route 53 does not support extended CloudWatch metric statistics\" (ROLLBACK_COMPLETE)"
+  evidence: "bench 2026-09-10 us-east-1: fail template -> CREATE_FAILED, but the CloudFormation handler for AWS::Route53::HealthCheck only says \"Invalid request provided: AWS::Route53::HealthCheck\"; the same HealthCheckConfig put straight to CreateHealthCheck answers InvalidInput: \"Route 53 does not support extended CloudWatch metric statistics\" (ROLLBACK_COMPLETE) bench 2026-11-27 us-east-1: fail template -> ROLLBACK_COMPLETE with \"\"Route 53 requires a single CloudWatch metric for a metric-based health check (Service: Route53, Status Code: 400, Request ID: 430aeb1f-5b61-4c18-9094-5875cbd6e645) (SDK Attempt Count: 1)\" (RequestToken: a53dcd94-7563-010b-b836-8b7132daf7e4, HandlerErrorCode: InvalidRequest)\""
+  expect: "Route 53 requires a single CloudWatch metric for a metric-based health check"
 addedOn: 2026-09-10

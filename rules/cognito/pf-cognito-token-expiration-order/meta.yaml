@@ -8,4 +8,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-03 ap-northeast-1: AccessTokenValidity 12 hours with RefreshTokenValidity 2 hours (c04) -> \"Access and Id Token expiration times must be less than or equal to refresh token expiration times.\" ROLLBACK_COMPLETE."
+  expect: "Access and Id Token expiration times must be less than or equal to refresh token expiration times."
 addedOn: 2026-09-03

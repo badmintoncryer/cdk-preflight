@@ -8,4 +8,5 @@ upstream: pending-engine
 repro:
   method: real-deploy
   evidence: "bench 2026-09-02 ap-northeast-1 (s13): ExpirationInDays 0 -> \"'Days' for Expiration action must be a positive integer\". ROLLBACK_COMPLETE. Registry schema has no minimum on the field (probe: engine silent)."
+  expect: "'Days' for Expiration action must be a positive integer"
 addedOn: 2026-09-02

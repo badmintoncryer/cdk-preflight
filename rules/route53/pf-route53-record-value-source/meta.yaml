@@ -8,6 +8,7 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-02 ap-northeast-1, three shapes: AliasTarget+ResourceRecords -> \"Expected exactly one of [AliasTarget, all of [TTL, and ResourceRecords], or TrafficPolicyInstanceId], but found more than one\"; TTL only -> same message \"found none\"; ResourceRecords only -> same message \"found none\". All ROLLBACK_COMPLETE, Status Code 400. TTL+AliasTarget is left to the engine's E3029.; bench 2026-11-26 ap-northeast-1, fixtures now building their own hosted zone: fail (AliasTarget + ResourceRecords) -> \"Expected exactly one of [AliasTarget, all of [TTL, and ResourceRecords], or TrafficPolicyInstanceId], but found more than one\" (ROLLBACK_COMPLETE); pass -> CREATE_COMPLETE; omission bench 2026-11-26 ap-northeast-1: pass template without AWS::Route53::RecordSet.ResourceRecords -> ROLLBACK_COMPLETE with \"Invalid request: Expected exactly one of [AliasTarget, all of [TTL, and ResourceRecords], or TrafficPolicyInstanceId], but found none\"; omission bench 2026-11-26 ap-northeast-1: pass template without AWS::Route53::RecordSet.TTL -> ROLLBACK_COMPLETE with \"Invalid request: Expected exactly one of [AliasTarget, all of [TTL, and ResourceRecords], or TrafficPolicyInstanceId], but found none\""
+  expect: "Invalid request: Expected exactly one of [AliasTarget, all of [TTL, and ResourceRecords], or TrafficPolicyInstanceId], but found"
 addedOn: 2026-09-02
 omissionFails:
   - "AWS::Route53::RecordSet.ResourceRecords"

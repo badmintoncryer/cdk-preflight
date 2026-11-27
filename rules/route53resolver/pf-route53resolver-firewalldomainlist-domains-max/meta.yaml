@@ -8,5 +8,6 @@ constraintSource: https://docs.aws.amazon.com/Route53/latest/APIReference/API_ro
 upstream: none
 repro:
   method: real-deploy
-  evidence: "bench 2026-09-10 us-east-1: fail template -> UpdateFirewallDomains が \"Invalid request provided\" で ROLLBACK_COMPLETE。2026-09-14 に API を直叩きして境界を確定: 1000 個の ADD は COMPLETE、1001 個は ValidationException \"[RSLVR-02028] You must provide less than \\\"1000\\\" domains in a request\"。1000 に対応するクォータは無い（Domains per account は 100000、Domains in a file imported from S3 は 250000）ので原則 6 の対象外。"
+  evidence: "bench 2026-09-10 us-east-1: fail template -> UpdateFirewallDomains が \"Invalid request provided\" で ROLLBACK_COMPLETE。2026-09-14 に API を直叩きして境界を確定: 1000 個の ADD は COMPLETE、1001 個は ValidationException \"[RSLVR-02028] You must provide less than \\\"1000\\\" domains in a request\"。1000 に対応するクォータは無い（Domains per account は 100000、Domains in a file imported from S3 は 250000）ので原則 6 の対象外。 bench 2026-11-27 us-east-1: fail template -> ROLLBACK_COMPLETE with \"1 validation error detected: Value 'Invalid request provided: UpdateFirewallDomainsRequest(FirewallDomainListId=rslvr-fdl-7d9c40490e8044...<17036 chars total>' at 'statusMessage' failed to satisfy constraint: Member must have length less than or equal to 2048\""
+  expect: "Invalid request provided: UpdateFirewallDomainsRequest("
 addedOn: 2026-09-10

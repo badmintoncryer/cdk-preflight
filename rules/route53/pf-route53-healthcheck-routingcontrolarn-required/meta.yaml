@@ -9,6 +9,7 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-10 us-east-1: fail template -> CREATE_FAILED, the CloudFormation handler only says \"Invalid request provided: AWS::Route53::HealthCheck\"; the same config put straight to CreateHealthCheck answers InvalidInput: Routing control ARN must not be null (ROLLBACK_COMPLETE); omission bench 2026-11-26 us-east-1: pass template without AWS::Route53::HealthCheck.HealthCheckConfig.RoutingControlArn -> ROLLBACK_COMPLETE with \"Routing control ARN must not be null\""
+  expect: "Routing control ARN must not be null"
 addedOn: 2026-09-10
 omissionFails:
   - "AWS::Route53::HealthCheck.HealthCheckConfig.RoutingControlArn"

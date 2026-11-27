@@ -12,5 +12,6 @@ supersededBy:
   engineRules: [F3033]
 repro:
   method: real-deploy
-  evidence: "bench 2026-09-10 us-east-1: stack CREATE_FAILED with DetailedStatus VALIDATION_FAILED, \"Validation failed with 1 error(s)\" \u2014 the registry schema caps Comment at 256 characters. Comment is a CloudFormation-only property (ChangeResourceRecordSets has no equivalent), so the service cannot be probed directly for a message that names it. The bundled engine (1.7.0-beta) is silent on it, hence upstream: pending-engine."
+  evidence: "bench 2026-09-10 us-east-1: stack CREATE_FAILED with DetailedStatus VALIDATION_FAILED, \"Validation failed with 1 error(s)\" — the registry schema caps Comment at 256 characters. Comment is a CloudFormation-only property (ChangeResourceRecordSets has no equivalent), so the service cannot be probed directly for a message that names it. The bundled engine (1.7.0-beta) is silent on it, hence upstream: pending-engine. bench 2026-11-27 us-east-1: fail template -> ROLLBACK_COMPLETE with \"Validation failed with 1 error(s). Call DescribeEvents to retrieve the full list of issues with resource and property details, resolve each error, then retry the operation. [DescribeEvents: PROPERTY_VALIDATION Rec /Resources/Rec/Properties/Comment: #/Comment: expected maxLength: 256, actual: 257]\""
+  expect: "Comment: #/Comment: expected maxLength: 256, actual: 257"
 addedOn: 2026-09-10

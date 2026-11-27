@@ -761,7 +761,6 @@
 | `pf-agentcore-capacity-provider-volume-init-rate-snapshot` | AWS::BedrockAgentCore::CapacityProvider | An ephemeral EBS volume can set VolumeInitializationRate only with a SnapshotId | ERROR | none |
 | `pf-agentcore-capacity-provider-volume-name-unique` | AWS::BedrockAgentCore::CapacityProvider | Capacity provider volume names must be unique | ERROR | none |
 | `pf-agentcore-config-bundle-components-empty` | AWS::BedrockAgentCore::ConfigurationBundle | A configuration bundle needs at least one component | ERROR | none |
-| `pf-agentcore-config-bundle-name-unique` | AWS::BedrockAgentCore::ConfigurationBundle | BundleName must be unique within the account | ERROR | none |
 | `pf-agentcore-dataset-name-unique` | AWS::BedrockAgentCore::Dataset | DatasetName must be unique within the account, compared case-insensitively | ERROR | none |
 | `pf-agentcore-evaluator-rating-scale-empty` | AWS::BedrockAgentCore::Evaluator | An LLM-as-a-judge evaluator RatingScale must list at least one scale entry | ERROR | none |
 | `pf-agentcore-execution-role-account` | AWS::BedrockAgentCore::OnlineEvaluationConfig<br>AWS::BedrockAgentCore::Memory | An AgentCore execution role must live in the deploy account | ERROR | none |

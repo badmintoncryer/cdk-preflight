@@ -12,5 +12,6 @@ supersededBy:
   engineRules: [F3031, F3033]
 repro:
   method: real-deploy
-  evidence: "bench 2026-09-22 us-east-1: Name of 1025 characters -> \"Validation failed with 1 error(s). Call DescribeEvents to retrieve the full list of issues with resource and property details, resolve each error, then retry the operation.\" (ROLLBACK_COMPLETE); Name of 1024 -> CREATE_COMPLETE"
+  evidence: "bench 2026-09-22 us-east-1: Name of 1025 characters -> \"Validation failed with 1 error(s). Call DescribeEvents to retrieve the full list of issues with resource and property details, resolve each error, then retry the operation.\" (ROLLBACK_COMPLETE); Name of 1024 -> CREATE_COMPLETE bench 2026-11-27 us-east-1: fail template -> ROLLBACK_COMPLETE with \"Validation failed with 1 error(s). Call DescribeEvents to retrieve the full list of issues with resource and property details, resolve each error, then retry the operation. [DescribeEvents: PROPERTY_VALIDATION Ns /Resources/Ns/Properties/Name: #/Name: expected maxLength: 1024, actual: 1025]\""
+  expect: "Name: #/Name: expected maxLength: 1024, actual: 1025"
 addedOn: 2026-09-22

@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-10 us-east-1: fail template -> Invalid request provided: {Name: ql-2aac7b80-ad28-11f1-935c-0e8f87c1c059,DestinationArn: arn:aws:sns:us-east-1:123456789012:cdkpf-probe,Tags: []} (ROLLBACK_COMPLETE)"
+  expect: "DestinationArn: arn:aws:sns"
 addedOn: 2026-09-10

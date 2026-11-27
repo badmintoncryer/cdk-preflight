@@ -13,4 +13,5 @@ benchRegion: us-east-1
 repro:
   method: real-deploy
   evidence: "bench 2026-09-13 us-east-1: a 64-character domain prefix -> CREATE_FAILED, but the CloudFormation handler for AWS::Cognito::UserPoolDomain only says \"Invalid request provided: AWS::Cognito::UserPoolDomain\"; the same prefix put straight to CreateUserPoolDomain names the constraint: \"Value 'abbb...' at 'domain' failed to satisfy constraint: Member must have length less than or equal to 63\" (ROLLBACK_COMPLETE); pass 63 characters -> CREATE_COMPLETE"
+  expect: "Invalid request provided: AWS::Cognito::UserPoolDomain"
 addedOn: 2026-09-08

@@ -7,5 +7,6 @@ constraintSource: https://docs.aws.amazon.com/AmazonCloudWatch/latest/APIReferen
 upstream: none
 repro:
   method: real-deploy
-  evidence: "bench 2026-09-03 ap-northeast-1: widget without type (dw03) -> PutDashboard \"Should have required property 'type'\" at /widgets/0; widget without properties (dw07) -> \"Should have required property 'properties'\". Both ROLLBACK_COMPLETE. Widget type VALUES are not validated (dw04: type 'metricc' reached CREATE_COMPLETE - BROKEN-EXPECTATION, so no enum check here). Bare engine clean."
+  evidence: "bench 2026-09-03 ap-northeast-1: widget without type (dw03) -> PutDashboard \"Should have required property 'type'\" at /widgets/0; widget without properties (dw07) -> \"Should have required property 'properties'\". Both ROLLBACK_COMPLETE. Widget type VALUES are not validated (dw04: type 'metricc' reached CREATE_COMPLETE - BROKEN-EXPECTATION, so no enum check here). Bare engine clean. bench 2026-11-27 ap-northeast-1: fail template -> ROLLBACK_COMPLETE with \"\"The dashboard body is invalid, there are 1 validation errors:\""
+  expect: "The dashboard body is invalid, there are 1 validation errors"
 addedOn: 2026-09-03

@@ -8,5 +8,6 @@ upstream: none
 benchRegion: us-east-1
 repro:
   method: real-deploy
-  evidence: "bench 2026-09-07 us-east-1: AuthorizationType BASIC with ApiKeyAuthParameters -> ROLLBACK_COMPLETE \"Parameter BasicAuthParameters is not valid. Reason: Missing required field(s)\". Measured the same day via events:CreateConnection: an OAuth AuthorizationEndpoint of 'http://example.com/token' gives \"Parameter AuthorizationEndpoint is not valid. Reason: Endpoint '...' is not valid\". A reserved 'Authorization' header in InvocationHttpParameters is accepted, so it is deliberately not reported."
+  evidence: "bench 2026-09-07 us-east-1: AuthorizationType BASIC with ApiKeyAuthParameters -> ROLLBACK_COMPLETE \"Parameter BasicAuthParameters is not valid. Reason: Missing required field(s)\". Measured the same day via events:CreateConnection: an OAuth AuthorizationEndpoint of 'http://example.com/token' gives \"Parameter AuthorizationEndpoint is not valid. Reason: Endpoint '...' is not valid\". A reserved 'Authorization' header in InvocationHttpParameters is accepted, so it is deliberately not reported. bench 2026-11-27 us-east-1: fail template -> ROLLBACK_COMPLETE with \"\"Invalid request provided: BasicAuthParameters not provided for BASIC AuthorizationType.\" (RequestToken: e51cac2f-a2c7-0203-9086-e1329fb584c0, HandlerErrorCode: InvalidRequest)\""
+  expect: "Invalid request provided: BasicAuthParameters not provided for BASIC AuthorizationType."
 addedOn: 2026-09-07

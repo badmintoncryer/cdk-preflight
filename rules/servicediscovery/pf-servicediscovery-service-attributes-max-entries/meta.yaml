@@ -8,5 +8,6 @@ constraintSource: https://docs.aws.amazon.com/cloud-map/latest/api/API_UpdateSer
 upstream: cfn-schema
 repro:
   method: real-deploy
-  evidence: "bench 2026-09-22 us-east-1: 31 ServiceAttributes entries -> \"Validation failed with 1 error(s). Call DescribeEvents to retrieve the full list of issues with resource and property details, resolve each error, then retry the operation.\" (ROLLBACK_COMPLETE); 30 entries -> CREATE_COMPLETE"
+  evidence: "bench 2026-09-22 us-east-1: 31 ServiceAttributes entries -> \"Validation failed with 1 error(s). Call DescribeEvents to retrieve the full list of issues with resource and property details, resolve each error, then retry the operation.\" (ROLLBACK_COMPLETE); 30 entries -> CREATE_COMPLETE bench 2026-11-27 us-east-1: fail template -> ROLLBACK_COMPLETE with \"Validation failed with 1 error(s). Call DescribeEvents to retrieve the full list of issues with resource and property details, resolve each error, then retry the operation. [DescribeEvents: PROPERTY_VALIDATION Svc /Resources/Svc/Properties/ServiceAttributes: #/ServiceAttributes: maximum size: [30], found: [31]]\""
+  expect: "ServiceAttributes: #/ServiceAttributes: maximum size: [30], found: [31]"
 addedOn: 2026-09-22

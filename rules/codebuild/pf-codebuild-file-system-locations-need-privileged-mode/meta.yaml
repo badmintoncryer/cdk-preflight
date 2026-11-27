@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-14 us-east-1: fail template (FileSystemLocations with a well-formed EFS location and no Environment.PrivilegedMode) -> \"Privileged Mode has to be set for projects with File System Locations\" (ROLLBACK_COMPLETE); pass template (PrivilegedMode true and no FileSystemLocations) -> CREATE_COMPLETE. The pass cannot carry a FileSystemLocations of its own: CreateProject answers a well-formed location with \"VPC has to be configured for projects with File System Locations\" next, and the VpcConfig it then wants needs EC2 permissions the bench service role does not hold. The documented Identifier charset limit is a separate, still unmeasured hypothesis; this id keeps the survey's name."
+  expect: "Privileged Mode has to be set for projects with File System Locations"
 addedOn: 2026-09-14

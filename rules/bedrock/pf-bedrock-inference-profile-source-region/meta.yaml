@@ -8,5 +8,6 @@ constraintSource: https://docs.aws.amazon.com/bedrock/latest/APIReference/API_Cr
 upstream: none
 repro:
   method: real-deploy
-  evidence: "bench 2026-09-06 us-east-1 (API/CFN probe): CopyFrom foundation-model ARN in us-west-2 from us-east-1 -> CreateInferenceProfile ResourceNotFoundException: Model not found; eu. inference-profile ARN from us-east-1 -> Inference profile not found; ${AWS::Region} ARNs deploy. Silent in warn mode and in Region-agnostic apps; verify-rule.sh 2026-09-06 us-east-1: fail ROLLBACK_COMPLETE, pass CREATE_COMPLETE and deleted. Log: bench/logs/pf-bedrock-inference-profile-source-region.log"
+  evidence: "bench 2026-09-06 us-east-1 (API/CFN probe): CopyFrom foundation-model ARN in us-west-2 from us-east-1 -> CreateInferenceProfile ResourceNotFoundException: Model not found; eu. inference-profile ARN from us-east-1 -> Inference profile not found; ${AWS::Region} ARNs deploy. Silent in warn mode and in Region-agnostic apps; verify-rule.sh 2026-09-06 us-east-1: fail ROLLBACK_COMPLETE, pass CREATE_COMPLETE and deleted. Log: bench/logs/pf-bedrock-inference-profile-source-region.log bench 2026-11-27 us-east-1: fail template -> ROLLBACK_COMPLETE with \"\"Model not found. (Service: Bedrock, Status Code: 404, Request ID: e1de3787-07e0-4734-a424-6793109a8f6d) (SDK Attempt Count: 1)\" (RequestToken: 80ccdd58-0c2c-5af0-4e54-98070d02e5e5, HandlerErrorCode: NotFound)\""
+  expect: "Model not found."
 addedOn: 2026-09-06

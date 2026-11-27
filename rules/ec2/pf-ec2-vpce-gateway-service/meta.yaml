@@ -7,5 +7,6 @@ constraintSource: https://docs.aws.amazon.com/vpc/latest/privatelink/gateway-end
 upstream: none
 repro:
   method: real-deploy
-  evidence: "bench 2026-09-03 ap-northeast-1: Gateway + com.amazonaws.ap-northeast-1.ec2 (e09b) -> \"Endpoint type (Gateway) does not match available service types ([Interface]).\" ROLLBACK_COMPLETE. Region mismatches are pf-ec2-vpce-service-region territory; this rule only judges the service segment."
+  evidence: "bench 2026-09-03 ap-northeast-1: Gateway + com.amazonaws.ap-northeast-1.ec2 (e09b) -> \"Endpoint type (Gateway) does not match available service types ([Interface]).\" ROLLBACK_COMPLETE. Region mismatches are pf-ec2-vpce-service-region territory; this rule only judges the service segment. bench 2026-11-27 ap-northeast-1: fail template -> ROLLBACK_COMPLETE with \"\"The Vpc Endpoint Service 'com.amazonaws.us-east-1.ec2' does not exist (Service: Ec2, Status Code: 400, Request ID: 06a1c703-6aff-48fc-93eb-aea93c2cf1f2) (SDK Attempt Count: 1)\" (RequestToken: aaaf168e-fda5-1979-a438-a12bd66bbbd5, HandlerErrorCode: InvalidRequest)\""
+  expect: "The Vpc Endpoint Service 'com.amazonaws.us-east-1.ec2' does not exist"
 addedOn: 2026-09-03

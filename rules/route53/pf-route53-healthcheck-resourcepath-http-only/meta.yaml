@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-10 us-east-1: fail template -> CREATE_FAILED, but the CloudFormation handler for AWS::Route53::HealthCheck only says \"Invalid request provided: AWS::Route53::HealthCheck\"; the same HealthCheckConfig put straight to CreateHealthCheck answers InvalidInput: \"TCP health checks must not have a resource path specified.\" (ROLLBACK_COMPLETE)"
+  expect: "TCP health checks must not have a resource path specified."
 addedOn: 2026-09-10

@@ -8,5 +8,6 @@ upstream: none
 repro:
   method: real-deploy
   evidence: 'bench 2026-09-09 us-east-1: Resource handler returned message: "Invalid request provided: AWS::CloudFront::AnycastIpList" (RequestToken: 14bdf51c-31a9-2bed-22c1-ce5e61b921e5, HandlerErrorCode: InvalidRequest)'
+  expect: "Invalid request provided: AWS::CloudFront::AnycastIpList"
 addedOn: 2026-09-08
 benchRegion: us-east-1
