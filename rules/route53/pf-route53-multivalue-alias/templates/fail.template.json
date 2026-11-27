@@ -3,8 +3,10 @@
     "Rec": {
       "Type": "AWS::Route53::RecordSet",
       "Properties": {
-        "HostedZoneId": "Z1234567890ABC",
-        "Name": "www.example.org.",
+        "HostedZoneId": {
+          "Ref": "Zone"
+        },
+        "Name": "www.pf-multivalue-alias.cdkpf-verify.com.",
         "Type": "A",
         "AliasTarget": {
           "DNSName": "d111111abcdef8.cloudfront.net",
@@ -12,6 +14,12 @@
         },
         "MultiValueAnswer": true,
         "SetIdentifier": "one"
+      }
+    },
+    "Zone": {
+      "Type": "AWS::Route53::HostedZone",
+      "Properties": {
+        "Name": "pf-multivalue-alias.cdkpf-verify.com."
       }
     }
   }

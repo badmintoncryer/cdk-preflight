@@ -5,7 +5,7 @@
       "Properties": {
         "Protocol": "HTTP",
         "Port": 80,
-        "VpcId": "vpc-11112222",
+        "VpcId": "vpc-4331593e",
         "TargetType": "instance",
         "TargetGroupAttributes": [
           {

@@ -3,7 +3,7 @@
     "Zone": {
       "Type": "AWS::Route53::HostedZone",
       "Properties": {
-        "Name": "example.org."
+        "Name": "pf-apex-cname.cdkpf-verify.com."
       }
     },
     "Rec": {
@@ -12,7 +12,7 @@
         "HostedZoneId": {
           "Ref": "Zone"
         },
-        "Name": "example.org.",
+        "Name": "pf-apex-cname.cdkpf-verify.com.",
         "Type": "CNAME",
         "ResourceRecords": [
           "target.example.net."

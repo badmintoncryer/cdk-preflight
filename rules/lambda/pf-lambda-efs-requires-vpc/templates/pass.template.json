@@ -1,9 +1,72 @@
 {
   "Resources": {
+    "Fs": {
+      "Type": "AWS::EFS::FileSystem",
+      "Properties": {}
+    },
+    "Mt": {
+      "Type": "AWS::EFS::MountTarget",
+      "Properties": {
+        "FileSystemId": {
+          "Ref": "Fs"
+        },
+        "SubnetId": "subnet-2e0a500f",
+        "SecurityGroups": [
+          "sg-7d699f61"
+        ]
+      }
+    },
+    "Ap": {
+      "Type": "AWS::EFS::AccessPoint",
+      "Properties": {
+        "FileSystemId": {
+          "Ref": "Fs"
+        },
+        "PosixUser": {
+          "Uid": "1000",
+          "Gid": "1000"
+        },
+        "RootDirectory": {
+          "Path": "/lambda",
+          "CreationInfo": {
+            "OwnerUid": "1000",
+            "OwnerGid": "1000",
+            "Permissions": "750"
+          }
+        }
+      }
+    },
+    "R": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "lambda.amazonaws.com"
+              },
+              "Action": "sts:AssumeRole"
+            }
+          ]
+        },
+        "ManagedPolicyArns": [
+          "arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole",
+          "arn:aws:iam::aws:policy/AmazonElasticFileSystemClientReadWriteAccess"
+        ]
+      }
+    },
     "F": {
       "Type": "AWS::Lambda::Function",
+      "DependsOn": "Mt",
       "Properties": {
-        "Role": "arn:aws:iam::123456789012:role/lambda-role",
+        "Role": {
+          "Fn::GetAtt": [
+            "R",
+            "Arn"
+          ]
+        },
         "Code": {
           "ZipFile": "def handler(e, c):\n    return 0\n"
         },
@@ -11,16 +74,21 @@
         "Handler": "index.handler",
         "FileSystemConfigs": [
           {
-            "Arn": "arn:aws:elasticfilesystem:us-east-1:123456789012:access-point/fsap-0123456789abcdef0",
+            "Arn": {
+              "Fn::GetAtt": [
+                "Ap",
+                "Arn"
+              ]
+            },
             "LocalMountPath": "/mnt/data"
           }
         ],
         "VpcConfig": {
           "SubnetIds": [
-            "subnet-0123456789abcdef0"
+            "subnet-2e0a500f"
           ],
           "SecurityGroupIds": [
-            "sg-0123456789abcdef0"
+            "sg-7d699f61"
           ]
         }
       }

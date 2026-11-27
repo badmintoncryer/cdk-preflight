@@ -4,7 +4,7 @@
       "Type": "AWS::EC2::SecurityGroup",
       "Properties": {
         "GroupDescription": "bench",
-        "VpcId": "vpc-11112222",
+        "VpcId": "vpc-4331593e",
         "GroupName": "sg-badname"
       }
     }

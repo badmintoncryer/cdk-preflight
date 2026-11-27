@@ -4,8 +4,10 @@ resourceTypes: [AWS::ElasticLoadBalancingV2::TargetGroup]
 severity: ERROR
 title: app_cookie stickiness requires a cookie name
 constraintSource: https://docs.aws.amazon.com/elasticloadbalancing/latest/application/sticky-sessions.html
+benchRegion: us-east-1
 upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-03 ap-northeast-1: stickiness.enabled true + stickiness.type app_cookie without stickiness.app_cookie.cookie_name (e06b) -> \"You must set an application cookie name to enable stickiness of type 'app_cookie'\" ROLLBACK_COMPLETE (fires before any protocol validation)."
+  expect: "You must set an application cookie name to enable stickiness of type 'app_cookie'"
 addedOn: 2026-09-03

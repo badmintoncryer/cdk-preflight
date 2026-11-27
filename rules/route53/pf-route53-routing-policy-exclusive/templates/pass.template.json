@@ -3,13 +3,21 @@
     "Rec": {
       "Type": "AWS::Route53::RecordSet",
       "Properties": {
-        "HostedZoneId": "Z1234567890ABC",
-        "Name": "www.example.org.",
+        "HostedZoneId": {
+          "Ref": "Zone"
+        },
+        "Name": "www.pf-routing-policy-exclusive.cdkpf-verify.com.",
         "Type": "A",
         "ResourceRecords": [
           "192.0.2.1"
         ],
         "TTL": "300"
+      }
+    },
+    "Zone": {
+      "Type": "AWS::Route53::HostedZone",
+      "Properties": {
+        "Name": "pf-routing-policy-exclusive.cdkpf-verify.com."
       }
     }
   }

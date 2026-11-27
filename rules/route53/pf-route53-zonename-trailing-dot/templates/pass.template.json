@@ -3,13 +3,20 @@
     "Rec": {
       "Type": "AWS::Route53::RecordSet",
       "Properties": {
-        "HostedZoneName": "example.org.",
-        "Name": "www.example.org.",
+        "HostedZoneName": "pf-zonename-trailing-dot.cdkpf-verify.com.",
+        "Name": "www.pf-zonename-trailing-dot.cdkpf-verify.com.",
         "Type": "A",
         "ResourceRecords": [
           "192.0.2.1"
         ],
         "TTL": "300"
+      },
+      "DependsOn": "Zone"
+    },
+    "Zone": {
+      "Type": "AWS::Route53::HostedZone",
+      "Properties": {
+        "Name": "pf-zonename-trailing-dot.cdkpf-verify.com."
       }
     }
   }

@@ -22,7 +22,18 @@
           "Ref": "S"
         },
         "ConnectivityType": "private",
-        "AllocationId": "eipalloc-11112222"
+        "AllocationId": {
+          "Fn::GetAtt": [
+            "Eip",
+            "AllocationId"
+          ]
+        }
+      }
+    },
+    "Eip": {
+      "Type": "AWS::EC2::EIP",
+      "Properties": {
+        "Domain": "vpc"
       }
     }
   }
