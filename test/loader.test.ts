@@ -804,6 +804,22 @@ describe('a rule pack that cannot run fails synthesis instead of passing silentl
       expect(skipped.description).toMatch(/its test rules on this template/);
     });
 
+    test('issue #441: after skipping a service, a one-branch finding of an undecided Fn::If is still a warning', () => {
+      const app = appWith((stack) => {
+        const flag = new CfnParameter(stack, 'Flag', { type: 'String' });
+        const on = new CfnCondition(stack, 'On', { expression: Fn.conditionEquals(flag.valueAsString, 'on') });
+        const vpc = new ec2.CfnVPC(stack, 'Vpc', { cidrBlock: '10.0.0.0/16' });
+        const sg = new ec2.CfnSecurityGroup(stack, 'SG', { groupDescription: 'cdk-preflight loader test', vpcId: vpc.ref });
+        sg.addPropertyOverride('SecurityGroupIngress', Fn.conditionIf(on.logicalId,
+          [{ IpProtocol: 'tcp', FromPort: 99999, ToPort: 99999, CidrIp: '10.0.0.0/8' }],
+          [{ IpProtocol: 'tcp', FromPort: 443, ToPort: 443, CidrIp: '10.0.0.0/8' }]));
+      });
+      expect(() => app.synth()).not.toThrow();
+      const sg = readReport(app).filter((v) => v.ruleName === 'pf-ec2-sg-port-range');
+      expect(sg.length).toBeGreaterThan(0);
+      expect(sg.every((v) => v.severity === 'warning')).toBe(true);
+    });
+
     test('a template the other services accept synthesizes, with a warning', () => {
       const app = appWith(() => {});
       expect(() => app.synth()).not.toThrow();

@@ -181,9 +181,12 @@ export class PreflightEnforcePlugin implements IPolicyValidationPlugin {
       disableBuiltinRules: !this.strict,
     });
     const run = (e: any) => runOn(e, checked);
+    const settle = (e: any) => settledFindings(e, runOn, checked, tmp);
     let report: any;
+    let settled: Set<string> | undefined;
     try {
       report = run(eng);
+      settled = settle(eng);
     } catch (e) {
       // throw を外に出すと CDK はこの呼び出しを plugin failure（violation ゼロ）として
       // 記録するだけになり、ここまでに集めた違反も後続テンプレートの違反も丸ごと消え、
@@ -192,15 +195,16 @@ export class PreflightEnforcePlugin implements IPolicyValidationPlugin {
       // テンプレート全体の評価を止める。これはルール側のバグであってテンプレートの問題では
       // ないので、落ちた service だけ外して他の全ルールを走らせ直し、外したことは warning で
       // 残す。外しても評価できないとき（コンパイル不能・エンジン自体の失敗）だけ synth を止める。
-      const retried = retryWithoutFailingServices(engine, run, e, loaded);
+      const retried = retryWithoutFailingServices(engine, run, e, loaded, settle);
       if (!retried) {
         violations.push(engineErrorViolation(st, e));
         return;
       }
       report = retried.report;
+      // Fn::If の両枝の判定も外した後のエンジンで（元のエンジンはまた同じ評価エラーで落ちる。#441）
+      settled = retried.settled;
       violations.push(skippedServicesViolation(st, retried.skipped, e));
     }
-    const settled = settledFindings(eng, runOn, checked, tmp);
     for (const d of (report.diagnostics ?? []) as EngineDiagnostic[]) {
       const isOurs = d.source === 'CUSTOM' && ours.has(d.ruleId);
       const isStrictHit = this.strict
@@ -423,7 +427,8 @@ function retryWithoutFailingServices(
   run: (eng: any) => any,
   firstError: unknown,
   loaded: LoadedRules,
-): { report: any; skipped: string[] } | undefined {
+  settle: (eng: any) => Set<string> | undefined,
+): { report: any; skipped: string[]; settled?: Set<string> } | undefined {
   const skipped: string[] = [];
   let err = firstError;
   for (let attempt = 0; attempt < 5; attempt++) {
@@ -437,7 +442,8 @@ function retryWithoutFailingServices(
     let eng: any;
     try {
       eng = buildRegoEngine(engineModule, kept, loaded.region, loaded.account);
-      return { report: run(eng), skipped };
+      const report = run(eng);
+      return { report, skipped, settled: settle(eng) };
     } catch (e) {
       err = e;
     } finally {
