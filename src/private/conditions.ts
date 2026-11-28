@@ -346,8 +346,32 @@ export function specializeTemplateFile(templatePath: string, pseudo: PseudoValue
 }
 
 /**
+ * The names of the conditions that `Fn::If`s left in the template branch on, in the order they
+ * first appear (nested `Fn::If`s included). Meant for a template `specializeTemplate` has folded.
+ */
+export function undecidedConditions(template: unknown): string[] {
+  const out = new Set<string>();
+  const walk = (node: any): void => {
+    if (Array.isArray(node)) {
+      node.forEach(walk);
+      return;
+    }
+    if (!node || typeof node !== 'object') return;
+    const f = node['Fn::If'];
+    if (Object.keys(node).length === 1 && Array.isArray(f) && f.length === 3 && typeof f[0] === 'string') out.add(f[0]);
+    Object.values(node).forEach(walk);
+  };
+  const t = template as any;
+  for (const r of Object.values<any>(t?.Resources ?? {})) {
+    for (const k of ['Properties', 'Metadata', 'UpdatePolicy', 'CreationPolicy']) walk(r?.[k]);
+  }
+  walk(t?.Outputs);
+  return [...out];
+}
+
+/**
  * The template with every `Fn::If` that is still in it forced to one branch (`true`: the first,
- * `false`: the second), a taken `{"Ref": "AWS::NoValue"}` removing the property or list element.
+ * `false`: the second; a function picks the branch per condition name), a taken `{"Ref": "AWS::NoValue"}` removing the property or list element.
  * Meant for a template that `specializeTemplate` has already folded, so what is left are the
  * conditions the defaults cannot decide (issue #276).
  *
@@ -358,7 +382,8 @@ export function specializeTemplateFile(templatePath: string, pseudo: PseudoValue
  * them is a finding about a deployment that may not happen. Returns undefined when the template
  * has no `Fn::If` left, so the caller can skip the extra evaluations.
  */
-export function forceConditionalBranches(template: unknown, branch: boolean): unknown | undefined {
+export function forceConditionalBranches(template: unknown, branch: boolean | ((condition: string) => boolean)): unknown | undefined {
+  const take = typeof branch === 'function' ? branch : () => branch;
   const t = template as any;
   if (!t || typeof t !== 'object' || !t.Resources || typeof t.Resources !== 'object') return undefined;
   let found = false;
@@ -376,7 +401,7 @@ export function forceConditionalBranches(template: unknown, branch: boolean): un
     if (keys.length === 1 && keys[0] === 'Fn::If' && Array.isArray(node['Fn::If']) && node['Fn::If'].length === 3
       && typeof node['Fn::If'][0] === 'string') {
       found = true;
-      const taken = node['Fn::If'][branch ? 1 : 2];
+      const taken = node['Fn::If'][take(node['Fn::If'][0]) ? 1 : 2];
       if (taken && typeof taken === 'object' && !Array.isArray(taken) && Object.keys(taken).length === 1 && taken.Ref === 'AWS::NoValue') return NO_VALUE;
       return walk(taken);
     }

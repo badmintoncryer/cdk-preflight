@@ -10,7 +10,7 @@ import {
   type PolicyViolation,
 } from 'aws-cdk-lib';
 import type { IConstruct } from 'constructs';
-import { forceConditionalBranches, specializeTemplateFile } from './conditions';
+import { forceConditionalBranches, specializeTemplateFile, undecidedConditions } from './conditions';
 import { checkQuotas, nestedTemplateFile, type QuotaCheckOptions } from './quota';
 import { BUNDLED_LIBS, type BundledRuleData } from '../rules.generated';
 
@@ -30,9 +30,8 @@ export const DEPLOY_ENV_MODULE_NAME = '_pf_deploy_environment';
  * Rules must read it as `data.cdk_preflight.deploy_region` (never as a bare
  * variable): the data reference is simply undefined when the module is not
  * injected — the rule body fails and the rule skips — while a bare variable
- * would be a compile error. Injected by the enforce plugin when the app-level
- * region is concrete; the warn mode (CDK built-in plugin) never injects it,
- * so region-dependent rules only fire in enforce mode.
+ * would be a compile error. Injected for every group of stacks whose region is
+ * concrete, in enforce mode and (since #433) in observe mode alike.
  */
 export function deployEnvironmentModule(region: string, accountId?: string): { name: string; content: string } {
   const account = isConcreteAccount(accountId) ? `deploy_account := ${JSON.stringify(accountId)}\n` : '';
@@ -182,9 +181,12 @@ export class PreflightEnforcePlugin implements IPolicyValidationPlugin {
       disableBuiltinRules: !this.strict,
     });
     const run = (e: any) => runOn(e, checked);
+    const settle = (e: any) => settledFindings(e, runOn, checked, tmp);
     let report: any;
+    let settled: Set<string> | undefined;
     try {
       report = run(eng);
+      settled = settle(eng);
     } catch (e) {
       // throw を外に出すと CDK はこの呼び出しを plugin failure（violation ゼロ）として
       // 記録するだけになり、ここまでに集めた違反も後続テンプレートの違反も丸ごと消え、
@@ -193,15 +195,16 @@ export class PreflightEnforcePlugin implements IPolicyValidationPlugin {
       // テンプレート全体の評価を止める。これはルール側のバグであってテンプレートの問題では
       // ないので、落ちた service だけ外して他の全ルールを走らせ直し、外したことは warning で
       // 残す。外しても評価できないとき（コンパイル不能・エンジン自体の失敗）だけ synth を止める。
-      const retried = retryWithoutFailingServices(engine, run, e, loaded);
+      const retried = retryWithoutFailingServices(engine, run, e, loaded, settle);
       if (!retried) {
         violations.push(engineErrorViolation(st, e));
         return;
       }
       report = retried.report;
+      // Fn::If の両枝の判定も外した後のエンジンで（元のエンジンはまた同じ評価エラーで落ちる。#441）
+      settled = retried.settled;
       violations.push(skippedServicesViolation(st, retried.skipped, e));
     }
-    const settled = settledFindings(eng, runOn, checked, tmp);
     for (const d of (report.diagnostics ?? []) as EngineDiagnostic[]) {
       const isOurs = d.source === 'CUSTOM' && ours.has(d.ruleId);
       const isStrictHit = this.strict
@@ -299,15 +302,44 @@ export function byEnvironment<T extends { region?: string; accountId?: string }>
 
 const UNSETTLED_NOTE = ' (reported as a warning: it holds on only one branch of an Fn::If whose condition cannot be decided at synth time)';
 
+/**
+ * 指摘の同一性。同じルールでも別のプロパティの指摘は別物として数える（#434）。リストの添字は
+ * 枝を倒すと `AWS::NoValue` の要素が抜けてずれるので、数字の段は伏せる。
+ */
 function findingKey(d: EngineDiagnostic): string {
-  return `${d.ruleId}|${d.entity?.logicalId ?? ''}`;
+  const where = (d.propertyPath ?? '').split('.').map((seg) => (/^\d+$/.test(seg) ? '*' : seg)).join('.');
+  return `${d.ruleId}|${d.entity?.logicalId ?? ''}|${where}`;
+}
+
+/** 決まらない条件がこれ以下なら真偽の全組み合わせ（2^n 通り）を評価する。 */
+const EXHAUSTIVE_CONDITIONS = 3;
+
+/**
+ * 決まらない条件の真偽の割り当て。条件が少なければ全組み合わせ、多ければ「全部真」「全部偽」と、
+ * 1 つだけを反対にした版（2n + 2 通り）。後者は全組み合わせではないので取りこぼしうるが、
+ * 全部を同じ側に倒すだけだった頃（#434）よりは、独立した条件の組み合わせを拾う。
+ */
+export function conditionAssignments(names: string[]): Map<string, boolean>[] {
+  const of = (f: (i: number) => boolean) => new Map(names.map((n, i) => [n, f(i)]));
+  if (names.length <= EXHAUSTIVE_CONDITIONS) {
+    return Array.from({ length: 2 ** names.length }, (_, m) => of((i) => Math.floor(m / 2 ** i) % 2 === 1));
+  }
+  const out = [of(() => true), of(() => false)];
+  names.forEach((_, j) => {
+    out.push(of((i) => i !== j));
+    out.push(of((i) => i === j));
+  });
+  return out;
 }
 
 /**
- * テンプレートに既定値で決まらない Fn::If が残っているとき、全部を真の枝に倒した版と偽の枝に
- * 倒した版の両方を評価し、両方で出た自前ルールの指摘のキーを返す（issue #276）。
- * Fn::If が残っていない・読めない・どちらかの評価が失敗したときは undefined で、呼び出し側は
- * 何も変えない。
+ * テンプレートに既定値で決まらない Fn::If が残っているとき、条件名ごとに真偽を割り当てた版を
+ * 評価し、どの版でも出た自前ルールの指摘のキーを返す（issue #276、#434）。
+ * 全部を真に倒した版と偽に倒した版の 2 つだけでは、独立した条件が 2 つ以上あるとき、どちらでも
+ * 鳴るのにデプロイできる組み合わせ（A 偽 × B 真）を見落として synth を止めていた。
+ * Fn::If が残っていない・読めない・評価が失敗したときは undefined で、呼び出し側は何も変えない。
+ * ponytail: 条件どうしの関係（Off = Not(On) など）は見ないので、ありえない組み合わせも評価する。
+ * そこで鳴らない指摘は warning に落ちる（synth を止めない側に倒れる）。
  */
 function settledFindings(
   eng: any,
@@ -317,16 +349,20 @@ function settledFindings(
 ): Set<string> | undefined {
   try {
     const tpl = JSON.parse(fs.readFileSync(checked, 'utf8'));
-    const keys: Set<string>[] = [];
-    for (const branch of [true, false]) {
-      const forced = forceConditionalBranches(tpl, branch);
+    const names = undecidedConditions(tpl);
+    if (names.length === 0) return undefined;
+    let settled: Set<string> | undefined;
+    for (const assignment of conditionAssignments(names)) {
+      const forced = forceConditionalBranches(tpl, (name) => assignment.get(name) ?? true);
       if (forced === undefined) return undefined;
-      const file = path.join(tmp, `${fs.readdirSync(tmp).length}-forced-${branch}.template.json`);
+      const file = path.join(tmp, `${fs.readdirSync(tmp).length}-forced.template.json`);
       fs.writeFileSync(file, JSON.stringify(forced));
       const r = runOn(eng, file);
-      keys.push(new Set(((r.diagnostics ?? []) as EngineDiagnostic[]).filter((d) => d.source === 'CUSTOM').map(findingKey)));
+      const keys = new Set(((r.diagnostics ?? []) as EngineDiagnostic[]).filter((d) => d.source === 'CUSTOM').map(findingKey));
+      settled = settled === undefined ? keys : new Set([...settled].filter((k) => keys.has(k)));
+      if (settled.size === 0) break;
     }
-    return new Set([...keys[0]].filter((k) => keys[1].has(k)));
+    return settled;
   } catch {
     return undefined;
   }
@@ -391,7 +427,8 @@ function retryWithoutFailingServices(
   run: (eng: any) => any,
   firstError: unknown,
   loaded: LoadedRules,
-): { report: any; skipped: string[] } | undefined {
+  settle: (eng: any) => Set<string> | undefined,
+): { report: any; skipped: string[]; settled?: Set<string> } | undefined {
   const skipped: string[] = [];
   let err = firstError;
   for (let attempt = 0; attempt < 5; attempt++) {
@@ -405,7 +442,8 @@ function retryWithoutFailingServices(
     let eng: any;
     try {
       eng = buildRegoEngine(engineModule, kept, loaded.region, loaded.account);
-      return { report: run(eng), skipped };
+      const report = run(eng);
+      return { report, skipped, settled: settle(eng) };
     } catch (e) {
       err = e;
     } finally {
@@ -639,13 +677,14 @@ let cachedObservePlugin: { key: string; plugin: ConditionAwarePlugin } | undefin
 export function observePluginCached(rules: BundledRuleData[]): ConditionAwarePlugin {
   const key = rules.map((r) => r.id).join(',');
   if (cachedObservePlugin?.key !== key) {
+    const regoRules = [
+      ...BUNDLED_LIBS.map((l) => ({ name: l.name, content: l.rego })),
+      ...mergeRuleModules(rules),
+    ];
     cachedObservePlugin = {
       key,
-      plugin: new ConditionAwarePlugin(new CloudFormationValidatePlugin({
-        regoRules: [
-          ...BUNDLED_LIBS.map((l) => ({ name: l.name, content: l.rego })),
-          ...mergeRuleModules(rules),
-        ],
+      plugin: new ConditionAwarePlugin((region, account) => new CloudFormationValidatePlugin({
+        regoRules: region === undefined ? regoRules : [...regoRules, deployEnvironmentModule(region, account)],
       })),
     };
   }
@@ -653,14 +692,23 @@ export function observePluginCached(rules: BundledRuleData[]): ConditionAwarePlu
 }
 
 /**
- * 観測モードでも enforce と同じく、Condition / Fn::If を既定値で決まる分だけ畳んだテンプレートを
- * 検査させる（issue #408）。中身は CDK 組み込みのプラグインのままで、渡すテンプレートだけ差し替え、
- * 報告のパスは元のテンプレートに戻す。
+ * 観測モードのプラグイン。中身は CDK 組み込みの CloudFormationValidatePlugin のままで（報告の名前と
+ * acknowledge の id は `CloudFormation-Validate::<rule-id>` のまま）、enforce と同じ下ごしらえをする。
+ *
+ * - Condition / Fn::If を既定値で決まる分だけ畳んだテンプレートを渡し、報告のパスは元に戻す（#408）
+ * - ネストしたスタックの子テンプレートも渡す（#432）
+ * - スタックを環境（リージョン × アカウント）で束ね、具体的な環境には deploy_region / deploy_account を
+ *   焼き込んだ組み込みプラグインを使う。これが無いとリージョン・アカウント依存のルールが観測モードでは
+ *   一切評価されない（#433）。環境ごとのプラグインは 1 度作ったら使い回す（エンジンは free() できない）。
  */
 export class ConditionAwarePlugin implements IPolicyValidationPlugin {
   public readonly name: string;
-  constructor(public readonly inner: CloudFormationValidatePlugin) {
-    this.name = inner.name;
+  /** 環境を焼き込まないプラグイン（環境が具体的でないスタック用） */
+  public readonly inner: CloudFormationValidatePlugin;
+  private readonly byEnv = new Map<string, CloudFormationValidatePlugin>();
+  constructor(private readonly make: (region?: string, account?: string) => CloudFormationValidatePlugin) {
+    this.inner = make();
+    this.name = this.inner.name;
   }
   public get version(): string | undefined {
     return this.inner.version;
@@ -669,27 +717,44 @@ export class ConditionAwarePlugin implements IPolicyValidationPlugin {
     return this.inner.ruleIds;
   }
   public validate(context: IPolicyValidationContext): PolicyValidationPluginReport {
+    // enforce と同じくネストしたスタックの子テンプレートも検査させる（#432）
+    const groups = byEnvironment(withNestedStacks(context.stackTemplates));
+    const reports = groups.map((g) => this.validateGroup(context, g.stacks, this.pluginFor(g.region, g.account)));
+    if (reports.length === 1) return reports[0];
+    return {
+      ...reports[0] ?? {},
+      success: reports.every((r) => r.success),
+      violations: reports.flatMap((r) => r.violations),
+    };
+  }
+
+  private pluginFor(region?: string, account?: string): CloudFormationValidatePlugin {
+    if (region === undefined) return this.inner;
+    const key = `${region}|${account ?? ''}`;
+    if (!this.byEnv.has(key)) this.byEnv.set(key, this.make(region, account));
+    return this.byEnv.get(key)!;
+  }
+
+  private validateGroup(
+    context: IPolicyValidationContext,
+    stacks: IPolicyValidationContext['stackTemplates'],
+    plugin: CloudFormationValidatePlugin,
+  ): PolicyValidationPluginReport {
     const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'cdkpf-spec-'));
     try {
-      // enforce と同じくネストしたスタックの子テンプレートも検査させる（#432）
-      const all = withNestedStacks(context.stackTemplates);
-      if (all.length !== context.stackTemplates.length) {
-        context = { ...context, stackTemplates: all, templatePaths: [...new Set([...context.templatePaths, ...all.map((st) => st.templatePath)])] };
-      }
       const back = new Map<string, string>();
-      const stackTemplates = context.stackTemplates.map((st) => {
+      const stackTemplates = stacks.map((st) => {
         const spec = specializeTemplateFile(st.templatePath, { region: st.region, accountId: st.accountId }, tmp);
         if (spec === undefined) return st;
         back.set(spec, st.templatePath);
         return { ...st, templatePath: spec };
       });
-      if (back.size === 0) return this.inner.validate(context);
-      const fwd = new Map([...back].map(([k, v]) => [v, k]));
-      const report = this.inner.validate({
+      const report = plugin.validate({
         ...context,
-        templatePaths: context.templatePaths.map((p) => fwd.get(p) ?? p),
+        templatePaths: stackTemplates.map((st) => st.templatePath),
         stackTemplates,
       });
+      if (back.size === 0) return report;
       return {
         ...report,
         violations: report.violations.map((v) => ({

@@ -311,6 +311,17 @@ describe('enforce mode (default)', () => {
       expect(where.some((p) => p.startsWith('East'))).toBe(false);
     });
 
+    test('issue #433: observe mode gets region rules too, per stack', () => {
+      const app = makeApp();
+      Preflight.apply(app, { enforce: false });
+      addStream(new Stack(app, 'East', { env: { account: '123456789012', region: 'us-east-1' } }));
+      addStream(new Stack(app, 'Tokyo', { env: { account: '123456789012', region: 'ap-northeast-1' } }));
+      app.synth(); // warnings only
+      const where = regionFindings(app);
+      expect(where.some((p) => p.startsWith('Tokyo'))).toBe(true);
+      expect(where.some((p) => p.startsWith('East'))).toBe(false);
+    });
+
     test('a stack in another account still gets its account rules', () => {
       const app = makeApp();
       Preflight.apply(app);
@@ -415,6 +426,44 @@ describe('enforce mode (default)', () => {
     Preflight.apply(app, { enforce: true });
     sgWithUndecidedIf(new Stack(app, 'S', { env: { region: 'us-east-1', account: '123456789012' } }), true);
     expect(() => app.synth()).toThrow(/pf-ec2-sg-port-range|Validation failed/);
+  });
+
+  // issue #434: 独立した条件が 2 つあると、全部真・全部偽のどちらでも鳴るのにデプロイできる組み合わせが残る
+  function scalableTargetWithTwoIfs(stack: Stack, minIfFalse: number): void {
+    const cond = (id: string) => new CfnCondition(stack, id, {
+      expression: Fn.conditionEquals(new CfnParameter(stack, `P${id}`, { type: 'String' }).valueAsString, 'yes'),
+    });
+    const a = cond('A');
+    const b = cond('B');
+    new CfnResource(stack, 'T', {
+      type: 'AWS::ApplicationAutoScaling::ScalableTarget',
+      properties: {
+        MinCapacity: Fn.conditionIf(a.logicalId, 10, minIfFalse),
+        MaxCapacity: Fn.conditionIf(b.logicalId, 5, 0),
+        ResourceId: 'table/x',
+        ScalableDimension: 'dynamodb:table:ReadCapacityUnits',
+        ServiceNamespace: 'dynamodb',
+      },
+    });
+  }
+
+  test('issue #434: a finding that a combination of independent conditions avoids is a warning', () => {
+    const app = makeApp();
+    Preflight.apply(app, { enforce: true });
+    // A 偽 × B 真 なら Min 1 / Max 5 でデプロイできる
+    scalableTargetWithTwoIfs(new Stack(app, 'S', { env: { region: 'us-east-1', account: '123456789012' } }), 1);
+    expect(() => app.synth()).not.toThrow();
+    const mine = readReport(app).filter((v) => v.ruleName === 'pf-appautoscaling-min-max-capacity');
+    expect(mine.length).toBeGreaterThan(0);
+    expect(mine.every((v) => v.severity === 'warning')).toBe(true);
+  });
+
+  test('issue #434: a finding that holds in every combination still fails synthesis', () => {
+    const app = makeApp();
+    Preflight.apply(app, { enforce: true });
+    // Min は 10 か 6、Max は 5 か 0: どの組み合わせでも Min > Max
+    scalableTargetWithTwoIfs(new Stack(app, 'S', { env: { region: 'us-east-1', account: '123456789012' } }), 6);
+    expect(() => app.synth()).toThrow(/pf-appautoscaling-min-max-capacity|Validation failed/);
   });
 
   test('issue #276: list counts over mutually exclusive undecided Fn::If elements do not fail synthesis', () => {
@@ -753,6 +802,22 @@ describe('a rule pack that cannot run fails synthesis instead of passing silentl
       const skipped = violations.find((v) => v.ruleName === ENGINE_ERROR_RULE);
       expect(skipped.severity).toBe('warning');
       expect(skipped.description).toMatch(/its test rules on this template/);
+    });
+
+    test('issue #441: after skipping a service, a one-branch finding of an undecided Fn::If is still a warning', () => {
+      const app = appWith((stack) => {
+        const flag = new CfnParameter(stack, 'Flag', { type: 'String' });
+        const on = new CfnCondition(stack, 'On', { expression: Fn.conditionEquals(flag.valueAsString, 'on') });
+        const vpc = new ec2.CfnVPC(stack, 'Vpc', { cidrBlock: '10.0.0.0/16' });
+        const sg = new ec2.CfnSecurityGroup(stack, 'SG', { groupDescription: 'cdk-preflight loader test', vpcId: vpc.ref });
+        sg.addPropertyOverride('SecurityGroupIngress', Fn.conditionIf(on.logicalId,
+          [{ IpProtocol: 'tcp', FromPort: 99999, ToPort: 99999, CidrIp: '10.0.0.0/8' }],
+          [{ IpProtocol: 'tcp', FromPort: 443, ToPort: 443, CidrIp: '10.0.0.0/8' }]));
+      });
+      expect(() => app.synth()).not.toThrow();
+      const sg = readReport(app).filter((v) => v.ruleName === 'pf-ec2-sg-port-range');
+      expect(sg.length).toBeGreaterThan(0);
+      expect(sg.every((v) => v.severity === 'warning')).toBe(true);
     });
 
     test('a template the other services accept synthesizes, with a warning', () => {
