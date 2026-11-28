@@ -176,7 +176,16 @@ function runCheck(args: string[]): number {
     console.error(`cdk-preflight: cannot read template: ${(e as Error).message}`);
     return 2;
   }
-  Preflight.apply(app, { enforce: !warn, exclude });
+  try {
+    Preflight.apply(app, { enforce: !warn, exclude });
+  } catch (e) {
+    // 使い方の誤り（--exclude に知らない ID）はスタックトレースではなく 1 行で返す（#437）
+    console.error(`${(e as Error).message}\n\n${USAGE}`);
+    return 2;
+  }
+  // --output を使い回すと前回の実行のレポートが残り、下の「レポートがあれば検査は走った」の判定を
+  // 狂わせる（#442）。
+  fs.rmSync(path.join(outdir, 'validation-report.json'), { force: true });
 
   try {
     app.synth();

@@ -192,4 +192,16 @@ describe('check', () => {
     expect(runCli(['check', path.join(dir, 'missing.yaml')])).toBe(2);
     expect(runCli(['check', ...out(), template('bad.yaml', 'Resources:\n  X: [unclosed\n')])).toBe(2);
   });
+
+  test('issue #437: an unknown rule id in --exclude is a usage error, not a crash', () => {
+    expect(runCli(['check', ...out(), '--exclude', 'pf-no-such-rule', template('app.yaml', ALB('60'))])).toBe(2);
+  });
+
+  test('issue #442: a report left in --output by an earlier run is removed before checking', () => {
+    const f = template('app.yaml', ALB('5000'));
+    expect(runCli(['check', ...out(), f])).toBe(1);
+    expect(runCli(['check', ...out(), template('clean.yaml', ALB('60'))])).toBe(0);
+    const left = path.join(dir, 'out', 'validation-report.json');
+    expect(fs.existsSync(left) ? fs.readFileSync(left, 'utf8') : '').not.toContain('pf-elbv2-lb-idle-timeout-range');
+  });
 });

@@ -28,6 +28,25 @@ const REPORT = {
   ],
 };
 
+test('issue #435: reads the observe-mode findings and the exports plugin, not the built-in rules', () => {
+  const findings = fromReport({
+    pluginReports: [
+      {
+        pluginName: 'CloudFormation Validate',
+        violations: [
+          { ruleName: 'CloudFormation-Validate::pf-ec2-sg-port-range', description: 'port', severity: 'warning', violatingConstructs: [{ constructPath: 'S/SG' }] },
+          { ruleName: 'W3030', description: 'built-in', severity: 'warning', violatingConstructs: [{ constructPath: 'S/X' }] },
+        ],
+      },
+      {
+        pluginName: 'cdk-preflight-exports',
+        violations: [{ ruleName: 'pf-cfn-export-name-conflict', description: 'export', severity: 'warning', violatingConstructs: [{ constructPath: 'B/O' }] }],
+      },
+    ],
+  });
+  expect(findings.map((f: any) => [f.rule, f.path])).toEqual([['pf-ec2-sg-port-range', 'S/SG'], ['pf-cfn-export-name-conflict', 'B/O']]);
+});
+
 test('reads only cdk-preflight findings from validation-report.json', () => {
   expect(fromReport(REPORT)).toEqual([
     {
