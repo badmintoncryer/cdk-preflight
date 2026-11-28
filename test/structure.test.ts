@@ -586,6 +586,16 @@ describe('rule lint (scripts/lint-rules.ts)', () => {
     expect(lintRego('f', 'x := object.get(object.get(o, "A", {}), "B", "x,y")')).toHaveLength(1);
   });
 
+  test('a variable bound to a service-value literal in the same body is flagged like the literal', () => {
+    const body = (bind: string) => `deny contains r if {\n  ${bind}\n  t := object.get(o, "PipelineType", d)\n  r := t\n}\n`;
+    expect(lintRego('f', body('d := "V1"')).map((f) => f.line)).toEqual([3]);
+    expect(lintRego('f', body('d = 0'))).toHaveLength(1);
+    expect(lintRego('f', body('d := "__pf_absent"'))).toEqual([]);
+    expect(lintRego('f', body('d == "V1"'))).toEqual([]);
+    // 別のルール本体での束縛は別の変数
+    expect(lintRego('f', `a if {\n  d := "V1"\n}\n${body('d := v.x')}`)).toEqual([]);
+  });
+
   test('every finding is a problem, and an inline default points at the ledger', () => {
     const ps = lintProblems([{ check: 'inline-default', file: 'a.rego', line: 3, text: 't' }]);
     expect(ps).toHaveLength(1);
