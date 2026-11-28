@@ -45,6 +45,21 @@ function isSafeDefault(arg: string): boolean {
   return !/^(-?\d+(\.\d+)?|true|false)$/.test(a);
 }
 
+/**
+ * 既定値が変数のとき、その変数が同じルール本体の中でリテラルに束縛されていれば、
+ * リテラルを直接書いたのと同じ主張になる（`d := "V1"; object.get(x, "k", d)`）。
+ * 呼び出しより前、直近のルール頭（行頭の識別子）までを探す。
+ */
+function boundToUnsafeLiteral(src: string, arg: string, at: number): boolean {
+  const name = arg.trim();
+  if (!/^[A-Za-z_][A-Za-z0-9_]*$/.test(name)) return false;
+  const before = src.slice(0, at);
+  const heads = [...before.matchAll(/^[A-Za-z_]/gm)];
+  const body = before.slice(heads.length ? heads[heads.length - 1].index! : 0);
+  const re = new RegExp(`(?<![A-Za-z0-9_.])${name}\\s*:?=\\s*("(?:[^"\\\\]|\\\\.)*"|-?\\d+(?:\\.\\d+)?|true|false)(?![A-Za-z0-9_.])`, 'g');
+  return [...body.matchAll(re)].some((b) => !isSafeDefault(b[1]));
+}
+
 /** コメントを空白に置き換える（文字列の中の # は残す）。行番号を保つ。 */
 export function stripComments(src: string): string {
   const out = [...src];
@@ -131,7 +146,7 @@ export function lintRego(file: string, rego: string): LintFinding[] {
   for (const m of src.matchAll(/(?<![A-Za-z0-9_])object\.get\(/g)) {
     const call = callArgs(src, m.index! + m[0].length - 1);
     if (!call || call.args.length !== 3) continue;
-    if (isSafeDefault(call.args[2])) continue;
+    if (isSafeDefault(call.args[2]) && !boundToUnsafeLiteral(src, call.args[2], m.index!)) continue;
     const line = lineOf(src, m.index!);
     out.push({ check: 'inline-default', file, line, text: lines[line - 1].trim() });
   }

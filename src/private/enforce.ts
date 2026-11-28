@@ -51,7 +51,8 @@ export function isConcreteAccount(accountId: string | undefined): accountId is s
  * (as opposed to undefined, an unresolved token, or a placeholder).
  */
 export function isConcreteRegion(region: string | undefined): region is string {
-  return typeof region === 'string' && /^[a-z]{2}(-[a-z]+)+-\d+$/.test(region);
+  // 先頭は 2〜4 文字: eusc-de-east-1（AWS European Sovereign Cloud）を弾かない（#440）
+  return typeof region === 'string' && /^[a-z]{2,4}(-[a-z]+)+-\d+$/.test(region);
 }
 
 interface EngineDiagnostic {
@@ -99,7 +100,7 @@ export class PreflightEnforcePlugin implements IPolicyValidationPlugin {
       console.error(
         'cdk-preflight: could not resolve @aws/cloudformation-validate; ' +
         'enforce mode is unavailable and no preflight checks were run. ' +
-        'Install it as a devDependency, or use Preflight.apply(app, { enforce: false }) to report through the CDK built-in validator.',
+        'It ships inside aws-cdk-lib 2.267.0 and later: upgrade aws-cdk-lib, or use Preflight.apply(app, { enforce: false }) to report through the CDK built-in validator.',
       );
       return [];
     }
@@ -560,7 +561,7 @@ function failIfReportUnhandled(directory: string): void {
   console.error(formatReports(pluginReports));
   throw new Error(
     'cdk-preflight: validation failed. Fix the findings above, ' +
-    "acknowledge them with Validations.of(scope).acknowledge({ id: 'cdk-preflight::<rule-id>' }), " +
+    "acknowledge them with Validations.of(scope).acknowledge({ id: 'cdk-preflight::<rule-id>' }) (aws-cdk-lib 2.271.0 or later), " +
     'or exclude the rule via Preflight.apply(app, { exclude: [...] }).',
   );
 }
@@ -865,17 +866,10 @@ export function validateTemplate(eng: any, template: unknown, config: object): a
 }
 
 export function loadEngine(): any | undefined {
+  const dir = engineDir();
+  if (dir === undefined) return undefined;
   try {
-    return require('@aws/cloudformation-validate');
-  } catch {
-    // fall through
-  }
-  try {
-    const libPkg = require.resolve('aws-cdk-lib/package.json');
-    const engPkg = require.resolve('@aws/cloudformation-validate/package.json', {
-      paths: [path.dirname(libPkg)],
-    });
-    return require(path.dirname(engPkg));
+    return require(dir);
   } catch {
     return undefined;
   }
@@ -886,16 +880,30 @@ export function loadEngine(): any | undefined {
  * （テストからも利用するため export している）
  */
 export function engineVersion(): string | undefined {
+  const dir = engineDir();
+  if (dir === undefined) return undefined;
   try {
-    return require('@aws/cloudformation-validate/package.json').version;
+    return require(path.join(dir, 'package.json')).version;
+  } catch {
+    return undefined;
+  }
+}
+
+/**
+ * 載せるエンジンのディレクトリ。aws-cdk-lib が同梱しているコピーを先に見る（#438）。観測モードは
+ * CDK 組み込みの CloudFormationValidatePlugin、つまり同梱版で評価するので、トップレベルに別の版が
+ * 入っていてもそちらを先に取ると、enforce と観測モードで別のエンジンが走り、supersededBy の省略も
+ * 実際に走らない版で決まってしまう。トップレベルを見るのは、同梱版が見つからないときだけ。
+ */
+function engineDir(): string | undefined {
+  try {
+    const libPkg = require.resolve('aws-cdk-lib/package.json');
+    return path.dirname(require.resolve('@aws/cloudformation-validate/package.json', { paths: [path.dirname(libPkg)] }));
   } catch {
     // fall through
   }
   try {
-    const libPkg = require.resolve('aws-cdk-lib/package.json');
-    return require(require.resolve('@aws/cloudformation-validate/package.json', {
-      paths: [path.dirname(libPkg)],
-    })).version;
+    return path.dirname(require.resolve('@aws/cloudformation-validate/package.json'));
   } catch {
     return undefined;
   }

@@ -98,7 +98,7 @@ export function uncoveredFindings(own: Finding[], engine: Finding[]): Finding[] 
 }
 
 const ISO_DATE = /\d{4}-\d{2}-\d{2}/;
-const AWS_REGION = /\b(?:af|ap|ca|eu|il|me|sa|us)-[a-z]+-\d\b/;
+const AWS_REGION = /\b(?:af|ap|ca|cn|eu|eusc|il|me|mx|sa|us)(?:-[a-z]+)+-\d\b/;
 
 /**
  * repro.evidence の最低要件。PR CI は実機デプロイを回さない（fork PR に自アカウントへの

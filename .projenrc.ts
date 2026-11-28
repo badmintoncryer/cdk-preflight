@@ -166,6 +166,12 @@ project.buildWorkflow!.addPostBuildJob('package-smoke', {
       },
     }),
     { name: 'Smoke test the packed tarball', run: 'bash .repo/scripts/smoke.sh dist/js/*.jsii.tgz' },
+    // peer の下限。エンジンの同梱や検証 API の形が古い版で変わっていないかをここで見る
+    {
+      name: 'Smoke test at the aws-cdk-lib peer floor',
+      run: 'bash .repo/scripts/smoke.sh dist/js/*.jsii.tgz',
+      env: { CDK_VERSION: project.cdkVersion.replace(/^\^/, '') },
+    },
   ],
 });
 

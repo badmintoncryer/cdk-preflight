@@ -35,10 +35,13 @@ function partitionOf(region: string): { partition: string; urlSuffix: string } {
   if (region.startsWith('us-gov-')) return { partition: 'aws-us-gov', urlSuffix: 'amazonaws.com' };
   if (region.startsWith('us-iso-')) return { partition: 'aws-iso', urlSuffix: 'c2s.ic.gov' };
   if (region.startsWith('us-isob-')) return { partition: 'aws-iso-b', urlSuffix: 'sc2s.sgov.gov' };
+  if (region.startsWith('us-isof-')) return { partition: 'aws-iso-f', urlSuffix: 'csp.hci.ic.gov' };
+  if (region.startsWith('eu-isoe-')) return { partition: 'aws-iso-e', urlSuffix: 'cloud.adc-e.uk' };
+  if (region.startsWith('eusc-')) return { partition: 'aws-eusc', urlSuffix: 'amazonaws.eu' };
   return { partition: 'aws', urlSuffix: 'amazonaws.com' };
 }
 
-const CONCRETE_REGION = /^[a-z]{2}(-[a-z]+)+-\d+$/;
+const CONCRETE_REGION = /^[a-z]{2,4}(-[a-z]+)+-\d+$/;
 const CONCRETE_ACCOUNT = /^\d{12}$/;
 
 /** Parameter types whose value is a list (the `Ref` returns the split list). */

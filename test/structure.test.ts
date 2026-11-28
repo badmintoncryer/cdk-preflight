@@ -137,6 +137,10 @@ test('repro evidence is required, and real-deploy must quote a bench run', () =>
   expect(evidenceProblem({ method: 'real-deploy', evidence: '' })).toMatch(/required/);
   expect(evidenceProblem({ method: 'doc-only' })).toMatch(/required/);
   // 実機を回さずに real-deploy を自称するケースを弾く
+  // #440: mx / cn / eusc / us-gov のリージョンで回した bench 行も通す
+  for (const region of ['mx-central-1', 'cn-north-1', 'eusc-de-east-1', 'us-gov-west-1']) {
+    expect(evidenceProblem({ method: 'real-deploy', evidence: `bench 2026-11-28 ${region}: ROLLBACK_COMPLETE` })).toBeUndefined();
+  }
   expect(evidenceProblem({ method: 'real-deploy', evidence: 'verified locally' })).toMatch(/bench run/);
   expect(evidenceProblem({ method: 'real-deploy', evidence: 'bench 2026-09-03: rolled back' })).toMatch(/bench run/);
   expect(
@@ -580,6 +584,16 @@ describe('rule lint (scripts/lint-rules.ts)', () => {
     // 入れ子の呼び出しでも最外の 3 引数目だけを見る
     expect(lintRego('f', 'x := object.get(object.get(o, "A", {}), "B", null)')).toEqual([]);
     expect(lintRego('f', 'x := object.get(object.get(o, "A", {}), "B", "x,y")')).toHaveLength(1);
+  });
+
+  test('a variable bound to a service-value literal in the same body is flagged like the literal', () => {
+    const body = (bind: string) => `deny contains r if {\n  ${bind}\n  t := object.get(o, "PipelineType", d)\n  r := t\n}\n`;
+    expect(lintRego('f', body('d := "V1"')).map((f) => f.line)).toEqual([3]);
+    expect(lintRego('f', body('d = 0'))).toHaveLength(1);
+    expect(lintRego('f', body('d := "__pf_absent"'))).toEqual([]);
+    expect(lintRego('f', body('d == "V1"'))).toEqual([]);
+    // 別のルール本体での束縛は別の変数
+    expect(lintRego('f', `a if {\n  d := "V1"\n}\n${body('d := v.x')}`)).toEqual([]);
   });
 
   test('every finding is a problem, and an inline default points at the ledger', () => {

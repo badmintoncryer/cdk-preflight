@@ -142,9 +142,9 @@ WARNING idle_timeout.timeout_seconds is 5000 but must be between 1 and 4000 seco
 | `quotaCacheTtl` | 5 minutes | How long `checkQuotas` reuses the usage and deployed-stack state it fetched |
 
 To opt out of a single rule everywhere, pass its id in `exclude`. To suppress a
-single *finding* on one construct, acknowledge it — this works in both modes, the
-id prefix just differs (`cdk-preflight::` when enforcing, `CloudFormation-Validate::`
-in observe-only, as printed in the warning text):
+single *finding* on one construct, acknowledge it — this works in both modes (in enforce
+mode with aws-cdk-lib 2.271.0 or later), the id prefix just differs (`cdk-preflight::` when
+enforcing, `CloudFormation-Validate::` in observe-only, as printed in the warning text):
 
 ```ts
 cdk.Validations.of(errorFilter).acknowledge({
