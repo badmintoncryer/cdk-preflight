@@ -5,7 +5,7 @@
 import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
-import { App, CfnCondition, CfnParameter, CfnResource, Fn, Stack, Stage, Validations, aws_apigateway as apigateway, aws_ec2 as ec2, aws_eks as eks, aws_iam as iam, aws_kinesis as kinesis, aws_logs as logs, aws_sns as sns, aws_sqs as sqs } from 'aws-cdk-lib';
+import { App, CfnCondition, CfnParameter, CfnResource, Fn, NestedStack, Stack, Stage, Validations, aws_apigateway as apigateway, aws_ec2 as ec2, aws_eks as eks, aws_iam as iam, aws_kinesis as kinesis, aws_logs as logs, aws_sns as sns, aws_sqs as sqs } from 'aws-cdk-lib';
 import { Preflight } from '../src';
 import {
   ENGINE_ERROR_RULE,
@@ -99,6 +99,14 @@ describe('observe mode (enforce: false)', () => {
     expect(rules).toContain('pf-ec2-sg-port-range');
     // 組み込みルール（スキーマ enum 検証）が失われていないこと
     expect(rules).toContain('W3030');
+  });
+
+  test('issue #432: reports a violation inside a NestedStack', () => {
+    const app = makeApp();
+    Preflight.apply(app, { enforce: false });
+    addBadSecurityGroup(new NestedStack(new Stack(app, 'S'), 'Child'));
+    app.synth();
+    expect(readReport(app).map((v) => v.ruleName)).toContain('pf-ec2-sg-port-range');
   });
 
   test('clean stacks produce no preflight findings', () => {
@@ -243,6 +251,13 @@ describe('enforce mode (default)', () => {
     const app = makeApp();
     Preflight.apply(app, { enforce: true });
     addBadSecurityGroup(new Stack(app, 'S'));
+    expect(() => app.synth()).toThrow(/pf-ec2-sg-port-range|Validation failed/);
+  });
+
+  test('issue #432: a violation inside a NestedStack (and its nested stacks) fails synthesis', () => {
+    const app = makeApp();
+    Preflight.apply(app);
+    addBadSecurityGroup(new NestedStack(new NestedStack(new Stack(app, 'S'), 'Child'), 'Grandchild'));
     expect(() => app.synth()).toThrow(/pf-ec2-sg-port-range|Validation failed/);
   });
 

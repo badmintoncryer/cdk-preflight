@@ -11,7 +11,7 @@ import {
 } from 'aws-cdk-lib';
 import type { IConstruct } from 'constructs';
 import { forceConditionalBranches, specializeTemplateFile } from './conditions';
-import { checkQuotas, type QuotaCheckOptions } from './quota';
+import { checkQuotas, nestedTemplateFile, type QuotaCheckOptions } from './quota';
 import { BUNDLED_LIBS, type BundledRuleData } from '../rules.generated';
 
 /* eslint-disable @typescript-eslint/no-require-imports */
@@ -110,7 +110,9 @@ export class PreflightEnforcePlugin implements IPolicyValidationPlugin {
 
     // 全テンプレートの和集合で刈り込む。テンプレートごとに刈るとエンジンを何度も
     // 作り直すことになり、そちらのコストの方が高くつく（regoEngineCached のコメント参照）。
-    const rules = prune(this.rules, templateResourceTypes(context.stackTemplates.map((st) => st.templatePath)));
+    // CDK の検証コンテキストにはネストしたスタックが入らないので、子テンプレートを自分で足す（#432）。
+    const stackTemplates = withNestedStacks(context.stackTemplates);
+    const rules = prune(this.rules, templateResourceTypes(stackTemplates.map((st) => st.templatePath)));
 
     // 1 本も残らない = このアプリのリソースに関係するルールが無い。エンジンを組む必要も無い
     // （libs だけを載せたエンジンは violation ルールを持たず、評価時に落ちる）。
@@ -123,7 +125,7 @@ export class PreflightEnforcePlugin implements IPolicyValidationPlugin {
     // 1 環境 1 回だけエンジンを組む。アプリ単位の context.region / accountId は全スタックが
     // 同じ環境のときしか入らず、それを使うと環境の違うスタックが 1 つあるだけで
     // リージョン依存のルールが全スタックで黙る。
-    for (const group of byEnvironment(context.stackTemplates)) {
+    for (const group of byEnvironment(stackTemplates)) {
       let eng: any;
       try {
         eng = regoEngineCached(engine, rules, group.region, group.account);
@@ -236,6 +238,44 @@ export class PreflightQuotaPlugin implements IPolicyValidationPlugin {
   public validate(context: IPolicyValidationContext): PolicyValidationPluginReport {
     return { success: true, violations: checkQuotas(context, { ...this.quotas, severity: 'warning' }) };
   }
+}
+
+/**
+ * スタックと、そのネストしたスタックの子テンプレート（孫以降も）。子は親と同じ環境・同じ
+ * construct path で返す。CDK の検証コンテキストはトップレベルのスタックしか持たないので、
+ * これを通さないと NestedStack の中のリソースにはどのルールも掛からない（#432）。
+ * 子テンプレートの場所は quota.ts の nestedTemplateFile と同じ辿り方で引く。読めないものは飛ばす。
+ * （テストからも利用するため export している）
+ */
+export function withNestedStacks<T extends { templatePath: string }>(stacks: readonly T[]): T[] {
+  const out: T[] = [];
+  const seen = new Set<string>();
+  const visit = (st: T) => {
+    const file = path.resolve(st.templatePath);
+    if (seen.has(file)) return;
+    seen.add(file);
+    out.push(st);
+    let template: any;
+    try {
+      template = JSON.parse(fs.readFileSync(st.templatePath, 'utf8'));
+    } catch {
+      return;
+    }
+    const dir = path.dirname(st.templatePath);
+    for (const r of Object.values<any>(template?.Resources ?? {})) {
+      if (r?.Type !== 'AWS::CloudFormation::Stack') continue;
+      let child: string | undefined;
+      try {
+        child = nestedTemplateFile(dir, r);
+      } catch {
+        child = undefined;
+      }
+      const childPath = child === undefined ? undefined : path.join(dir, child);
+      if (childPath && fs.existsSync(childPath)) visit({ ...st, templatePath: childPath });
+    }
+  };
+  for (const st of stacks) visit(st);
+  return out;
 }
 
 /**
@@ -631,6 +671,11 @@ export class ConditionAwarePlugin implements IPolicyValidationPlugin {
   public validate(context: IPolicyValidationContext): PolicyValidationPluginReport {
     const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'cdkpf-spec-'));
     try {
+      // enforce と同じくネストしたスタックの子テンプレートも検査させる（#432）
+      const all = withNestedStacks(context.stackTemplates);
+      if (all.length !== context.stackTemplates.length) {
+        context = { ...context, stackTemplates: all, templatePaths: [...new Set([...context.templatePaths, ...all.map((st) => st.templatePath)])] };
+      }
       const back = new Map<string, string>();
       const stackTemplates = context.stackTemplates.map((st) => {
         const spec = specializeTemplateFile(st.templatePath, { region: st.region, accountId: st.accountId }, tmp);

@@ -142,7 +142,7 @@ export function collectUnits(context: Pick<IPolicyValidationContext, 'stackTempl
  * CLI 経由の synth にしか付かないので、無ければ TemplateURL の中のアセットハッシュを
  * `*.assets.json` で引く。
  */
-function nestedTemplateFile(dir: string, r: Resource): string | undefined {
+export function nestedTemplateFile(dir: string, r: Resource): string | undefined {
   const asset = r.Metadata?.['aws:asset:path'];
   if (typeof asset === 'string') return asset;
   const hash = /([0-9a-f]{64})\.json/.exec(JSON.stringify(r.Properties?.TemplateURL ?? ''))?.[1];
