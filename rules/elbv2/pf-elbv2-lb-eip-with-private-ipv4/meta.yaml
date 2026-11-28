@@ -8,5 +8,6 @@ benchRegion: us-east-1
 upstream: none
 repro:
   method: real-deploy
-  evidence: "bench 2026-09-09 us-east-1: the fail template rolled back with \"The allocation ID 'eipalloc-0123456789abcdef0' does not exist\"; the pass template reached CREATE_COMPLETE."
+  evidence: "bench 2026-09-09 us-east-1: the fail template rolled back with \"The allocation ID 'eipalloc-0123456789abcdef0' does not exist\"; the pass template reached CREATE_COMPLETE; rebuilt fixture bench 2026-11-28 us-east-1: AllocationId from a real EIP plus PrivateIPv4Address on an internet-facing NLB -> \"You can only specify private IPv4 addresses for Network Load Balancers with scheme 'internal'.\" ROLLBACK_COMPLETE; pass template CREATE_COMPLETE."
+  expect: "You can only specify private IPv4 addresses for Network Load Balancers with scheme 'internal'"
 addedOn: 2026-09-08
