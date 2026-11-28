@@ -64,6 +64,17 @@ describe('inactiveResources', () => {
     expect(inactive(t, { region: '${Token[AWS.Region.1]}', accountId: '${Token[AWS.AccountId.2]}' })).toEqual([]);
   });
 
+  test('issue #440: the sovereign and ISO regions are concrete and get their partition', () => {
+    const t = {
+      Conditions: {
+        Eusc: { 'Fn::Equals': [{ Ref: 'AWS::Partition' }, 'aws-eusc'] },
+        Commercial: { 'Fn::Equals': [{ Ref: 'AWS::Partition' }, 'aws'] },
+      },
+    };
+    expect(inactive(t, { region: 'eusc-de-east-1' })).toEqual(['RCommercial']);
+    expect(inactive(t, { region: 'eu-isoe-west-1' })).toEqual(['RCommercial', 'REusc']);
+  });
+
   test('Join, Split and FindInMap are evaluated; unmodelled intrinsics are unknown', () => {
     expect(inactive({
       Parameters: { Stage: { Type: 'String', Default: 'dev' } },

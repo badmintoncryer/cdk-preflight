@@ -137,6 +137,10 @@ test('repro evidence is required, and real-deploy must quote a bench run', () =>
   expect(evidenceProblem({ method: 'real-deploy', evidence: '' })).toMatch(/required/);
   expect(evidenceProblem({ method: 'doc-only' })).toMatch(/required/);
   // 実機を回さずに real-deploy を自称するケースを弾く
+  // #440: mx / cn / eusc / us-gov のリージョンで回した bench 行も通す
+  for (const region of ['mx-central-1', 'cn-north-1', 'eusc-de-east-1', 'us-gov-west-1']) {
+    expect(evidenceProblem({ method: 'real-deploy', evidence: `bench 2026-11-28 ${region}: ROLLBACK_COMPLETE` })).toBeUndefined();
+  }
   expect(evidenceProblem({ method: 'real-deploy', evidence: 'verified locally' })).toMatch(/bench run/);
   expect(evidenceProblem({ method: 'real-deploy', evidence: 'bench 2026-09-03: rolled back' })).toMatch(/bench run/);
   expect(

@@ -51,7 +51,8 @@ export function isConcreteAccount(accountId: string | undefined): accountId is s
  * (as opposed to undefined, an unresolved token, or a placeholder).
  */
 export function isConcreteRegion(region: string | undefined): region is string {
-  return typeof region === 'string' && /^[a-z]{2}(-[a-z]+)+-\d+$/.test(region);
+  // 先頭は 2〜4 文字: eusc-de-east-1（AWS European Sovereign Cloud）を弾かない（#440）
+  return typeof region === 'string' && /^[a-z]{2,4}(-[a-z]+)+-\d+$/.test(region);
 }
 
 interface EngineDiagnostic {
