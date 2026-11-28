@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "api-probe 2026-09-24 us-east-1: CreateSamplingRule with version=2 -> \"(InvalidRequestException) ... Sampling rule version must be 1\" (#71 phase B); bench 2026-09-24 us-east-1: fail (Version 2) -> \"Invalid request provided: CreateSamplingRuleRequest(SamplingRule=SamplingRule(RuleName=pfxr-version-f, ..., Version=2))\" (HandlerErrorCode: InvalidRequest, ROLLBACK_COMPLETE); pass (Version 1) -> CREATE_COMPLETE. Confounder: the handler echoes the request but drops the service reason text, so the quoted wording comes from the direct API call."
+  expect: "Version=2)"
 addedOn: 2026-09-24

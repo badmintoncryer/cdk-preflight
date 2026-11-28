@@ -4,8 +4,10 @@ resourceTypes: [AWS::Route53::RecordSet]
 severity: ERROR
 title: NS records take no routing policy; CNAME cannot be multivalue
 constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-route53-recordset.html
+benchRegion: us-east-1
 upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-02 ap-northeast-1: weighted NS -> \"RRSet with DNS name ..., type NS, SetIdentifier one cannot be created because this type of RRSet is not supported\"; multivalue CNAME -> same message with type CNAME. Both ROLLBACK_COMPLETE, Status Code 400. bench 2026-09-10 us-east-1: apex SOA with Weight+SetIdentifier -> \"RRSet with DNS name cdkpf-ext-soa.com., type SOA, SetIdentifier w1 cannot be created because this type of RRSet is not supported.\" (ROLLBACK_COMPLETE), so SOA is now covered; DS is still unmeasured and the rule leaves it alone."
+  expect: "cannot be created because this type of RRSet is not supported"
 addedOn: 2026-09-02

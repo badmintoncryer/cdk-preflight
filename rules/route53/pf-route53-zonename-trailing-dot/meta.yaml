@@ -4,8 +4,10 @@ resourceTypes: [AWS::Route53::RecordSet, AWS::Route53::RecordSetGroup]
 severity: ERROR
 title: HostedZoneName must end with a trailing dot
 constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-route53-recordset.html
+benchRegion: us-east-1
 upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-02 ap-northeast-1: HostedZoneName without the trailing dot -> ROLLBACK_COMPLETE, \"No hosted zone with name 'd21-zonename-no-dot.cdkpf-verify.com' found.\" (HandlerErrorCode NotFound) while the zone existed; control with the trailing dot on the same shape: CREATE_COMPLETE. CloudFormation does not normalize the dot. bench 2026-09-10 us-east-1: the RecordSetGroup shape behaves the same -> HostedZoneName without the trailing dot against a zone created in the same stack gave \"No hosted zones named cdkpf-ext-zdot.com found\" (ROLLBACK_COMPLETE)."
+  expect: "No hosted zone with name"
 addedOn: 2026-09-02

@@ -3,8 +3,10 @@
     "Rec": {
       "Type": "AWS::Route53::RecordSet",
       "Properties": {
-        "HostedZoneId": "Z1234567890ABC",
-        "Name": "sub.example.org.",
+        "HostedZoneId": {
+          "Ref": "Zone"
+        },
+        "Name": "sub.pf-record-type-routing-policy.cdkpf-verify.com.",
         "Type": "NS",
         "ResourceRecords": [
           "ns1.example.net."
@@ -12,6 +14,12 @@
         "TTL": "300",
         "SetIdentifier": "one",
         "Weight": 10
+      }
+    },
+    "Zone": {
+      "Type": "AWS::Route53::HostedZone",
+      "Properties": {
+        "Name": "pf-record-type-routing-policy.cdkpf-verify.com."
       }
     }
   }

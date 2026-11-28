@@ -4,8 +4,10 @@ resourceTypes: [AWS::ElasticLoadBalancingV2::Listener, AWS::ElasticLoadBalancing
 severity: ERROR
 title: Listener protocols must match the load balancer type
 constraintSource: https://docs.aws.amazon.com/elasticloadbalancing/latest/APIReference/API_CreateListener.html
+benchRegion: us-east-1
 upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-03 ap-northeast-1: application LB + TCP listener (e17) -> \"Listener protocol 'TCP' must be one of 'HTTP, HTTPS'\"; network LB + HTTP listener (e17b) -> \"Listener protocol 'HTTP' must be one of 'TCP, QUIC, TCP_QUIC, UDP, TCP_UDP, TLS'\". Both allow-sets are quoted verbatim from the service (QUIC and TCP_QUIC included). ROLLBACK_COMPLETE for both."
+  expect: "Listener protocol 'TCP' must be one of 'HTTP, HTTPS'"
 addedOn: 2026-09-03

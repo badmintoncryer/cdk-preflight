@@ -8,10 +8,21 @@
         "SubnetMappings": [
           {
             "SubnetId": "subnet-2e0a500f",
-            "AllocationId": "eipalloc-0123456789abcdef0",
+            "AllocationId": {
+              "Fn::GetAtt": [
+                "Eip",
+                "AllocationId"
+              ]
+            },
             "PrivateIPv4Address": "10.0.1.5"
           }
         ]
+      }
+    },
+    "Eip": {
+      "Type": "AWS::EC2::EIP",
+      "Properties": {
+        "Domain": "vpc"
       }
     }
   }

@@ -3,8 +3,8 @@
     "P": {
       "Type": "AWS::EC2::VPCEndpoint",
       "Properties": {
-        "VpcId": "vpc-11112222",
-        "ServiceName": "com.amazonaws.ap-northeast-1.s3"
+        "VpcId": "vpc-4331593e",
+        "ServiceName": "com.amazonaws.eu-west-1.s3"
       }
     }
   }

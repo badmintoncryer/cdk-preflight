@@ -6,8 +6,8 @@
         "Type": "application",
         "Scheme": "internal",
         "Subnets": [
-          "subnet-11112222",
-          "subnet-33334444"
+          "subnet-2e0a500f",
+          "subnet-ab11fde7"
         ]
       }
     },
@@ -16,7 +16,7 @@
       "Properties": {
         "Protocol": "TCP",
         "Port": 80,
-        "VpcId": "vpc-11112222",
+        "VpcId": "vpc-4331593e",
         "TargetType": "instance"
       }
     },

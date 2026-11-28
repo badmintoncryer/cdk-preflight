@@ -4,8 +4,10 @@ resourceTypes: [AWS::Lambda::Function]
 severity: ERROR
 title: Inline ZipFile excludes every other Code parameter
 constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-properties-lambda-function-code.html
+benchRegion: us-east-1
 upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-03 ap-northeast-1: Code with ZipFile plus S3Bucket/S3Key (cd01) -> \"Please do not provide other FunctionCode parameters when providing a ZipFile.\" ROLLBACK_COMPLETE. The schema oneOf is not evaluated by the engine (clean)."
+  expect: "Please do not provide other FunctionCode parameters when providing a ZipFile"
 addedOn: 2026-09-03
