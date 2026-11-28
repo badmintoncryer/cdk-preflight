@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: "bench 2026-09-02 us-east-1: associating an unqualified function ARN rolled back with \"The function ARN must reference a specific function version. (The ARN must end with the version number.)\" (Service: CloudFront, Status Code: 400)"
+  expect: "The function ARN must reference a specific function version"
 addedOn: 2026-09-02

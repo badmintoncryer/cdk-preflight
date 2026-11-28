@@ -20,7 +20,7 @@ violation contains make_diag_full("pf-cloudfront-edge-lambda-region", "ERROR", n
 	some name in resources_of_type("AWS::CloudFront::Distribution")
 	some b in _pf_cf_edgeregion_behaviors(name)
 	some a in flatten_list(name, sprintf("%s.LambdaFunctionAssociations", [b.path]))
-	arn := object.get(a.value, "LambdaFunctionARN", null)
+	arn := resolve(name, sprintf("%s.LambdaFunctionAssociations.%d.LambdaFunctionARN", [b.path, a.index]))
 	is_string(arn)
 	parts := split(arn, ":")
 	count(parts) >= 7

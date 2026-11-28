@@ -19,7 +19,7 @@ _pf_cf_edgever_behaviors(name) := array.concat(
 _pf_cf_edgever_arns(name) := [{"path": path, "arn": arn, "parts": parts} |
 	some b in _pf_cf_edgever_behaviors(name)
 	some a in flatten_list(name, sprintf("%s.LambdaFunctionAssociations", [b.path]))
-	arn := object.get(a.value, "LambdaFunctionARN", null)
+	arn := resolve(name, sprintf("%s.LambdaFunctionAssociations.%d.LambdaFunctionARN", [b.path, a.index]))
 	is_string(arn)
 	parts := split(arn, ":")
 	parts[0] == "arn"
