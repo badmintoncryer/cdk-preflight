@@ -216,6 +216,11 @@ jobs:
       - name: Smoke test the packed tarball
         id: smoke_test_the_packed_tarball
         run: bash .repo/scripts/smoke.sh dist/js/*.jsii.tgz
+      - name: Smoke test at the aws-cdk-lib peer floor
+        id: smoke_test_at_the_aws-cdk-lib_peer_floor
+        env:
+          CDK_VERSION: 2.267.0
+        run: bash .repo/scripts/smoke.sh dist/js/*.jsii.tgz
   corpus:
     runs-on: ubuntu-latest
     permissions:

@@ -3,6 +3,7 @@
 # テストは全部 ../src を import しているので、パッケージング側の壊れ（exports の漏れ、
 # lib/rules.generated の解決失敗、bin の欠落）はこのスクリプトでしか出ない。
 #   bash scripts/smoke.sh dist/js/cdk-preflight@x.y.z.jsii.tgz
+# CDK_VERSION=2.267.0 で aws-cdk-lib をその版に固定する（peer の下限で動くかを見る）。
 set -euo pipefail
 
 tgz="$(cd "$(dirname "$1")" && pwd)/$(basename "$1")"
@@ -11,7 +12,7 @@ trap 'rm -rf "$work"' EXIT
 cd "$work"
 
 npm init -y >/dev/null
-npm i --no-audit --no-fund --loglevel=error aws-cdk-lib constructs tsx "$tgz" >/dev/null
+npm i --no-audit --no-fund --loglevel=error "aws-cdk-lib${CDK_VERSION:+@$CDK_VERSION}" constructs tsx "$tgz" >/dev/null
 
 cat > app.ts <<'TS'
 import { App, CfnResource, Stack } from 'aws-cdk-lib';
@@ -48,4 +49,4 @@ if VIOLATE=1 npx tsx app.ts >out.log 2>&1; then
 fi
 grep -q 'pf-lambda-timeout-max' out.log || fail 'expected pf-lambda-timeout-max in the output'
 
-echo 'smoke.sh: OK'
+echo "smoke.sh: OK (aws-cdk-lib $(node -p "require('aws-cdk-lib/package.json').version"))"
