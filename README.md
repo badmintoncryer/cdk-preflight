@@ -361,7 +361,7 @@ Highlights:
 
 The repository is also a GitHub Action that synthesizes the app on both sides of a pull request and posts **one comment** with:
 
-- the cdk-preflight findings of the pull request (from `cdk.out/validation-report.json`, or the synth log),
+- the cdk-preflight findings of the pull request, `enforce: false` warnings included (from `cdk.out/validation-report.json`, or the synth log),
 - the idle cost change, from [cfn-idle-cost](https://github.com/badmintoncryer/cfn-idle-cost) (what the stacks cost a month with zero traffic),
 - the CloudFormation execution role permission change, from [cfn-exec-policy](https://github.com/badmintoncryer/cfn-exec-policy).
 
@@ -376,7 +376,7 @@ jobs:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
         with: { node-version: 22 }
-      - uses: badmintoncryer/cdk-preflight@main
+      - uses: badmintoncryer/cdk-preflight@main # pin a commit SHA to keep the report from changing under you
         with:
           idle-cost-args: --region us-east-1 --max-increase 50
           exec-policy-args: --fail-on wildcard,unknown
@@ -390,8 +390,8 @@ The base branch is fetched and synthesized in a separate worktree, so neither si
 | `install` | Install command, run on both sides. Default `npm ci`; empty to skip |
 | `synth` | Synth command, run on both sides. It must write `cdk.out` in the app directory. Default `npx cdk synth -q` |
 | `base-ref` | Branch to compare against. Default: the pull request's base branch |
-| `idle-cost`, `idle-cost-args` | `false` to leave the idle cost out; more `cfn-idle-cost` flags (`--region` is needed for env-agnostic stacks) |
-| `exec-policy`, `exec-policy-args` | `false` to leave the permissions out; more `cfn-exec-policy diff` flags |
+| `idle-cost`, `idle-cost-args`, `idle-cost-version` | `false` to leave the idle cost out; more `cfn-idle-cost` flags (`--region` is needed for env-agnostic stacks); the `cfn-idle-cost` version to run (pinned by default) |
+| `exec-policy`, `exec-policy-args`, `exec-policy-version` | `false` to leave the permissions out; more `cfn-exec-policy diff` flags; the `cfn-exec-policy` version to run (pinned by default) |
 | `comment` | `false` to only write the job summary. Default `true` |
 | `github-token` | Token used to comment. Default `github.token` |
 

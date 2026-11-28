@@ -10,20 +10,39 @@
 const fs = require('fs');
 const path = require('path');
 
-const PLUGIN = 'cdk-preflight';
+/**
+ * Whether a violation is a cdk-preflight finding. In enforce mode the rules
+ * report as the cdk-preflight plugin; the cross-stack export and quota checks
+ * as cdk-preflight-exports / cdk-preflight-quotas; with `enforce: false` the
+ * rules ride on the CDK built-in "CloudFormation Validate" plugin, where only
+ * the pf-* rule ids are ours.
+ */
+function isOurs(pluginName, ruleId) {
+  const name = String(pluginName ?? '');
+  if (name === 'cdk-preflight' || name.startsWith('cdk-preflight-')) return true;
+  return name === 'CloudFormation Validate' && ruleId.startsWith('pf-');
+}
 
-/** Findings of the cdk-preflight plugin in a validation report. */
+/** The rule id without the `<namespace>::` prefix the CDK may put in front of it. */
+function bareRule(ruleName) {
+  const r = String(ruleName ?? '');
+  const i = r.lastIndexOf('::');
+  return i >= 0 ? r.slice(i + 2) : r;
+}
+
+/** Findings of the cdk-preflight plugins in a validation report. */
 function fromReport(report) {
   const out = [];
   for (const r of report?.pluginReports ?? []) {
-    if (r?.pluginName !== PLUGIN) continue;
-    for (const v of r.violations ?? []) {
+    for (const v of r?.violations ?? []) {
+      const rule = bareRule(v.ruleName);
+      if (!isOurs(r?.pluginName, rule)) continue;
       const constructs = v.violatingConstructs ?? [];
       const where = constructs.length > 0 ? constructs.map((c) => c.constructPath) : [''];
       for (const w of where) {
         out.push({
           severity: String(v.severity ?? 'error').toLowerCase(),
-          rule: String(v.ruleName ?? '').replace(/^cdk-preflight::/, ''),
+          rule,
           message: String(v.description ?? ''),
           path: w ?? '',
         });
@@ -34,14 +53,15 @@ function fromReport(report) {
 }
 
 /**
- * Findings in a synth log: "ERROR <message> (cdk-preflight)" with the
+ * Findings in a synth log: "ERROR <message> (cdk-preflight)" (or one of the
+ * cdk-preflight-* plugins) with the
  * construct path on the next line.
  */
 function fromLog(log) {
   const lines = log.split(/\r?\n/);
   const out = [];
   lines.forEach((line, i) => {
-    const m = line.match(/^\s*(ERROR|WARN|WARNING|INFO)\s+(.*)\s+\(cdk-preflight\)\s*$/);
+    const m = line.match(/^\s*(ERROR|WARN|WARNING|INFO)\s+(.*)\s+\(cdk-preflight(?:-[a-z]+)?\)\s*$/);
     if (!m) return;
     const next = (lines[i + 1] ?? '').trim();
     out.push({

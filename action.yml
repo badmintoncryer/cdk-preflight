@@ -20,12 +20,18 @@ inputs:
   idle-cost-args:
     description: More cfn-idle-cost flags, e.g. "--region us-east-1 --max-increase 50".
     default: ""
+  idle-cost-version:
+    description: cfn-idle-cost version to run. Pinned so a new release upstream does not change the report by itself.
+    default: "1.10.0"
   exec-policy:
     description: Include the CloudFormation execution role permission change (cfn-exec-policy).
     default: "true"
   exec-policy-args:
     description: More cfn-exec-policy diff flags, e.g. "--fail-on wildcard,unknown".
     default: ""
+  exec-policy-version:
+    description: cfn-exec-policy version to run. Pinned so a new release upstream does not change the report by itself.
+    default: "1.7.5"
   comment:
     description: Post the report as a pull request comment, updated on each run.
     default: "true"
@@ -48,8 +54,10 @@ runs:
         IN_BASE_REF: ${{ inputs.base-ref || github.base_ref }}
         IN_IDLE_COST: ${{ inputs.idle-cost }}
         IN_IDLE_COST_ARGS: ${{ inputs.idle-cost-args }}
+        IN_IDLE_COST_VERSION: ${{ inputs.idle-cost-version }}
         IN_EXEC_POLICY: ${{ inputs.exec-policy }}
         IN_EXEC_POLICY_ARGS: ${{ inputs.exec-policy-args }}
+        IN_EXEC_POLICY_VERSION: ${{ inputs.exec-policy-version }}
         IN_COMMENT: ${{ inputs.comment }}
         ACTION_PATH: ${{ github.action_path }}
         PR: ${{ github.event.pull_request.number }}
@@ -110,7 +118,7 @@ runs:
             echo >> "$out"
             [ -n "$base_note" ] && { echo "$base_note" >> "$out"; echo >> "$out"; }
             code=0
-            npx -y cfn-idle-cost@latest "${flags[@]}" $IN_IDLE_COST_ARGS "$work/head.out" > "$work/idle.md" 2> "$work/idle.err" || code=$?
+            npx -y "cfn-idle-cost@$IN_IDLE_COST_VERSION" "${flags[@]}" $IN_IDLE_COST_ARGS "$work/head.out" > "$work/idle.md" 2> "$work/idle.err" || code=$?
             if [ "$code" = 0 ] || [ "$code" = 3 ]; then
               cat "$work/idle.md" >> "$out"
               [ "$code" = 3 ] && failed="$failed idle-cost"
@@ -123,7 +131,7 @@ runs:
             echo >> "$out"
             if [ "$base_ok" = true ]; then
               code=0
-              npx -y cfn-exec-policy@latest diff --format md --base "$work/base.out" $IN_EXEC_POLICY_ARGS "$work/head.out" > "$work/policy.md" 2> "$work/policy.err" || code=$?
+              npx -y "cfn-exec-policy@$IN_EXEC_POLICY_VERSION" diff --format md --base "$work/base.out" $IN_EXEC_POLICY_ARGS "$work/head.out" > "$work/policy.md" 2> "$work/policy.err" || code=$?
               if [ "$code" = 0 ] || [ "$code" = 3 ]; then
                 cat "$work/policy.md" >> "$out"
                 [ "$code" = 3 ] && failed="$failed exec-policy"
