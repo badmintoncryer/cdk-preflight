@@ -11,6 +11,10 @@
             "InstanceId": {
               "type": "String",
               "default": ""
+            },
+            "AutomationAssumeRole": {
+              "type": "String",
+              "default": ""
             }
           },
           "mainSteps": [
@@ -21,7 +25,8 @@
                 "Duration": "PT1S"
               }
             }
-          ]
+          ],
+          "assumeRole": "{{ AutomationAssumeRole }}"
         }
       }
     },
@@ -41,7 +46,34 @@
             ]
           }
         ],
-        "WaitForSuccessTimeoutSeconds": 300
+        "WaitForSuccessTimeoutSeconds": 300,
+        "Parameters": {
+          "AutomationAssumeRole": [
+            {
+              "Fn::GetAtt": [
+                "Role",
+                "Arn"
+              ]
+            }
+          ]
+        }
+      }
+    },
+    "Role": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "ssm.amazonaws.com"
+              },
+              "Action": "sts:AssumeRole"
+            }
+          ]
+        }
       }
     }
   }

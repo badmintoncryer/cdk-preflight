@@ -4,6 +4,7 @@ resourceTypes: [AWS::EC2::ClientVpnAuthorizationRule]
 severity: ERROR
 title: Client VPN authorization rule cannot set both AccessGroupId and AuthorizeAllGroups
 constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-ec2-clientvpnauthorizationrule.html
+benchRegion: us-east-1
 upstream: none
 repro:
   method: real-deploy
