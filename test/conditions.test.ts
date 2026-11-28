@@ -1,7 +1,8 @@
 /**
  * Condition の三値評価（src/private/conditions.ts）。証明できた false だけがリソースを外す。
  */
-import { forceConditionalBranches, inactiveResources, specializeTemplate } from '../src/private/conditions';
+import { forceConditionalBranches, inactiveResources, specializeTemplate, undecidedConditions } from '../src/private/conditions';
+import { conditionAssignments } from '../src/private/enforce';
 
 const sub = (condition: string) => ({ Type: 'AWS::SNS::Subscription', Condition: condition, Properties: {} });
 
@@ -165,6 +166,21 @@ describe('forceConditionalBranches (issue #276)', () => {
     const f = forceConditionalBranches(tpl, false) as any;
     expect(f.Resources.R.Properties).toEqual({ A: 'y', L: ['k', 'w'] });
     expect(f.Outputs.O.Value).toBe('b');
+  });
+
+  test('issue #434: a function picks the branch per condition name', () => {
+    const t = forceConditionalBranches(tpl, (c) => c === 'D') as any;
+    expect(t.Resources.R.Properties).toEqual({ A: 'y', L: ['k'] });
+  });
+
+  test('issue #434: undecidedConditions lists each condition once', () => {
+    expect(undecidedConditions(tpl)).toEqual(['C', 'D']);
+  });
+
+  test('issue #434: few conditions get every combination, many get all-true, all-false and one-flips', () => {
+    expect(conditionAssignments(['A', 'B']).map((m) => [m.get('A'), m.get('B')]))
+      .toEqual([[false, false], [true, false], [false, true], [true, true]]);
+    expect(conditionAssignments(['A', 'B', 'C', 'D', 'E'])).toHaveLength(12);
   });
 
   test('a template without Fn::If gives undefined', () => {

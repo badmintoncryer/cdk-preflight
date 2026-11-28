@@ -10,7 +10,7 @@ import {
   type PolicyViolation,
 } from 'aws-cdk-lib';
 import type { IConstruct } from 'constructs';
-import { forceConditionalBranches, specializeTemplateFile } from './conditions';
+import { forceConditionalBranches, specializeTemplateFile, undecidedConditions } from './conditions';
 import { checkQuotas, nestedTemplateFile, type QuotaCheckOptions } from './quota';
 import { BUNDLED_LIBS, type BundledRuleData } from '../rules.generated';
 
@@ -298,15 +298,44 @@ export function byEnvironment<T extends { region?: string; accountId?: string }>
 
 const UNSETTLED_NOTE = ' (reported as a warning: it holds on only one branch of an Fn::If whose condition cannot be decided at synth time)';
 
+/**
+ * 指摘の同一性。同じルールでも別のプロパティの指摘は別物として数える（#434）。リストの添字は
+ * 枝を倒すと `AWS::NoValue` の要素が抜けてずれるので、数字の段は伏せる。
+ */
 function findingKey(d: EngineDiagnostic): string {
-  return `${d.ruleId}|${d.entity?.logicalId ?? ''}`;
+  const where = (d.propertyPath ?? '').split('.').map((seg) => (/^\d+$/.test(seg) ? '*' : seg)).join('.');
+  return `${d.ruleId}|${d.entity?.logicalId ?? ''}|${where}`;
+}
+
+/** 決まらない条件がこれ以下なら真偽の全組み合わせ（2^n 通り）を評価する。 */
+const EXHAUSTIVE_CONDITIONS = 3;
+
+/**
+ * 決まらない条件の真偽の割り当て。条件が少なければ全組み合わせ、多ければ「全部真」「全部偽」と、
+ * 1 つだけを反対にした版（2n + 2 通り）。後者は全組み合わせではないので取りこぼしうるが、
+ * 全部を同じ側に倒すだけだった頃（#434）よりは、独立した条件の組み合わせを拾う。
+ */
+export function conditionAssignments(names: string[]): Map<string, boolean>[] {
+  const of = (f: (i: number) => boolean) => new Map(names.map((n, i) => [n, f(i)]));
+  if (names.length <= EXHAUSTIVE_CONDITIONS) {
+    return Array.from({ length: 2 ** names.length }, (_, m) => of((i) => Math.floor(m / 2 ** i) % 2 === 1));
+  }
+  const out = [of(() => true), of(() => false)];
+  names.forEach((_, j) => {
+    out.push(of((i) => i !== j));
+    out.push(of((i) => i === j));
+  });
+  return out;
 }
 
 /**
- * テンプレートに既定値で決まらない Fn::If が残っているとき、全部を真の枝に倒した版と偽の枝に
- * 倒した版の両方を評価し、両方で出た自前ルールの指摘のキーを返す（issue #276）。
- * Fn::If が残っていない・読めない・どちらかの評価が失敗したときは undefined で、呼び出し側は
- * 何も変えない。
+ * テンプレートに既定値で決まらない Fn::If が残っているとき、条件名ごとに真偽を割り当てた版を
+ * 評価し、どの版でも出た自前ルールの指摘のキーを返す（issue #276、#434）。
+ * 全部を真に倒した版と偽に倒した版の 2 つだけでは、独立した条件が 2 つ以上あるとき、どちらでも
+ * 鳴るのにデプロイできる組み合わせ（A 偽 × B 真）を見落として synth を止めていた。
+ * Fn::If が残っていない・読めない・評価が失敗したときは undefined で、呼び出し側は何も変えない。
+ * ponytail: 条件どうしの関係（Off = Not(On) など）は見ないので、ありえない組み合わせも評価する。
+ * そこで鳴らない指摘は warning に落ちる（synth を止めない側に倒れる）。
  */
 function settledFindings(
   eng: any,
@@ -316,16 +345,20 @@ function settledFindings(
 ): Set<string> | undefined {
   try {
     const tpl = JSON.parse(fs.readFileSync(checked, 'utf8'));
-    const keys: Set<string>[] = [];
-    for (const branch of [true, false]) {
-      const forced = forceConditionalBranches(tpl, branch);
+    const names = undecidedConditions(tpl);
+    if (names.length === 0) return undefined;
+    let settled: Set<string> | undefined;
+    for (const assignment of conditionAssignments(names)) {
+      const forced = forceConditionalBranches(tpl, (name) => assignment.get(name) ?? true);
       if (forced === undefined) return undefined;
-      const file = path.join(tmp, `${fs.readdirSync(tmp).length}-forced-${branch}.template.json`);
+      const file = path.join(tmp, `${fs.readdirSync(tmp).length}-forced.template.json`);
       fs.writeFileSync(file, JSON.stringify(forced));
       const r = runOn(eng, file);
-      keys.push(new Set(((r.diagnostics ?? []) as EngineDiagnostic[]).filter((d) => d.source === 'CUSTOM').map(findingKey)));
+      const keys = new Set(((r.diagnostics ?? []) as EngineDiagnostic[]).filter((d) => d.source === 'CUSTOM').map(findingKey));
+      settled = settled === undefined ? keys : new Set([...settled].filter((k) => keys.has(k)));
+      if (settled.size === 0) break;
     }
-    return new Set([...keys[0]].filter((k) => keys[1].has(k)));
+    return settled;
   } catch {
     return undefined;
   }

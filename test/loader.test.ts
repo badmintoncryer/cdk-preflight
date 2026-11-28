@@ -428,6 +428,44 @@ describe('enforce mode (default)', () => {
     expect(() => app.synth()).toThrow(/pf-ec2-sg-port-range|Validation failed/);
   });
 
+  // issue #434: 独立した条件が 2 つあると、全部真・全部偽のどちらでも鳴るのにデプロイできる組み合わせが残る
+  function scalableTargetWithTwoIfs(stack: Stack, minIfFalse: number): void {
+    const cond = (id: string) => new CfnCondition(stack, id, {
+      expression: Fn.conditionEquals(new CfnParameter(stack, `P${id}`, { type: 'String' }).valueAsString, 'yes'),
+    });
+    const a = cond('A');
+    const b = cond('B');
+    new CfnResource(stack, 'T', {
+      type: 'AWS::ApplicationAutoScaling::ScalableTarget',
+      properties: {
+        MinCapacity: Fn.conditionIf(a.logicalId, 10, minIfFalse),
+        MaxCapacity: Fn.conditionIf(b.logicalId, 5, 0),
+        ResourceId: 'table/x',
+        ScalableDimension: 'dynamodb:table:ReadCapacityUnits',
+        ServiceNamespace: 'dynamodb',
+      },
+    });
+  }
+
+  test('issue #434: a finding that a combination of independent conditions avoids is a warning', () => {
+    const app = makeApp();
+    Preflight.apply(app, { enforce: true });
+    // A 偽 × B 真 なら Min 1 / Max 5 でデプロイできる
+    scalableTargetWithTwoIfs(new Stack(app, 'S', { env: { region: 'us-east-1', account: '123456789012' } }), 1);
+    expect(() => app.synth()).not.toThrow();
+    const mine = readReport(app).filter((v) => v.ruleName === 'pf-appautoscaling-min-max-capacity');
+    expect(mine.length).toBeGreaterThan(0);
+    expect(mine.every((v) => v.severity === 'warning')).toBe(true);
+  });
+
+  test('issue #434: a finding that holds in every combination still fails synthesis', () => {
+    const app = makeApp();
+    Preflight.apply(app, { enforce: true });
+    // Min は 10 か 6、Max は 5 か 0: どの組み合わせでも Min > Max
+    scalableTargetWithTwoIfs(new Stack(app, 'S', { env: { region: 'us-east-1', account: '123456789012' } }), 6);
+    expect(() => app.synth()).toThrow(/pf-appautoscaling-min-max-capacity|Validation failed/);
+  });
+
   test('issue #276: list counts over mutually exclusive undecided Fn::If elements do not fail synthesis', () => {
     const app = makeApp();
     Preflight.apply(app, { enforce: true });
