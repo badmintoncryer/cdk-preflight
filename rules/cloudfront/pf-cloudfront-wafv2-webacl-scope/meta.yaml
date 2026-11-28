@@ -8,6 +8,6 @@ constraintSource: https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateR
 upstream: none
 repro:
   method: real-deploy
-  evidence: "bench 2026-09-02 us-east-1: ROLLBACK_COMPLETE, \"Only global scoped ARNs are supported arn:aws:wafv2:ap-northeast-1:<account>:regional/webacl/app/...\" (Service: CloudFront, Status Code: 400). The check is on the ARN scope segment, not the region, so a REGIONAL web ACL created in us-east-1 fails the same way."
+  evidence: "bench 2026-09-02 us-east-1: ROLLBACK_COMPLETE, \"Only global scoped ARNs are supported arn:aws:wafv2:ap-northeast-1:<account>:regional/webacl/app/...\" (Service: CloudFront, Status Code: 400). The check is on the ARN scope segment, not the region, so a REGIONAL web ACL created in us-east-1 fails the same way. monthly 2026-11-28 us-east-1 (run 46121117191, account 502761806921): a REGIONAL ARN in the running account with a made-up id -> \"Only global scoped ARNs are supported\" (ROLLBACK_COMPLETE); the scope is checked before the web ACL is looked up."
   expect: "Only global scoped ARNs are supported"
 addedOn: 2026-09-02
