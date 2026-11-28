@@ -3,7 +3,7 @@ import * as os from 'os';
 import * as path from 'path';
 import { App, CfnCondition, Fn, NestedStack, Stack, Validations, aws_ec2 as ec2, aws_lambda as lambda } from 'aws-cdk-lib';
 import { PreflightQuotaPlugin } from '../src/private/enforce';
-import { checkQuotas, flushQuotaCache, installQuotaCacheFlush, LAMBDA_CONCURRENCY_RULE, QUOTA_SKIPPED_RULE, type QuotaFacts, type QuotaRequest } from '../src/private/quota';
+import { cacheKey, checkQuotas, flushQuotaCache, installQuotaCacheFlush, LAMBDA_CONCURRENCY_RULE, QUOTA_SKIPPED_RULE, type QuotaFacts, type QuotaRequest } from '../src/private/quota';
 
 const ACCOUNT = '123456789012';
 
@@ -167,6 +167,14 @@ test('a skipped stack is reported once, not once per nested stack', () => {
 });
 
 describe('cache', () => {
+  test('keys facts on the credentials, without storing the raw key', () => {
+    const a = cacheKey('us-east-1', { AWS_ACCESS_KEY_ID: 'AKIAAAAAAAAAAAAAAAAA' });
+    const b = cacheKey('us-east-1', { AWS_ACCESS_KEY_ID: 'AKIABBBBBBBBBBBBBBBB' });
+    expect(a).not.toEqual(b);
+    expect(a).not.toContain('AKIAAAAAAAAAAAAAAAAA');
+    expect(cacheKey('us-east-1', { AWS_PROFILE: 'dev' })).not.toEqual(cacheKey('us-east-1', { AWS_PROFILE: 'prod' }));
+  });
+
   test('reuses facts within the TTL, then refetches usage but not quotas', () => {
     const ctx = synth(vpcs(1));
     let t = 0;

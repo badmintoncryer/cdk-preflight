@@ -1,4 +1,5 @@
 import { execFileSync } from 'child_process';
+import { createHash } from 'crypto';
 import * as fs from 'fs';
 import * as path from 'path';
 import { App, type IPolicyValidationContext, type PolicyViolation } from 'aws-cdk-lib';
@@ -295,7 +296,7 @@ interface CacheEntry {
 function cachedFetch(templatePath: string, req: QuotaRequest, opts: QuotaCheckOptions): QuotaFacts {
   const now = (opts.now ?? Date.now)();
   const file = path.join(assemblyRoot(templatePath), '.cdk-preflight', 'quota-cache.json');
-  const key = `${process.env.AWS_PROFILE ?? ''}|${req.region ?? ''}`;
+  const key = cacheKey(req.region);
   let cache: Record<string, CacheEntry> = {};
   try {
     cache = JSON.parse(fs.readFileSync(file, 'utf8'));
@@ -312,6 +313,16 @@ function cachedFetch(templatePath: string, req: QuotaRequest, opts: QuotaCheckOp
   cache[key] = { at: now, quotasAt: got.quotas ? now : hit!.quotasAt, facts };
   pendingCache.set(file, cache);
   return facts;
+}
+
+/**
+ * キャッシュのキー。AWS_PROFILE だけでは、環境変数（AWS_ACCESS_KEY_ID など）で資格情報を切り替えたときに
+ * 前のアカウントの使用量を TTL のあいだ使い続ける（#443）。アクセスキー ID はハッシュにして入れる
+ * （cdk.out に資格情報の断片を残さない）。
+ */
+export function cacheKey(region: string | undefined, env: NodeJS.ProcessEnv = process.env): string {
+  const keyId = env.AWS_ACCESS_KEY_ID ? createHash('sha256').update(env.AWS_ACCESS_KEY_ID).digest('hex').slice(0, 16) : '';
+  return `${env.AWS_PROFILE ?? ''}|${keyId}|${region ?? ''}`;
 }
 
 /**
