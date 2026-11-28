@@ -9,4 +9,5 @@ upstream: none
 repro:
   method: real-deploy
   evidence: 'bench 2026-09-06 ap-northeast-1: fail template -> ROLLBACK_COMPLETE, "You can specify either access-group-id or authorize-all-groups, not both"; pass template -> CREATE_COMPLETE. Both stacks were deployed with the placeholder ACM ARNs replaced by a real bench certificate, because the committed fixture must not carry an account-specific ARN.'
+  expect: "You can specify either access-group-id or authorize-all-groups, not both"
 addedOn: 2026-09-06
