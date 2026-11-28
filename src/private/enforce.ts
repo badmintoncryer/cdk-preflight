@@ -30,9 +30,8 @@ export const DEPLOY_ENV_MODULE_NAME = '_pf_deploy_environment';
  * Rules must read it as `data.cdk_preflight.deploy_region` (never as a bare
  * variable): the data reference is simply undefined when the module is not
  * injected — the rule body fails and the rule skips — while a bare variable
- * would be a compile error. Injected by the enforce plugin when the app-level
- * region is concrete; the warn mode (CDK built-in plugin) never injects it,
- * so region-dependent rules only fire in enforce mode.
+ * would be a compile error. Injected for every group of stacks whose region is
+ * concrete, in enforce mode and (since #433) in observe mode alike.
  */
 export function deployEnvironmentModule(region: string, accountId?: string): { name: string; content: string } {
   const account = isConcreteAccount(accountId) ? `deploy_account := ${JSON.stringify(accountId)}\n` : '';
@@ -639,13 +638,14 @@ let cachedObservePlugin: { key: string; plugin: ConditionAwarePlugin } | undefin
 export function observePluginCached(rules: BundledRuleData[]): ConditionAwarePlugin {
   const key = rules.map((r) => r.id).join(',');
   if (cachedObservePlugin?.key !== key) {
+    const regoRules = [
+      ...BUNDLED_LIBS.map((l) => ({ name: l.name, content: l.rego })),
+      ...mergeRuleModules(rules),
+    ];
     cachedObservePlugin = {
       key,
-      plugin: new ConditionAwarePlugin(new CloudFormationValidatePlugin({
-        regoRules: [
-          ...BUNDLED_LIBS.map((l) => ({ name: l.name, content: l.rego })),
-          ...mergeRuleModules(rules),
-        ],
+      plugin: new ConditionAwarePlugin((region, account) => new CloudFormationValidatePlugin({
+        regoRules: region === undefined ? regoRules : [...regoRules, deployEnvironmentModule(region, account)],
       })),
     };
   }
@@ -653,14 +653,23 @@ export function observePluginCached(rules: BundledRuleData[]): ConditionAwarePlu
 }
 
 /**
- * 観測モードでも enforce と同じく、Condition / Fn::If を既定値で決まる分だけ畳んだテンプレートを
- * 検査させる（issue #408）。中身は CDK 組み込みのプラグインのままで、渡すテンプレートだけ差し替え、
- * 報告のパスは元のテンプレートに戻す。
+ * 観測モードのプラグイン。中身は CDK 組み込みの CloudFormationValidatePlugin のままで（報告の名前と
+ * acknowledge の id は `CloudFormation-Validate::<rule-id>` のまま）、enforce と同じ下ごしらえをする。
+ *
+ * - Condition / Fn::If を既定値で決まる分だけ畳んだテンプレートを渡し、報告のパスは元に戻す（#408）
+ * - ネストしたスタックの子テンプレートも渡す（#432）
+ * - スタックを環境（リージョン × アカウント）で束ね、具体的な環境には deploy_region / deploy_account を
+ *   焼き込んだ組み込みプラグインを使う。これが無いとリージョン・アカウント依存のルールが観測モードでは
+ *   一切評価されない（#433）。環境ごとのプラグインは 1 度作ったら使い回す（エンジンは free() できない）。
  */
 export class ConditionAwarePlugin implements IPolicyValidationPlugin {
   public readonly name: string;
-  constructor(public readonly inner: CloudFormationValidatePlugin) {
-    this.name = inner.name;
+  /** 環境を焼き込まないプラグイン（環境が具体的でないスタック用） */
+  public readonly inner: CloudFormationValidatePlugin;
+  private readonly byEnv = new Map<string, CloudFormationValidatePlugin>();
+  constructor(private readonly make: (region?: string, account?: string) => CloudFormationValidatePlugin) {
+    this.inner = make();
+    this.name = this.inner.name;
   }
   public get version(): string | undefined {
     return this.inner.version;
@@ -669,27 +678,44 @@ export class ConditionAwarePlugin implements IPolicyValidationPlugin {
     return this.inner.ruleIds;
   }
   public validate(context: IPolicyValidationContext): PolicyValidationPluginReport {
+    // enforce と同じくネストしたスタックの子テンプレートも検査させる（#432）
+    const groups = byEnvironment(withNestedStacks(context.stackTemplates));
+    const reports = groups.map((g) => this.validateGroup(context, g.stacks, this.pluginFor(g.region, g.account)));
+    if (reports.length === 1) return reports[0];
+    return {
+      ...reports[0] ?? {},
+      success: reports.every((r) => r.success),
+      violations: reports.flatMap((r) => r.violations),
+    };
+  }
+
+  private pluginFor(region?: string, account?: string): CloudFormationValidatePlugin {
+    if (region === undefined) return this.inner;
+    const key = `${region}|${account ?? ''}`;
+    if (!this.byEnv.has(key)) this.byEnv.set(key, this.make(region, account));
+    return this.byEnv.get(key)!;
+  }
+
+  private validateGroup(
+    context: IPolicyValidationContext,
+    stacks: IPolicyValidationContext['stackTemplates'],
+    plugin: CloudFormationValidatePlugin,
+  ): PolicyValidationPluginReport {
     const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'cdkpf-spec-'));
     try {
-      // enforce と同じくネストしたスタックの子テンプレートも検査させる（#432）
-      const all = withNestedStacks(context.stackTemplates);
-      if (all.length !== context.stackTemplates.length) {
-        context = { ...context, stackTemplates: all, templatePaths: [...new Set([...context.templatePaths, ...all.map((st) => st.templatePath)])] };
-      }
       const back = new Map<string, string>();
-      const stackTemplates = context.stackTemplates.map((st) => {
+      const stackTemplates = stacks.map((st) => {
         const spec = specializeTemplateFile(st.templatePath, { region: st.region, accountId: st.accountId }, tmp);
         if (spec === undefined) return st;
         back.set(spec, st.templatePath);
         return { ...st, templatePath: spec };
       });
-      if (back.size === 0) return this.inner.validate(context);
-      const fwd = new Map([...back].map(([k, v]) => [v, k]));
-      const report = this.inner.validate({
+      const report = plugin.validate({
         ...context,
-        templatePaths: context.templatePaths.map((p) => fwd.get(p) ?? p),
+        templatePaths: stackTemplates.map((st) => st.templatePath),
         stackTemplates,
       });
+      if (back.size === 0) return report;
       return {
         ...report,
         violations: report.violations.map((v) => ({

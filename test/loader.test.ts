@@ -311,6 +311,17 @@ describe('enforce mode (default)', () => {
       expect(where.some((p) => p.startsWith('East'))).toBe(false);
     });
 
+    test('issue #433: observe mode gets region rules too, per stack', () => {
+      const app = makeApp();
+      Preflight.apply(app, { enforce: false });
+      addStream(new Stack(app, 'East', { env: { account: '123456789012', region: 'us-east-1' } }));
+      addStream(new Stack(app, 'Tokyo', { env: { account: '123456789012', region: 'ap-northeast-1' } }));
+      app.synth(); // warnings only
+      const where = regionFindings(app);
+      expect(where.some((p) => p.startsWith('Tokyo'))).toBe(true);
+      expect(where.some((p) => p.startsWith('East'))).toBe(false);
+    });
+
     test('a stack in another account still gets its account rules', () => {
       const app = makeApp();
       Preflight.apply(app);
